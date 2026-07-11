@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Difficulty {
+  Easy
+  Medium
+  Hard
+}
+
+enum GameStatus {
+  waiting
+  playing
+  finished
+  cancelled
+}
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  clerkUserId String   @unique @map("clerk_user_id")
+  username    String   @unique @db.VarChar(20)
+  email       String   @unique @db.VarChar(255)
+  rating      Int      @default(1200)
+  gamesPlayed Int      @default(0) @map("games_played")
+  wins        Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  lastActive  DateTime @default(now()) @map("last_active")
+
+  hostedGames  Game[]       @relation("GameHost")
+  wonGames     Game[]       @relation("GameWinner")
+  gamePlayers  GamePlayer[]
+  answers      Answer[]
+
+  @@map("users")
+}
+
+model Country {
+  id         Int        @id @default(autoincrement())
+  name       String     @db.VarChar(100)
+  capital    String     @db.VarChar(100)
+  continent  String     @db.VarChar(50)
+  difficulty Difficulty
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  answers Answer[]
+
+  @@map("countries")
+}
+
+model Game {
+  id         String     @id @default(uuid()) @db.Uuid
+  roomCode   String     @unique @map("room_code") @db.VarChar(6)
+  hostId     String     @map("host_id") @db.Uuid
+  status     GameStatus @default(waiting)
+  difficulty Difficulty
+  rounds     Int        @default(10)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  finishedAt DateTime?  @map("finished_at")
+  winnerId   String?    @map("winner_id") @db.Uuid
+
+  host        User         @relation("GameHost", fields: [hostId], references: [id])
+  winner      User?        @relation("GameWinner", fields: [winnerId], references: [id])
+  gamePlayers GamePlayer[]
+  answers     Answer[]
+
+  @@index([hostId])
+  @@index([winnerId])
+  @@index([createdAt])
+  @@map("games")
+}
+
+model GamePlayer {
+  id           String   @id @default(uuid()) @db.Uuid
+  gameId       String   @map("game_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  score        Int      @default(0)
+  rank         Int?
+  ratingChange Int?     @map("rating_change")
+  abandoned    Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([gameId, userId])
+  @@index([userId])
+  @@map("game_players")
+}
+
+model Answer {
+  id             String   @id @default(uuid()) @db.Uuid
+  gameId         String   @map("game_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  countryId      Int      @map("country_id")
+  answer         String   @db.VarChar(255)
+  correct        Boolean
+  points         Int
+  responseTimeMs Int      @map("response_time_ms")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  game    Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+  country Country @relation(fields: [countryId], references: [id])
+
+  @@unique([gameId, userId, countryId])
+  @@index([userId])
+  @@index([countryId])
+  @@map("answers")
+}
