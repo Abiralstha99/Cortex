@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import { clerkMiddleware } from "@clerk/express";
 
 import { requireAuth } from "./middleware/requireAuth.js";
-import userRouter from "./routes/userRouter.js";
+import userRouter from "./routes/user.routes.js";
 import { handleClerkWebhook } from "./webhooks/clerk.js";
 
 dotenv.config();
