@@ -29,13 +29,13 @@ export function useSocket() {
       setConnected(false);
     };
 
-    socket.on("connected", onConnected);
+    socket.on("connect", onConnected);
     socket.on("connect_error", onConnectError);
     socket.on("disconnect", onDisconnect);
     socket.connect();
 
     return () => {
-      socket.off("connected", onConnected);
+      socket.off("connect", onConnected);
       socket.off("connect_error", onConnectError);
       socket.off("disconnect", onDisconnect);
       socket.disconnect();

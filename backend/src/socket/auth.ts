@@ -1,4 +1,5 @@
-// This middleware is used to authenticate the socket connection - this is because
+// This middleware is used to authenticate the socket connection 
+// When someone connects to the socket, the socket.io server will call this middleware to authenticate the connection
 import { verifyToken } from "@clerk/express";
 import type { Socket } from "socket.io";
 

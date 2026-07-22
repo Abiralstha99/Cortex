@@ -2,6 +2,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
+import Dashboard from "./pages/Dashboard";
+import CreateGame from "./pages/CreateGame";
+import JoinGame from "./pages/JoinGame";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -21,7 +24,23 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <div>Dashboard</div>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/game/create"
+            element={
+              <ProtectedRoute>
+                <CreateGame />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/game/join"
+            element={
+              <ProtectedRoute>
+                <JoinGame />
               </ProtectedRoute>
             }
           />
