@@ -1,0 +1,54 @@
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(11, 15, 20, 0.85);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.app-header__wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.app-header__wordmark--accent {
+  color: var(--accent);
+}
+
+.app-header__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.app-header__avatar:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+@media (max-width: 600px) {
+  .app-header__inner {
+    padding: 1rem 1.25rem;
+  }
+}
