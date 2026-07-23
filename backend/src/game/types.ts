@@ -18,3 +18,4 @@ export type ActiveGame = Omit<WaitingRoom, "status"> & {
   status: "playing";
   currentRound: number;
 };
+
