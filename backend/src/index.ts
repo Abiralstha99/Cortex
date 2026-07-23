@@ -2,11 +2,13 @@ import express from "express";
 import dotenv from "dotenv";
 import { clerkMiddleware } from "@clerk/express";
 import { createServer } from "http";
-import { requireAuth } from "./middleware/requireAuth.js";
+import { requireAuth } from "./middleware/requireAuth.middleware.js";
 import userRouter from "./routes/user.routes.js";
 import { handleClerkWebhook } from "./webhooks/clerk.js";
 import cors from "cors";
 import { attachSocket } from "./socket/index.js";
+import gameRouter from "./routes/game.routes.js";
+
 dotenv.config();
 
 const app = express();
@@ -36,6 +38,8 @@ app.use(clerkMiddleware());
 app.use("/api/users", requireAuth, userRouter);
 
 attachSocket(httpServer);
+app.use("/api/games", gameRouter);
+
 httpServer.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
