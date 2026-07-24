@@ -14,7 +14,7 @@ export async function createGame(req: Request, res: Response) {
 
   const user = await prisma.user.findUnique({
     where: { clerkUserId },
-    select: { id: true },
+    select: { id: true, username: true },
   });
 
   if (!user) {
@@ -23,6 +23,7 @@ export async function createGame(req: Request, res: Response) {
 
   const game = await createWaitingGame({
     hostId: user.id,
+    hostUsername: user.username,
     difficulty: req.body.difficulty,
     rounds: req.body.rounds,
   });
