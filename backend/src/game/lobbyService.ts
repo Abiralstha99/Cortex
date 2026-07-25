@@ -55,6 +55,23 @@ const JOIN_PLAYERS_LUA = `
   return { "ok", encoded }
 `;
 
+// Since redis returns string, we need to deserialize the room object
+function deserializeRoom(
+  raw: Record<string, string>,
+  players: Player[],
+): WaitingRoom {
+  return {
+    gameId: raw.gameId!,
+    difficulty: raw.difficulty as WaitingRoom["difficulty"],
+    numberOfRounds: Number(raw.numberOfRounds),
+    players,
+    status: "waiting",
+    hostId: raw.hostId!,
+    roomCode: raw.roomCode!,
+    createdAt: new Date(raw.createdAt!),
+  };
+}
+
 export async function joinWaitingGame({
   roomCode,
   playerId,
@@ -104,19 +121,10 @@ export async function joinWaitingGame({
   return { game: deserializeRoom(raw, players), isNewJoin: status === "ok" };
 }
 
-// Since redis returns string, we need to deserialize the room object
-function deserializeRoom(
-  raw: Record<string, string>,
-  players: Player[],
-): WaitingRoom {
-  return {
-    gameId: raw.gameId!,
-    difficulty: raw.difficulty as WaitingRoom["difficulty"],
-    numberOfRounds: Number(raw.numberOfRounds),
-    players,
-    status: "waiting",
-    hostId: raw.hostId!,
-    roomCode: raw.roomCode!,
-    createdAt: new Date(raw.createdAt!),
-  };
+export async function setPlayerReady(
+  _roomCode: string,
+  _playerId: string,
+): Promise<void> {
+  // TODO: implement ready toggle
 }
+
