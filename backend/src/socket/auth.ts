@@ -34,6 +34,7 @@ export async function SocketAuth(
     socket.data.clerkUserId = clerkUserId;
     socket.data.userId = user.id;
     socket.data.username = user.username;
+    socket.data.gameId = null;
     next();
   } catch (error) {
     console.log("Authentication error", error);

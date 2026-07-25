@@ -1,9 +1,13 @@
 /*
 When another player has a room code and wants to join, this file handles the logic:
 - Looks up the room code in Redis to find which game it belongs to
-- Reads the game hash and checks: does it exist? Is it still "waiting"? Is there space (max 8)?
+- Reads the game hash and checks: does it exist? Is it still "waiting"? Is there space (max 8)?
 - If the player is already in the list (e.g. the host reconnecting), it skips the write and just returns the current state
 - Otherwise it appends the new player to the list and saves it back
+
+Lobby Redis mutations for waiting rooms:
+- joinWaitingGame: look up room code, append player (or no-op if already in)
+- setPlayerReady: toggle a player's ready flag while status is waiting
 */
 
 import redis from "../lib/redis.js";
@@ -53,6 +57,40 @@ const JOIN_PLAYERS_LUA = `
   local encoded = cjson.encode(players)
   redis.call("HSET", KEYS[1], "players", encoded)
   return { "ok", encoded }
+`;
+
+const SET_PLAYER_READY_LUA = `
+  -- KEYS[1] = game:<gameId>
+  -- ARGV[1] = playerId
+  -- returns: { status, ready? }
+  --   status: "ok" | "missing" | "not_waiting" | "not_in_room"
+  --   ready: "true" | "false" (only when status is "ok")
+
+  local raw = redis.call("HGET", KEYS[1], "players")
+  local status = redis.call("HGET", KEYS[1], "status")
+
+  if (not raw) or (not status) then
+    return { "missing" }
+  end
+
+  if status ~= "waiting" then
+    return { "not_waiting" }
+  end
+
+  local players = cjson.decode(raw)
+  local playerId = ARGV[1]
+
+  for i = 1, #players do
+    if players[i].id == playerId then
+      local newReady = not players[i].ready
+      players[i].ready = newReady
+      local encoded = cjson.encode(players)
+      redis.call("HSET", KEYS[1], "players", encoded)
+      return { "ok", tostring(newReady) }
+    end
+  end
+
+  return { "not_in_room" }
 `;
 
 // Since redis returns string, we need to deserialize the room object
@@ -122,9 +160,34 @@ export async function joinWaitingGame({
 }
 
 export async function setPlayerReady(
-  _roomCode: string,
-  _playerId: string,
-): Promise<void> {
-  // TODO: implement ready toggle
-}
+  roomCode: string,
+  playerId: string,
+): Promise<{ ready: boolean; gameId: string }> {
+  const gameId = await redis.get(ROOM_CODE_KEY(roomCode));
+  if (!gameId) {
+    throw new Error("Room not found");
+  }
 
+  const result = (await redis.eval(
+    SET_PLAYER_READY_LUA,
+    1,
+    GAME_KEY(gameId),
+    playerId,
+  )) as [string, string?];
+
+  // result returns result = ["ok", "false"]; -- so we're destructuring the array
+  const [status, readyStr] = result;
+
+  switch (status) {
+    case "missing":
+      throw new Error("Room not found");
+    case "not_waiting":
+      throw new Error("Game has already started");
+    case "not_in_room":
+      throw new Error("You are not in this room");
+    case "ok":
+      return { ready: readyStr === "true", gameId };
+    default:
+      throw new Error("Failed to update ready status");
+  }
+}

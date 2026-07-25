@@ -1,7 +1,8 @@
 import type { Server, Socket } from "socket.io";
-import { joinWaitingGame } from "../game/lobbyService.js";
+import { joinWaitingGame, setPlayerReady } from "../game/lobbyService.js";
 import { JoinGamePayloadSchema } from "../schemas/game.js";
 import { parseSocketPayload } from "./parsePayload.js";
+import { RoomCodeSchema } from "../schemas/common.js";
 
 export function registerLobbyHandlers(io: Server, socket: Socket): void {
   socket.on("join_game", async (payload: unknown) => {
@@ -16,6 +17,9 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
         playerId: socket.data.userId,
         playerUsername: socket.data.username,
       });
+
+      // Attach the game ID to the socket for later use
+      socket.data.gameId = game.gameId;
 
       // Subscribe to the game's room for future broadcasts
       await socket.join(`game:${game.gameId}`);
@@ -38,12 +42,37 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
           ready: false,
         });
       }
-    } catch (err) {
-      if (err instanceof Error) {
-        socket.emit("error", { message: err.message });
+    } catch (error) {
+      if (error instanceof Error) {
+        socket.emit("error", { message: error.message });
         return;
       }
-      console.error("join_game unexpected error:", err);
+      console.error("join_game unexpected error:", error);
+      socket.emit("error", { message: "Failed to join game" });
+    }
+  });
+
+  socket.on("player_ready", async (payload: { roomCode?: string }) => {
+    const parsed = parseSocketPayload(socket, RoomCodeSchema, payload);
+    if (!parsed) {
+      return;
+    }
+    try {
+      const { ready, gameId } = await setPlayerReady(
+        parsed,
+        socket.data.userId,
+      );
+      io.to(`game:${gameId}`).emit("player_ready", {
+        id: socket.data.userId,
+        username: socket.data.username,
+        ready,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        socket.emit("error", { message: error.message });
+        return;
+      }
+      console.error("join_game unexpected error:", error);
       socket.emit("error", { message: "Failed to join game" });
     }
   });
