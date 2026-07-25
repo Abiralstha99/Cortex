@@ -1,6 +1,8 @@
 // This file defines the types for the waiting room and game room
 
-export type Difficulty = "Easy" | "Medium" | "Hard";
+import type { Difficulty } from "../schemas/game.js";
+
+export type { Difficulty };
 export type GameStatus = "waiting" | "playing" | "finished" | "cancelled";
 
 // `id` is the Postgres users.id (not the Clerk id — see the id boundary note
@@ -26,4 +28,3 @@ export type ActiveGame = Omit<WaitingRoom, "status"> & {
   status: "playing";
   currentRound: number;
 };
-

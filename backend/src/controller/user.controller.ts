@@ -1,19 +1,11 @@
 import type { Request, Response } from "express";
 import { Prisma } from "../../app/generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
+import type { UpdateUserBody, UserIdParams } from "../schemas/user.js";
 
-const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,20}$/;
-type UserParams = {
-  userId: string;
-};
-
-export async function getUser(req: Request<UserParams>, res: Response) {
+export async function getUser(req: Request, res: Response) {
   try {
-    const userId = req.params.userId;
-
-    if (!userId) {
-      return res.status(400).json({ error: "Missing user id" });
-    }
+    const { userId } = req.params as UserIdParams;
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },
@@ -42,25 +34,14 @@ export async function getUser(req: Request<UserParams>, res: Response) {
 
 export async function updateUser(req: Request, res: Response) {
   try {
-    const userId = req.params.userId;
-
-    if (!userId) {
-      return res.status(400).json({ error: "Missing user id" });
-    }
+    const { userId } = req.params as UserIdParams;
 
     // A user can only update their own profile.
     if (req.userId !== userId) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    const { username } = req.body ?? {};
-
-    if (typeof username !== "string" || !USERNAME_PATTERN.test(username)) {
-      return res.status(400).json({
-        error:
-          "username must be 3-20 characters and contain only letters, numbers, and underscores",
-      });
-    }
+    const { username } = req.body as UpdateUserBody;
 
     const updatedUser = await prisma.user.update({
       where: { clerkUserId: userId },

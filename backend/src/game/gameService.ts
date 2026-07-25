@@ -9,21 +9,18 @@ import { reserveRoomCode } from "./roomCode.js";
 import redis from "../lib/redis.js";
 import { GAME_KEY } from "./redisKeys.js";
 
-const MIN_ROUNDS = 3;
-const MAX_ROUNDS = 20;
-const DEFAULT_ROUNDS = 10;
 const WAITING_ROOM_EXPIRATION_TIME = 60 * 60; // 1 hour
 
 export async function createWaitingGame({
   hostId,
   hostUsername,
   difficulty,
-  rounds = DEFAULT_ROUNDS,
+  rounds,
 }: {
   hostId: string;
   hostUsername: string;
   difficulty: Difficulty;
-  rounds?: number;
+  rounds: number;
 }) {
   if (!hostId) {
     throw new Error("Host user ID is required");
@@ -33,11 +30,6 @@ export async function createWaitingGame({
     throw new Error("Host username is required");
   }
 
-  if (!rounds || rounds < MIN_ROUNDS || rounds > MAX_ROUNDS) {
-    throw new Error(
-      `rounds must be an integer between ${MIN_ROUNDS} and ${MAX_ROUNDS}`,
-    );
-  }
   const gameId = crypto.randomUUID();
 
   // Now first reverse the room code for game

@@ -1,17 +1,18 @@
 import type { Server, Socket } from "socket.io";
 import { joinWaitingGame } from "../game/lobbyService.js";
+import { JoinGamePayloadSchema } from "../schemas/game.js";
+import { parseSocketPayload } from "./parsePayload.js";
 
 export function registerLobbyHandlers(io: Server, socket: Socket): void {
-  socket.on("join_game", async (payload: { roomCode?: string }) => {
-    const roomCode = payload?.roomCode?.trim().toUpperCase();
-    if (!roomCode) {
-      socket.emit("error", { message: "Room code is required" });
+  socket.on("join_game", async (payload: unknown) => {
+    const parsed = parseSocketPayload(socket, JoinGamePayloadSchema, payload);
+    if (!parsed) {
       return;
     }
 
     try {
       const { game, isNewJoin } = await joinWaitingGame({
-        roomCode,
+        roomCode: parsed.roomCode,
         playerId: socket.data.userId,
         playerUsername: socket.data.username,
       });
