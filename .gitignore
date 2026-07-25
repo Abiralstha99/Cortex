@@ -3,4 +3,8 @@ CAPITAL_RUSH_PRD.md
 db_diagram.md
 plan.md
 
+docs/Design.md
+docs/design-decisions.md
+docs/system.md
+
 .cursor/
