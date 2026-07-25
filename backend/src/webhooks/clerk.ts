@@ -19,6 +19,7 @@ function resolveUsername(
 }
 
 export async function handleClerkWebhook(req: Request, res: Response) {
+  console.log("=== WEBHOOK HIT ===");
   const signingSecret = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!signingSecret) {
