@@ -11,6 +11,49 @@ import { ROOM_CODE_KEY, GAME_KEY } from "./redisKeys.js";
 import type { Player, WaitingRoom } from "./types.js";
 
 const MAX_PLAYERS = 8;
+const JOIN_PLAYERS_LUA = `
+  -- KEYS[1] = game:<gameId>
+  -- ARGV[1] = playerId
+  -- ARGV[2] = username
+  -- ARGV[3] = maxPlayers
+  -- returns: { status, playersJson? }
+  --   status: "ok" | "already" | "full" | "not_waiting" | "missing"
+
+  local raw = redis.call("HGET", KEYS[1], "players")
+  local status = redis.call("HGET", KEYS[1], "status")
+
+  if (not raw) or (not status) then
+    return { "missing" }
+  end
+
+  if status ~= "waiting" then
+    return { "not_waiting" }
+  end
+
+  local players = cjson.decode(raw)
+  local playerId = ARGV[1]
+  local maxPlayers = tonumber(ARGV[3])
+
+  for i = 1, #players do
+    if players[i].id == playerId then
+      return { "already", raw }
+    end
+  end
+
+  if #players >= maxPlayers then
+    return { "full" }
+  end
+
+  players[#players + 1] = {
+    id = playerId,
+    username = ARGV[2],
+    ready = false,
+  }
+
+  local encoded = cjson.encode(players)
+  redis.call("HSET", KEYS[1], "players", encoded)
+  return { "ok", encoded }
+`;
 
 export async function joinWaitingGame({
   roomCode,
@@ -26,38 +69,39 @@ export async function joinWaitingGame({
     throw new Error("Room not found");
   }
 
+  const result = (await redis.eval(
+    JOIN_PLAYERS_LUA,
+    1, // number of KEYS
+    GAME_KEY(gameId),
+    playerId,
+    playerUsername,
+    String(MAX_PLAYERS),
+  )) as [string, string?];
+
+  const [status, playersJson] = result;
+
+  switch (status) {
+    case "missing":
+      throw new Error("Room not found");
+    case "not_waiting":
+      throw new Error("Game has already started");
+    case "full":
+      throw new Error("Room is full");
+    case "ok":
+    case "already":
+      break;
+    default:
+      throw new Error("Failed to join game");
+  }
+
+  // Lua script returns the new players list, but the game needs other fields too
   const raw = (await redis.hgetall(GAME_KEY(gameId))) as Record<string, string>;
-  if (!raw || !raw.status) {
+  if (!raw?.status) {
     throw new Error("Room not found");
   }
 
-  if (raw.status !== "waiting") {
-    throw new Error("Game has already started");
-  }
-
-  const players: Player[] = JSON.parse(raw.players!);
-
-  // Already in the room (host reconnect or duplicate join) — skip mutation
-  const alreadyJoined = players.some((p) => p.id === playerId);
-  if (alreadyJoined) {
-    return { game: deserializeRoom(raw, players), isNewJoin: false };
-  }
-
-  if (players.length >= MAX_PLAYERS) {
-    throw new Error("Room is full");
-  }
-
-  const newPlayer: Player = {
-    id: playerId,
-    username: playerUsername,
-    ready: false,
-  };
-  players.push(newPlayer);
-
-  // Only the players field is updated in Redis. 
-  await redis.hset(GAME_KEY(gameId), "players", JSON.stringify(players));
-
-  return { game: deserializeRoom(raw, players), isNewJoin: true };
+  const players: Player[] = JSON.parse(playersJson ?? raw.players!);
+  return { game: deserializeRoom(raw, players), isNewJoin: status === "ok" };
 }
 
 // Since redis returns string, we need to deserialize the room object
