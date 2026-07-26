@@ -96,7 +96,7 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
       }
       io.to(`game:${game.gameId}`).emit("player_left", {
         id: leftPlayerId,
-        game: socket.data.game,
+        game,
       });
     } catch (error) {
       if (error instanceof Error) {
