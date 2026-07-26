@@ -4,4 +4,4 @@ node_modules
 
 /app/generated/prisma
 
-./docs/
+.docs/
