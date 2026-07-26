@@ -3,11 +3,11 @@
 It creates a REDIS waiting game lobby and adds the host as the first player.
 */
 
-import type { Difficulty, WaitingRoom } from "./types.js";
+import type { Difficulty, WaitingRoom } from "../models/waitingRoom.types.js";
 import crypto from "crypto";
-import { reserveRoomCode } from "./roomCode.js";
+import { reserveRoomCode } from "../lib/roomCode.js";
 import redis from "../lib/redis.js";
-import { GAME_KEY } from "./redisKeys.js";
+import { GAME_KEY } from "../lib/redisKeys.js";
 
 const WAITING_ROOM_EXPIRATION_TIME = 60 * 60; // 1 hour
 

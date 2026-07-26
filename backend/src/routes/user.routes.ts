@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getUser, updateUser } from "../controller/user.controller.js";
+import { getUser, updateUser } from "../controllers/user.controller.js";
 import {
   validateBody,
   validateParams,

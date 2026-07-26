@@ -11,8 +11,8 @@ Lobby Redis mutations for waiting rooms:
 */
 
 import redis from "../lib/redis.js";
-import { ROOM_CODE_KEY, GAME_KEY } from "./redisKeys.js";
-import type { Player, WaitingRoom } from "./types.js";
+import { ROOM_CODE_KEY, GAME_KEY } from "../lib/redisKeys.js";
+import type { Player, WaitingRoom } from "../models/waitingRoom.types.js";
 
 const MAX_PLAYERS = 8;
 const JOIN_PLAYERS_LUA = `

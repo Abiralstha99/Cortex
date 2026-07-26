@@ -2,7 +2,7 @@
 // We will be reserving the roomcode in redis to avoid collisions
 
 import crypto from "crypto";
-import redis from "../lib/redis.js";
+import redis from "./redis.js";
 import { ROOM_CODE_KEY } from "./redisKeys.js";
 
 const MAX_ATTEMPTS = 10;

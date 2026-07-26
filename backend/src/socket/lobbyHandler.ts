@@ -1,8 +1,10 @@
 import type { Server, Socket } from "socket.io";
-import { joinWaitingGame, setPlayerReady } from "../game/lobbyService.js";
+import {
+  joinWaitingGame,
+  setPlayerReady,
+} from "../services/lobby.service.js";
 import { JoinGamePayloadSchema } from "../schemas/game.js";
 import { parseSocketPayload } from "./parsePayload.js";
-import { RoomCodeSchema } from "../schemas/common.js";
 
 export function registerLobbyHandlers(io: Server, socket: Socket): void {
   socket.on("join_game", async (payload: unknown) => {
@@ -52,14 +54,14 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
     }
   });
 
-  socket.on("player_ready", async (payload: { roomCode?: string }) => {
-    const parsed = parseSocketPayload(socket, RoomCodeSchema, payload);
+  socket.on("player_ready", async (payload: unknown) => {
+    const parsed = parseSocketPayload(socket, JoinGamePayloadSchema, payload);
     if (!parsed) {
       return;
     }
     try {
       const { ready, gameId } = await setPlayerReady(
-        parsed,
+        parsed.roomCode,
         socket.data.userId,
       );
       io.to(`game:${gameId}`).emit("player_ready", {
@@ -72,8 +74,8 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
         socket.emit("error", { message: error.message });
         return;
       }
-      console.error("join_game unexpected error:", error);
-      socket.emit("error", { message: "Failed to join game" });
+      console.error("player_ready unexpected error:", error);
+      socket.emit("error", { message: "Failed to set ready status" });
     }
   });
 }
