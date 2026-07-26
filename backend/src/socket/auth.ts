@@ -8,7 +8,7 @@ export async function SocketAuth(
   socket: Socket,
   next: (err?: Error) => void,
 ): Promise<void> {
-  const token = socket.handshake.auth.token;
+  const token = socket.handshake.auth.token || socket.handshake.query?.token;
 
   if (!token) {
     return next(new Error("Authentication error"));
@@ -34,7 +34,7 @@ export async function SocketAuth(
     socket.data.clerkUserId = clerkUserId;
     socket.data.userId = user.id;
     socket.data.username = user.username;
-    socket.data.gameId = null;
+    socket.data.game = null;
     next();
   } catch (error) {
     console.log("Authentication error", error);
