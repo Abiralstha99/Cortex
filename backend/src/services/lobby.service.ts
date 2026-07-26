@@ -93,6 +93,62 @@ const SET_PLAYER_READY_LUA = `
   return { "not_in_room" }
 `;
 
+const LEAVE_GAME_LUA = `
+  -- KEYS[1] = game:<gameId>
+  -- ARGV[1] = playerId
+  -- returns: { status, leftPlayerId? }
+  --   status: "ok" | "empty" | "missing" | "not_waiting" | "not_in_room"
+  --   "ok" / "empty" also include leftPlayerId
+
+  local raw = redis.call("HGET", KEYS[1], "players")
+  local status = redis.call("HGET", KEYS[1], "status")
+
+  if (not raw) or (not status) then
+    return { "missing" }
+  end
+
+  if status ~= "waiting" then
+    return { "not_waiting" }
+  end
+
+  local players = cjson.decode(raw)
+  local playerId = ARGV[1]
+  local hostId = redis.call("HGET", KEYS[1], "hostId")
+  local foundIndex = nil
+
+  for i = 1, #players do
+    if players[i].id == playerId then
+      foundIndex = i
+      break
+    end
+  end
+
+  if not foundIndex then
+    return { "not_in_room" }
+  end
+
+  table.remove(players, foundIndex)
+
+  if #players == 0 then
+    redis.call("DEL", KEYS[1])
+    return { "empty", playerId }
+  end
+
+  -- Host left with others remaining — promote the first remaining player.
+  if hostId == playerId then
+    hostId = players[1].id
+  end
+
+  redis.call(
+    "HSET",
+    KEYS[1],
+    "players", cjson.encode(players),
+    "hostId", hostId
+  )
+
+  return { "ok", playerId }
+`;
+
 // Since redis returns string, we need to deserialize the room object
 function deserializeRoom(
   raw: Record<string, string>,
@@ -190,4 +246,51 @@ export async function setPlayerReady(
     default:
       throw new Error("Failed to update ready status");
   }
+}
+
+export async function leaveWaitingGame(
+  roomCode: string,
+  playerId: string,
+): Promise<{ game: WaitingRoom | null; leftPlayerId: string }> {
+  const gameId = await redis.get(ROOM_CODE_KEY(roomCode));
+  if (!gameId) {
+    throw new Error("Room not found");
+  }
+
+  const result = (await redis.eval(
+    LEAVE_GAME_LUA,
+    1,
+    GAME_KEY(gameId),
+    playerId,
+  )) as [string, string?];
+
+  const [status, leftPlayerId] = result;
+
+  switch (status) {
+    case "missing":
+      throw new Error("Room not found");
+    case "not_waiting":
+      throw new Error("Game has already started");
+    case "not_in_room":
+      throw new Error("You are not in this room");
+    case "empty":
+      await redis.del(ROOM_CODE_KEY(roomCode));
+      return { game: null, leftPlayerId: leftPlayerId ?? playerId };
+    case "ok":
+      break;
+    default:
+      throw new Error("Unable to leave the room");
+  }
+
+  // LUA (string) => JSON (object) => Player[] (array) => WaitingRoom (object)
+  const raw = (await redis.hgetall(GAME_KEY(gameId))) as Record<string, string>;
+  if (!raw?.status) {
+    throw new Error("Room not found");
+  }
+
+  const players: Player[] = JSON.parse(raw.players!);
+  return {
+    game: deserializeRoom(raw, players),
+    leftPlayerId: leftPlayerId ?? playerId,
+  };
 }
