@@ -5,6 +5,7 @@ import { createSocket } from "../lib/socket";
 
 export function useSocket() {
   const { getToken, isSignedIn, isLoaded } = useAuth();
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,7 +14,7 @@ export function useSocket() {
       return;
     }
 
-    const socket: Socket = createSocket(getToken);
+    const newSocket: Socket = createSocket(getToken);
 
     const onConnected = () => {
       setConnected(true);
@@ -29,18 +30,20 @@ export function useSocket() {
       setConnected(false);
     };
 
-    socket.on("connect", onConnected);
-    socket.on("connect_error", onConnectError);
-    socket.on("disconnect", onDisconnect);
-    socket.connect();
+    newSocket.on("connect", onConnected);
+    newSocket.on("connect_error", onConnectError);
+    newSocket.on("disconnect", onDisconnect);
+    newSocket.connect();
+    setSocket(newSocket);
 
     return () => {
-      socket.off("connect", onConnected);
-      socket.off("connect_error", onConnectError);
-      socket.off("disconnect", onDisconnect);
-      socket.disconnect();
+      newSocket.off("connect", onConnected);
+      newSocket.off("connect_error", onConnectError);
+      newSocket.off("disconnect", onDisconnect);
+      newSocket.disconnect();
+      setSocket(null);
     };
   }, [isLoaded, isSignedIn, getToken]);
 
-  return { connected, error };
+  return { socket, connected, error };
 }
