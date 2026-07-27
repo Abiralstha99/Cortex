@@ -6,6 +6,7 @@ import { useAuth, useUser } from "@clerk/react";
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 type AppUser = {
+  id: string;
   username: string | null;
 };
 
@@ -30,7 +31,9 @@ export function useCurrentUser() {
         });
         if (res.ok) {
           const data = await res.json();
-          if (!cancelled) setAppUser({ username: data.username ?? null });
+          if (!cancelled) {
+            setAppUser({ id: data.id, username: data.username ?? null });
+          }
         }
       } catch {
         // Fall back to Clerk-derived name below.
@@ -44,7 +47,9 @@ export function useCurrentUser() {
     };
   }, [isClerkLoaded, user, getToken]);
 
-  const username = appUser?.username || user?.username || user?.firstName || "PLAYER";
-
-  return { username, isLoading: isLoading && isClerkLoaded };
+  return {
+    id: appUser?.id ?? null,
+    username: appUser?.username || user?.username || user?.firstName || "PLAYER",
+    isLoading: isLoading && isClerkLoaded,
+  };
 }
