@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import AppHeader from "../components/AppHeader";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import "./Dashboard.css";
-import { useSocket } from "../hooks/useSocket";
 
 type ActiveRoom = {
   code: string;
@@ -28,7 +27,6 @@ const HELPER_STEPS = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const { username } = useCurrentUser();
-  const { connected, error } = useSocket();
   return (
     <div className="dashboard">
       <AppHeader />
@@ -63,8 +61,6 @@ export default function Dashboard() {
         {!activeRoom && <FirstTimeHelper />}
       </main>
 
-      {error && <div className="error">{error}</div>}
-      {connected && <div className="connected">Connected to socket</div>}
     </div>
   );
 }
