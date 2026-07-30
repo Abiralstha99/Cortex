@@ -6,7 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import CreateGame from "./pages/CreateGame";
 import JoinGame from "./pages/JoinGame";
 import ProtectedRoute from "./components/ProtectedRoute";
-
+import Lobby from "./pages/Lobby";
 function App() {
   return (
     <>
@@ -44,6 +44,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route path="/game/lobby/:roomCode" element={<ProtectedRoute><Lobby /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </>
