@@ -1,0 +1,167 @@
+.create-game {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.create-game__main {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 5rem 2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.create-game__eyebrow {
+  margin: 0 0 1rem;
+}
+
+.create-game__heading {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  margin: 0 0 3rem;
+  color: var(--text);
+}
+
+.create-game__form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.create-game__field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.create-game__label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+/* Difficulty toggle group */
+
+.create-game__difficulty-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.create-game__difficulty-btn {
+  padding: 0.5rem 1.25rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.1s ease, color 0.1s ease;
+}
+
+.create-game__difficulty-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.create-game__difficulty-btn--active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+/* Rounds stepper */
+
+.create-game__rounds-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.create-game__rounds-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.1s ease;
+}
+
+.create-game__rounds-btn:hover {
+  border-color: var(--accent);
+}
+
+.create-game__rounds-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1;
+  min-width: 2.5rem;
+  text-align: center;
+  color: var(--text);
+}
+
+.create-game__rounds-hint {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+/* Error */
+
+.create-game__error {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--danger);
+  margin: 0;
+}
+
+/* Submit */
+
+.create-game__submit {
+  padding: 0.875rem 2rem;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.create-game__submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.create-game__submit:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+@media (max-width: 480px) {
+  .create-game__main {
+    padding: 3rem 1.25rem 3rem;
+  }
+}
