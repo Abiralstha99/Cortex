@@ -1,0 +1,116 @@
+.join-game {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.join-game__main {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 5rem 2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.join-game__eyebrow {
+  margin: 0 0 1rem;
+}
+
+.join-game__heading {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  margin: 0 0 3rem;
+  color: var(--text);
+}
+
+.join-game__form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.join-game__field {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.join-game__label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.join-game__input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--text);
+  text-align: center;
+  text-transform: uppercase;
+  transition: border-color 0.15s ease;
+}
+
+.join-game__input::placeholder {
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+}
+
+.join-game__input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.join-game__error {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--danger);
+  margin: 0;
+}
+
+.join-game__submit {
+  width: 100%;
+  padding: 0.875rem 2rem;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.join-game__submit:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.join-game__submit:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+@media (max-width: 480px) {
+  .join-game__main {
+    padding: 3rem 1.25rem 3rem;
+  }
+}
