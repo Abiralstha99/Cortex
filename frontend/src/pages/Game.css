@@ -1,0 +1,79 @@
+.game {
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.game__main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 5rem 2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.game__eyebrow {
+  margin: 0 0 1rem;
+}
+
+.game__heading {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  margin: 0 0 1.5rem;
+  color: var(--text);
+}
+
+.game__meta {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 3rem;
+}
+
+.game__tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.25rem 0.625rem;
+}
+
+.game__placeholder {
+  width: 100%;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.game__placeholder-text {
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.game__placeholder-sub {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .game__main {
+    padding: 3rem 1.25rem 3rem;
+  }
+}
