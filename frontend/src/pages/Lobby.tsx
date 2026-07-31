@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { LogOut, Play } from "lucide-react";
 import AppHeader from "../components/AppHeader";
@@ -12,10 +13,11 @@ export default function Lobby() {
   const { roomCode = "" } = useParams();
   const normalized = roomCode.toUpperCase();
   const navigate = useNavigate();
-  const { connected, toggleReady, leave } = useLobbySocket(normalized);
+  const { connected, toggleReady, startGame, leave } = useLobbySocket(normalized);
 
   const players = useLobbyStore((s) => s.players);
   const hostId = useLobbyStore((s) => s.hostId);
+  const gameId = useLobbyStore((s) => s.gameId);
   const difficulty = useLobbyStore((s) => s.difficulty);
   const numberOfRounds = useLobbyStore((s) => s.numberOfRounds);
   const status = useLobbyStore((s) => s.status);
@@ -25,6 +27,21 @@ export default function Lobby() {
 
   const { id: myUserId } = useCurrentUser();
   const isHost = myUserId != null && hostId === myUserId;
+
+  // Navigate everyone to the game screen when the server confirms game_started
+  useEffect(() => {
+    if (status === "started" && gameId) {
+      navigate(`/game/${gameId}`, { replace: true });
+    }
+  }, [status, gameId, navigate]);
+
+  // When the host clicks Start, validate locally then emit to the server
+  function handleStart() {
+    attemptStart();
+    if (players.every((p) => p.ready)) {
+      startGame();
+    }
+  }
 
   function handleLeave() {
     leave();
@@ -84,10 +101,11 @@ export default function Lobby() {
             <button
               type="button"
               className="lobby__start-btn"
-              onClick={attemptStart}
+              onClick={handleStart}
+              disabled={status === "starting"}
             >
               <Play size={16} strokeWidth={2.5} />
-              START GAME
+              {status === "starting" ? "STARTING…" : "START GAME"}
             </button>
           )}
 

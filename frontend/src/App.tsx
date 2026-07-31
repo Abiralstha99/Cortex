@@ -7,6 +7,7 @@ import CreateGame from "./pages/CreateGame";
 import JoinGame from "./pages/JoinGame";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Lobby from "./pages/Lobby";
+import Game from "./pages/Game";
 function App() {
   return (
     <>
@@ -46,6 +47,14 @@ function App() {
           />
 
           <Route path="/game/lobby/:roomCode" element={<ProtectedRoute><Lobby /></ProtectedRoute>} />
+          <Route
+            path="/game/:gameId"
+            element={
+              <ProtectedRoute>
+                <Game />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </>
