@@ -20,6 +20,7 @@ export function useLobbySocket(roomCode: string) {
   const applyPlayerJoined = useLobbyStore((s) => s.applyPlayerJoined);
   const applyPlayerReady = useLobbyStore((s) => s.applyPlayerReady);
   const applyPlayerLeft = useLobbyStore((s) => s.applyPlayerLeft);
+  const applyGameStarted = useLobbyStore((s) => s.applyGameStarted);
   const setMyUserId = useLobbyStore((s) => s.setMyUserId);
   const setStatus = useLobbyStore((s) => s.setStatus);
   const setToast = useLobbyStore((s) => s.setToast);
@@ -41,6 +42,9 @@ export function useLobbySocket(roomCode: string) {
     const onPlayerLeft = (payload: { id: string; game: WaitingGame }) => {
       applyPlayerLeft(payload);
     };
+    const onGameStarted = (payload: { gameId: string }) => {
+      applyGameStarted(payload);
+    };
     const onError = (payload: { message: string }) => {
       setStatus("error");
       setToast(payload.message);
@@ -50,6 +54,7 @@ export function useLobbySocket(roomCode: string) {
     socket.on("player_joined", onPlayerJoined);
     socket.on("player_ready", onPlayerReady);
     socket.on("player_left", onPlayerLeft);
+    socket.on("game_started", onGameStarted);
     socket.on("error", onError);
 
     socket.emit("join_game", { roomCode });
@@ -59,6 +64,7 @@ export function useLobbySocket(roomCode: string) {
       socket.off("player_joined", onPlayerJoined);
       socket.off("player_ready", onPlayerReady);
       socket.off("player_left", onPlayerLeft);
+      socket.off("game_started", onGameStarted);
       socket.off("error", onError);
     };
   }, [
@@ -69,6 +75,7 @@ export function useLobbySocket(roomCode: string) {
     applyPlayerJoined,
     applyPlayerReady,
     applyPlayerLeft,
+    applyGameStarted,
     setStatus,
     setToast,
   ]);
@@ -77,10 +84,14 @@ export function useLobbySocket(roomCode: string) {
     socket?.emit("player_ready", { roomCode });
   }
 
+  function startGame() {
+    socket?.emit("start_game", { roomCode });
+  }
+
   function leave() {
     socket?.emit("leave_game", { roomCode });
     reset();
   }
 
-  return { connected, error: socketError, toggleReady, leave };
+  return { connected, error: socketError, toggleReady, startGame, leave };
 }
