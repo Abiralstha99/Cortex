@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Difficulty, LobbyPlayer, WaitingGame } from "../lib/api";
 
-type LobbyStatus = "idle" | "joining" | "in_lobby" | "error";
+type LobbyStatus = "idle" | "joining" | "in_lobby" | "starting" | "started" | "error";
 
 type JoinedSnapshot = {
   gameId: string;
@@ -29,6 +29,7 @@ type LobbyState = {
   setMyUserId: (id: string | null) => void;
   setStatus: (status: LobbyStatus) => void;
   setToast: (message: string | null) => void;
+  applyGameStarted: (payload: { gameId: string }) => void;
   attemptStart: () => void;
   reset: () => void;
 };
@@ -88,13 +89,16 @@ export const useLobbyStore = create<LobbyState>((set, get) => ({
 
   setToast: (message) => set({ toast: message }),
 
+  applyGameStarted: ({ gameId }) =>
+    set({ gameId, status: "started", toast: null }),
+
   attemptStart: () => {
     const { players } = get();
     if (players.some((p) => !p.ready)) {
       set({ toast: "All players yet to ready" });
       return;
     }
-    set({ toast: "Starting soon…" });
+    set({ toast: null, status: "starting" });
   },
 
   reset: () => set(initialState),
