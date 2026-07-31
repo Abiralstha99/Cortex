@@ -13,6 +13,8 @@ Lobby Redis mutations for waiting rooms:
 import redis from "../lib/redis.js";
 import { ROOM_CODE_KEY, GAME_KEY } from "../lib/redisKeys.js";
 import type { Player, WaitingRoom } from "../models/waitingRoom.types.js";
+import { RoomCodeSchema } from "../schemas/common.js";
+import {prisma} from "../lib/prisma.js";
 
 const MAX_PLAYERS = 8;
 const JOIN_PLAYERS_LUA = `
@@ -293,4 +295,58 @@ export async function leaveWaitingGame(
     game: deserializeRoom(raw, players),
     leftPlayerId: leftPlayerId ?? playerId,
   };
+}
+
+export async function startGame(
+  roomCode: string,
+): Promise<{ game: WaitingRoom }> {
+  // Validate that the room code is valid
+  const validatedRoomCode = RoomCodeSchema.parse(roomCode);
+  const gameId = await redis.get(ROOM_CODE_KEY(validatedRoomCode));
+  if (!gameId) {
+    throw new Error("Room not found");
+  }
+
+  // Get the game from Redis and check if it's in the "waiting" status
+  const raw = (await redis.hgetall(GAME_KEY(gameId))) as Record<string, string>;
+
+  // Redis returns string, so we need to deserialize the room object
+  const game = deserializeRoom(raw, JSON.parse(raw.players!));
+
+  if (game.status !== "waiting") {
+    throw new Error("Game has already started");
+  }
+
+  if (game.players.length < 2) {
+    throw new Error("There must be at least 2 players to start the game");
+  }
+
+  // Check if all players are ready
+  if (!game.players.every((player) => player.ready)) {
+    throw new Error("All players must be ready to start the game");
+  }
+
+  // Create the durable Postgres record. The Redis gameId becomes the Postgres
+  // primary key so the two layers always refer to the same UUID.
+  const dbGame = await prisma.game.create({
+    data: {
+      id: game.gameId,
+      roomCode: game.roomCode,
+      hostId: game.hostId,
+      status: "playing",
+      difficulty: game.difficulty,
+      rounds: game.numberOfRounds,
+    },
+  });
+
+  // Flip Redis to "playing". If this fails we roll back the Postgres row so
+  // there's no orphaned DB record with no live state behind it.
+  try {
+    await redis.hset(GAME_KEY(gameId), "status", "playing");
+  } catch (err) {
+    await prisma.game.delete({ where: { id: dbGame.id } });
+    throw new Error("Failed to update game state; rolled back", { cause: err });
+  }
+
+  return { game };
 }

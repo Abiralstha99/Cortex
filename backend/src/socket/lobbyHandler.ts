@@ -3,6 +3,7 @@ import {
   joinWaitingGame,
   setPlayerReady,
   leaveWaitingGame,
+  startGame,
 } from "../services/lobby.service.js";
 import { JoinGamePayloadSchema } from "../schemas/game.js";
 import { parseSocketPayload } from "./parsePayload.js";
@@ -77,6 +78,26 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
       }
       console.error("player_ready unexpected error:", error);
       socket.emit("error", { message: "Failed to set ready status" });
+    }
+  });
+
+  socket.on("start_game", async (payload: unknown) => {
+    const parsed = parseSocketPayload(socket, JoinGamePayloadSchema, payload);
+    if (!parsed) return;
+
+    try {
+      const { game } = await startGame(parsed.roomCode);
+
+      io.to(`game:${game.gameId}`).emit("game_started", {
+        gameId: game.gameId,
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        socket.emit("error", { message: error.message });
+        return;
+      }
+      console.error("start_game unexpected error:", error);
+      socket.emit("error", { message: "Failed to start game" });
     }
   });
 
