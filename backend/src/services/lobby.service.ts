@@ -12,9 +12,9 @@ Lobby Redis mutations for waiting rooms:
 
 import redis from "../lib/redis.js";
 import { ROOM_CODE_KEY, GAME_KEY } from "../lib/redisKeys.js";
-import type { Player, WaitingRoom } from "../models/waitingRoom.types.js";
+import type { Player, WaitingRoom } from "../types/room.types.js";
 import { RoomCodeSchema } from "../schemas/common.js";
-import {prisma} from "../lib/prisma.js";
+import { prisma } from "../lib/prisma.js";
 
 const MAX_PLAYERS = 8;
 const JOIN_PLAYERS_LUA = `
@@ -342,7 +342,13 @@ export async function startGame(
   // Flip Redis to "playing". If this fails we roll back the Postgres row so
   // there's no orphaned DB record with no live state behind it.
   try {
-    await redis.hset(GAME_KEY(gameId), "status", "playing");
+    await redis.hset(
+      GAME_KEY(gameId),
+      "status",
+      "playing",
+      "usedCountryIds",
+      "[]",
+    );
   } catch (err) {
     await prisma.game.delete({ where: { id: dbGame.id } });
     throw new Error("Failed to update game state; rolled back", { cause: err });
