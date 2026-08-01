@@ -3,7 +3,7 @@
 It creates a REDIS waiting game lobby and adds the host as the first player.
 */
 
-import type { Difficulty, WaitingRoom } from "../models/waitingRoom.types.js";
+import type { Difficulty, WaitingRoom } from "../types/room.types.js";
 import crypto from "crypto";
 import { reserveRoomCode } from "../lib/roomCode.js";
 import redis from "../lib/redis.js";
