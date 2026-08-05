@@ -36,28 +36,46 @@ async function pickCountry(
   difficulty: Difficulty,
   usedIds: number[],
 ): Promise<{ id: number; name: string; capital: string }> {
-  const country = await prisma.country.findMany({
-    where: {
-      difficulty,
-      id: {
-        notIn: usedIds,
-      },
-    },
+  const countries = await prisma.country.findMany({
+    where: { difficulty, id: { notIn: usedIds } },
   });
 
-  if (!country) {
-    throw new Error("No country found");
+  if (!countries.length) throw new Error("No country found");
+
+  const randomIndex = Math.floor(Math.random() * countries.length);
+  const country = countries[randomIndex];
+  if (!country) throw new Error("No country found");
+
+  return { id: country.id, name: country.name, capital: country.capital };
+}
+
+// Build 4 MCQ options: 3 wrong capitals from the same difficulty pool + the correct one.
+// Returns { options, correctIndex } where options is shuffled.
+async function buildOptions(
+  difficulty: Difficulty,
+  correctCapital: string,
+  correctId: number,
+): Promise<{ options: string[]; correctIndex: number }> {
+  const distractors = await prisma.country.findMany({
+    where: { difficulty, id: { not: correctId } },
+    select: { capital: true },
+  });
+
+  // Fisher-Yates on distractors to pick 3 random wrong answers
+  for (let i = distractors.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [distractors[i], distractors[j]] = [distractors[j]!, distractors[i]!];
+  }
+  const wrong = distractors.slice(0, 3).map((d) => d.capital);
+
+  const options = [...wrong, correctCapital];
+  // Shuffle to randomise correct answer position
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j]!, options[i]!];
   }
 
-  const randomIndex = Math.floor(Math.random() * country.length);
-  if (!country[randomIndex]) {
-    throw new Error("No country found");
-  }
-  return {
-    id: country[randomIndex].id,
-    name: country[randomIndex].name,
-    capital: country[randomIndex].capital,
-  };
+  return { options, correctIndex: options.indexOf(correctCapital) };
 }
 
 export async function prefetchNextCountry(gameId: string): Promise<void> {
@@ -90,6 +108,12 @@ export async function startRound(gameId: string): Promise<Round> {
     ? JSON.parse(prefetched)
     : await pickCountry(game.difficulty, game.usedCountryIds);
 
+  const { options, correctIndex } = await buildOptions(
+    game.difficulty,
+    question.capital,
+    question.id,
+  );
+
   // Build the round
   const roundNumber = game.currentRound + 1;
   const startedAt = new Date().toISOString();
@@ -99,6 +123,8 @@ export async function startRound(gameId: string): Promise<Round> {
     countryId: question.id,
     country: question.name,
     capital: question.capital,
+    options,
+    correctIndex,
     startedAt,
     roundNumber,
   };
@@ -112,6 +138,8 @@ export async function startRound(gameId: string): Promise<Round> {
         countryId: String(question.id),
         country: question.name,
         capital: question.capital,
+        options: JSON.stringify(options),
+        correctIndex: String(correctIndex),
         startedAt,
       })
       .hset(GAME_KEY(gameId), {
@@ -128,3 +156,5 @@ export async function startRound(gameId: string): Promise<Round> {
     throw new Error("Failed to start round", { cause: error });
   }
 }
+
+
