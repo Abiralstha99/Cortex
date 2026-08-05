@@ -5,8 +5,13 @@ import {
   leaveWaitingGame,
   startGame,
 } from "../services/lobby.service.js";
+import { startRound } from "../services/round.service.js";
+import { scheduleRoundEnd } from "../services/roundEnd.service.js";
+import { ROUND_TIME_LIMIT_MS } from "../services/answer.service.js";
 import { JoinGamePayloadSchema } from "../schemas/game.js";
 import { parseSocketPayload } from "./parsePayload.js";
+
+const ROUND_START_DELAY_MS = 3000;
 
 export function registerLobbyHandlers(io: Server, socket: Socket): void {
   socket.on("join_game", async (payload: unknown) => {
@@ -90,7 +95,32 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
 
       io.to(`game:${game.gameId}`).emit("game_started", {
         gameId: game.gameId,
+        countdownMs: ROUND_START_DELAY_MS,
       });
+
+      setTimeout(async () => {
+        try {
+          const round = await startRound(game.gameId);
+          io.to(`game:${game.gameId}`).emit("new_question", {
+            roundNumber: round.roundNumber,
+            country: round.country,
+            options: round.options,
+            startedAt: round.startedAt,
+          });
+
+          // Schedule the BullMQ job to end this round after the time limit
+          await scheduleRoundEnd(
+            game.gameId,
+            round.roundNumber,
+            ROUND_TIME_LIMIT_MS,
+          );
+        } catch (err) {
+          console.error("startRound error:", err);
+          io.to(`game:${game.gameId}`).emit("error", {
+            message: "Failed to start round",
+          });
+        }
+      }, ROUND_START_DELAY_MS);
     } catch (error) {
       if (error instanceof Error) {
         socket.emit("error", { message: error.message });

@@ -3,6 +3,7 @@ import type { Server as HTTPServer } from "node:http";
 import { Server } from "socket.io";
 import { SocketAuth } from "./auth.js";
 import { registerLobbyHandlers } from "./lobbyHandler.js";
+import { registerGameHandlers } from "./gameHandler.js";
 
 export function attachSocket(httpServer: HTTPServer): Server {
   const clientOrigin = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
@@ -19,6 +20,7 @@ export function attachSocket(httpServer: HTTPServer): Server {
   io.on("connection", (socket) => {
     console.log(`User ${socket.data.username} connected`);
     registerLobbyHandlers(io, socket);
+    registerGameHandlers(io, socket);
   });
 
   return io;
