@@ -48,3 +48,55 @@ export async function createWaitingGame(
   }
   return res.json() as Promise<WaitingGame>;
 }
+
+// Game event payloads
+export type NewQuestionPayload = {
+  roundNumber: number;
+  country: string;
+  options: string[];
+  startedAt: string; // ISO timestamp
+};
+
+export type AnswerResult = {
+  correct: boolean;
+  pointsEarned: number;
+  placement: number | null;
+  correctAnswer: string;
+};
+
+export type AnswerSubmittedPayload = {
+  playerId: string;
+  username: string;
+};
+
+export type LeaderboardEntry = {
+  rank: number;
+  playerId: string;
+  username: string;
+  score: number;
+};
+
+export type SubmissionSummary = {
+  playerId: string;
+  correct: boolean;
+  pointsEarned: number;
+  placement: number | null;
+};
+
+export type RoundFinishedPayload = {
+  roundNumber: number;
+  correctAnswer: string;
+  submissions: SubmissionSummary[];
+  leaderboard: LeaderboardEntry[];
+  isLastRound: boolean;
+  nextRoundIn: number; // ms
+};
+
+export type GameFinishedPayload = {
+  finalLeaderboard: LeaderboardEntry[];
+  winner: {
+    playerId: string;
+    username: string;
+    score: number;
+  };
+};
