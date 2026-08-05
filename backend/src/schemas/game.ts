@@ -21,6 +21,14 @@ export const JoinGamePayloadSchema = z.object({
   roomCode: RoomCodeSchema,
 });
 
+export const SubmitAnswerPayloadSchema = z.object({
+  gameId: z.string().uuid(),
+  countryId: z.number().int().positive(),
+  answerIndex: z.number().int().min(0).max(3), // index into the 4 MCQ options
+  responseTime: z.number().int().nonnegative(), // ms from question delivery
+});
+
 export type Difficulty = z.infer<typeof DifficultySchema>;
 export type CreateWaitingGameInput = z.infer<typeof CreateWaitingGameSchema>;
 export type JoinGamePayload = z.infer<typeof JoinGamePayloadSchema>;
+export type SubmitAnswerPayload = z.infer<typeof SubmitAnswerPayloadSchema>;
