@@ -7,6 +7,7 @@ import userRouter from "./routes/user.routes.js";
 import { handleClerkWebhook } from "./webhooks/clerk.js";
 import cors from "cors";
 import { attachSocket } from "./socket/index.js";
+import { startRoundEndWorker } from "./workers/roundEnd.worker.js";
 import gameRouter from "./routes/game.routes.js";
 
 dotenv.config();
@@ -37,7 +38,11 @@ app.use(clerkMiddleware());
 // Protected routes
 app.use("/api/users", requireAuth, userRouter);
 
-attachSocket(httpServer);
+const io = attachSocket(httpServer);
+
+// Start the round end worker
+startRoundEndWorker(io);
+
 app.use("/api/games", gameRouter);
 
 httpServer.listen(3000, () => {
