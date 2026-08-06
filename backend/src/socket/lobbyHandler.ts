@@ -93,16 +93,24 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
     try {
       const { game } = await startGame(parsed.roomCode);
 
+      // Emit game_started immediately
       io.to(`game:${game.gameId}`).emit("game_started", {
         gameId: game.gameId,
         countdownMs: ROUND_START_DELAY_MS,
       });
 
+      // Start fetching the first question IMMEDIATELY (parallel with countdown)
+      const roundPromise = startRound(game.gameId);
+
+      // Wait for countdown to complete
       setTimeout(async () => {
         try {
-          const round = await startRound(game.gameId);
+          // By now, the question fetch should be done (or nearly done)
+          const round = await roundPromise;
+
           io.to(`game:${game.gameId}`).emit("new_question", {
             roundNumber: round.roundNumber,
+            countryId: round.countryId,
             country: round.country,
             options: round.options,
             startedAt: round.startedAt,
