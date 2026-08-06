@@ -33,14 +33,23 @@ export function useSocket() {
     newSocket.on("connect", onConnected);
     newSocket.on("connect_error", onConnectError);
     newSocket.on("disconnect", onDisconnect);
-    newSocket.connect();
+
+    // Connect if not already connected or connecting
+    if (!newSocket.connected && !newSocket.active) {
+      newSocket.connect();
+    }
+
+    // Sync initial connection state
+    setConnected(newSocket.connected);
     setSocket(newSocket);
 
     return () => {
       newSocket.off("connect", onConnected);
       newSocket.off("connect_error", onConnectError);
       newSocket.off("disconnect", onDisconnect);
-      newSocket.disconnect();
+      // DON'T disconnect the socket on unmount - it's a singleton that persists
+      // across page navigations so we don't lose events during navigation
+      // newSocket.disconnect();
       setSocket(null);
     };
   }, [isLoaded, isSignedIn, getToken]);
