@@ -1,0 +1,54 @@
+.game-results {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.game-results__header {
+  text-align: center;
+}
+
+.game-results__title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--color-text, #1f2937);
+  margin-bottom: 1rem;
+}
+
+.game-results__winner {
+  font-size: 1.25rem;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.game-results__winner--me {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.game-results__winner strong {
+  color: #6366f1;
+  font-weight: 700;
+}
+
+.game-results__exit-btn {
+  padding: 1rem 2rem;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.game-results__exit-btn:hover {
+  background: #4f46e5;
+}
