@@ -27,6 +27,7 @@ type GameState = {
   options: string[];
   startedAt: Date | null;
   timeLimit: number; // 30000ms
+  countryId: number | null; // the ID of the country being asked about
 
   // Answer tracking
   myAnswer: number | null; // index 0-3
@@ -57,6 +58,7 @@ const initialState = {
   options: [] as string[],
   startedAt: null as Date | null,
   timeLimit: 30000,
+  countryId: null as number | null,
   myAnswer: null as number | null,
   answerResult: null as AnswerResult | null,
   otherAnswers: [] as AnswerSubmittedPayload[],
@@ -81,6 +83,7 @@ export const useGameStore = create<GameState>((set) => ({
       question: payload.country,
       options: payload.options,
       startedAt: new Date(payload.startedAt),
+      countryId: payload.countryId,
       myAnswer: null,
       answerResult: null,
       otherAnswers: [],

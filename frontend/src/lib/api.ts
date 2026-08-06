@@ -52,6 +52,7 @@ export async function createWaitingGame(
 // Game event payloads
 export type NewQuestionPayload = {
   roundNumber: number;
+  countryId: number;
   country: string;
   options: string[];
   startedAt: string; // ISO timestamp
