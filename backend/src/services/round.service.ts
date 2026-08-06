@@ -141,6 +141,7 @@ export async function startRound(gameId: string): Promise<Round> {
         options: JSON.stringify(options),
         correctIndex: String(correctIndex),
         startedAt,
+        submissionCount: "0", // Reset for new round (HINCRBY increments this)
       })
       .hset(GAME_KEY(gameId), {
         currentRound: String(roundNumber),

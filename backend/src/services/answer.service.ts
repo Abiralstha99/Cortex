@@ -171,6 +171,7 @@ export async function submitAnswer(params: {
 
 // Collect all SubmissionRecord values for a round from Redis.
 // Used by round-end logic to build the round_finished payload.
+// Returns submissions for all players; creates a null submission for players who didn't answer.
 export async function getRoundSubmissions(
   gameId: string,
   roundNumber: number,
@@ -181,10 +182,21 @@ export async function getRoundSubmissions(
     const key = SUBMISSION_KEY(gameId, roundNumber, playerId);
     const raw = await redis.get(key);
     if (!raw) {
-      throw new Error("Submission not found");
+      // Player didn't submit an answer - create a null submission with 0 points
+      submissions.push({
+        playerId,
+        roundNumber,
+        countryId: 0, // Not relevant for non-submissions
+        answerIndex: -1, // -1 indicates no answer
+        submittedAt: new Date().toISOString(),
+        correct: false,
+        pointsEarned: 0,
+        placement: null,
+      });
+    } else {
+      const submission = JSON.parse(raw) as SubmissionRecord;
+      submissions.push(submission);
     }
-    const submission = JSON.parse(raw) as SubmissionRecord;
-    submissions.push(submission);
   }
   return submissions;
 }
