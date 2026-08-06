@@ -3,6 +3,7 @@ import type { Difficulty, LobbyPlayer, WaitingGame } from "../lib/api";
 import { useCurrentUser } from "./useCurrentUser";
 import { useSocket } from "./useSocket";
 import { useLobbyStore } from "../stores/lobbyStore";
+import { useGameStore } from "../stores/gameStore";
 
 type JoinedPayload = {
   gameId: string;
@@ -25,6 +26,7 @@ export function useLobbySocket(roomCode: string) {
   const setStatus = useLobbyStore((s) => s.setStatus);
   const setToast = useLobbyStore((s) => s.setToast);
   const reset = useLobbyStore((s) => s.reset);
+  const applyCountdown = useGameStore((s) => s.applyCountdown);
 
   useEffect(() => {
     setMyUserId(myUserId);
@@ -42,8 +44,10 @@ export function useLobbySocket(roomCode: string) {
     const onPlayerLeft = (payload: { id: string; game: WaitingGame }) => {
       applyPlayerLeft(payload);
     };
-    const onGameStarted = (payload: { gameId: string }) => {
+    const onGameStarted = (payload: { gameId: string; countdownMs: number }) => {
       applyGameStarted(payload);
+      // Initialize gameStore with countdown phase so Game component starts in correct state
+      applyCountdown(payload.countdownMs);
     };
     const onError = (payload: { message: string }) => {
       setStatus("error");
@@ -76,6 +80,7 @@ export function useLobbySocket(roomCode: string) {
     applyPlayerReady,
     applyPlayerLeft,
     applyGameStarted,
+    applyCountdown,
     setStatus,
     setToast,
   ]);
