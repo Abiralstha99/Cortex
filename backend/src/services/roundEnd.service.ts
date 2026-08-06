@@ -19,7 +19,12 @@ import type {
   Player,
 } from "../types/room.types.js";
 import { ROUND_END_JOB, roundEndQueue } from "../lib/queue.js";
-import { GAME_KEY, ROUND_ENDED_KEY, ROUND_KEY } from "../lib/redisKeys.js";
+import {
+  GAME_KEY,
+  ROUND_ENDED_KEY,
+  ROUND_KEY,
+  ROUND_END_JOB_ID,
+} from "../lib/redisKeys.js";
 import redis from "../lib/redis.js";
 import { getRoundSubmissions, ROUND_TIME_LIMIT_MS } from "./answer.service.js";
 import { startRound } from "./round.service.js";
@@ -114,7 +119,7 @@ export async function scheduleRoundEnd(
   await roundEndQueue.add(
     ROUND_END_JOB,
     { gameId, roundNumber },
-    { delay: timeLimitMs, jobId: ROUND_ENDED_KEY(gameId, roundNumber) },
+    { delay: timeLimitMs, jobId: ROUND_END_JOB_ID(gameId, roundNumber) },
   );
 }
 
@@ -124,7 +129,7 @@ export async function cancelRoundEndJob(
   gameId: string,
   roundNumber: number,
 ): Promise<void> {
-  const job = await roundEndQueue.getJob(ROUND_ENDED_KEY(gameId, roundNumber));
+  const job = await roundEndQueue.getJob(ROUND_END_JOB_ID(gameId, roundNumber));
   if (job) {
     await job.remove();
   }
@@ -202,6 +207,7 @@ export async function endRound(
         // Emit new_question to the room
         io.to(`game:${gameId}`).emit("new_question", {
           roundNumber: nextRound.roundNumber,
+          countryId: nextRound.countryId,
           country: nextRound.country,
           options: nextRound.options,
           startedAt: nextRound.startedAt,

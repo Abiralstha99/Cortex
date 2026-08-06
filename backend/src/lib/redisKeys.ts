@@ -63,3 +63,9 @@ export const SUBMISSION_KEY = (gameId: string, round: number, playerId: string) 
 //   value: "1"
 export const ROUND_ENDED_KEY = (gameId: string, round: number) =>
   `game:${gameId}:round:${round}:ended`;
+
+// ROUND_END_JOB_ID  game_<gameId>_round_<n>_end
+//   Job ID for BullMQ round-end jobs. BullMQ doesn't allow colons in job IDs,
+//   so we use underscores instead. This is separate from ROUND_ENDED_KEY.
+export const ROUND_END_JOB_ID = (gameId: string, round: number) =>
+  `game_${gameId}_round_${round}_end`;
