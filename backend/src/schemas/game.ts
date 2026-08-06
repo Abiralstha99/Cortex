@@ -5,10 +5,8 @@ export const MIN_ROUNDS = 3;
 export const MAX_ROUNDS = 20;
 export const DEFAULT_ROUNDS = 10;
 
-export const DifficultySchema = z.enum(["Easy", "Medium", "Hard"]);
-
 export const CreateWaitingGameSchema = z.object({
-  difficulty: DifficultySchema,
+  quizId: z.string().uuid(),
   rounds: z
     .number()
     .int()
@@ -23,12 +21,11 @@ export const JoinGamePayloadSchema = z.object({
 
 export const SubmitAnswerPayloadSchema = z.object({
   gameId: z.string().uuid(),
-  countryId: z.number().int().positive(),
-  answerIndex: z.number().int().min(0).max(3), // index into the 4 MCQ options
-  responseTime: z.number().int().nonnegative(), // ms from question delivery
+  questionId: z.string().uuid(),
+  answerIndex: z.number().int().min(0).max(3),
+  responseTime: z.number().int().nonnegative(),
 });
 
-export type Difficulty = z.infer<typeof DifficultySchema>;
 export type CreateWaitingGameInput = z.infer<typeof CreateWaitingGameSchema>;
 export type JoinGamePayload = z.infer<typeof JoinGamePayloadSchema>;
 export type SubmitAnswerPayload = z.infer<typeof SubmitAnswerPayloadSchema>;

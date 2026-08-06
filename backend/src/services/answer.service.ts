@@ -73,7 +73,7 @@ return {0, placement, totalSubmissions, isCorrect}
 export async function submitAnswer(params: {
   gameId: string;
   roundNumber: number;
-  countryId: number;
+  questionId: string;
   playerId: string;
   answerIndex: number;
   responseTime: number;
@@ -82,21 +82,21 @@ export async function submitAnswer(params: {
   const {
     gameId,
     roundNumber,
-    countryId,
+    questionId,
     playerId,
     answerIndex,
-    responseTime,
+    responseTime: _responseTime,
     totalPlayers,
   } = params;
 
   // Read active round state
   const raw = await redis.hgetall(ROUND_KEY(gameId));
-  if (!raw || !raw.countryId) {
+  if (!raw || !raw.questionId) {
     throw new Error("No active round found");
   }
 
   // Validate this submission is for the current round (guards against stale events)
-  if (Number(raw.countryId) !== countryId) {
+  if (raw.questionId !== questionId) {
     throw new Error("Stale submission for wrong round");
   }
 
@@ -119,7 +119,7 @@ export async function submitAnswer(params: {
   const baseRecord = {
     playerId,
     roundNumber,
-    countryId,
+    questionId,
     answerIndex,
     submittedAt,
   };
@@ -156,11 +156,14 @@ export async function submitAnswer(params: {
   };
   await redis.set(submissionKey, JSON.stringify(submissionRecord));
 
+  const options: string[] = JSON.parse(raw.options ?? "[]");
+  const correctAnswer = options[correctIndex] ?? "";
+
   const answerResult: AnswerResult = {
     correct,
     pointsEarned,
     placement,
-    correctAnswer: raw.capital!,
+    correctAnswer,
   };
 
   return {
@@ -186,8 +189,8 @@ export async function getRoundSubmissions(
       submissions.push({
         playerId,
         roundNumber,
-        countryId: 0, // Not relevant for non-submissions
-        answerIndex: -1, // -1 indicates no answer
+        questionId: "",
+        answerIndex: -1,
         submittedAt: new Date().toISOString(),
         correct: false,
         pointsEarned: 0,

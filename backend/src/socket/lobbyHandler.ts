@@ -38,7 +38,7 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
         gameId: game.gameId,
         roomCode: game.roomCode,
         hostId: game.hostId,
-        difficulty: game.difficulty,
+        quizId: game.quizId,
         numberOfRounds: game.numberOfRounds,
         players: game.players,
       });
@@ -110,8 +110,8 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
 
           io.to(`game:${game.gameId}`).emit("new_question", {
             roundNumber: round.roundNumber,
-            countryId: round.countryId,
-            country: round.country,
+            questionId: round.questionId,
+            question: round.question,
             options: round.options,
             startedAt: round.startedAt,
           });

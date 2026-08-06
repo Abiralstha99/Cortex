@@ -180,9 +180,13 @@ export async function endRound(
 
   // Build and broadcast round_finished payload
   const isLastRound = currentRound >= numberOfRounds;
+  const options: string[] = JSON.parse(round.options ?? "[]");
+  const correctIndex = Number(round.correctIndex);
+  const correctAnswer = options[correctIndex] ?? "";
+
   const payload: RoundFinishedPayload = {
     roundNumber,
-    correctAnswer: round.capital!,
+    correctAnswer,
     leaderboard,
     submissions: submissions.map((sub) => ({
       playerId: sub.playerId,
@@ -207,8 +211,8 @@ export async function endRound(
         // Emit new_question to the room
         io.to(`game:${gameId}`).emit("new_question", {
           roundNumber: nextRound.roundNumber,
-          countryId: nextRound.countryId,
-          country: nextRound.country,
+          questionId: nextRound.questionId,
+          question: nextRound.question,
           options: nextRound.options,
           startedAt: nextRound.startedAt,
         });

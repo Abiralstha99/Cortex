@@ -19,7 +19,7 @@ export default function Game() {
   const { id: myPlayerId } = useCurrentUser();
 
   const storeGameId = useLobbyStore((s) => s.gameId);
-  const difficulty = useLobbyStore((s) => s.difficulty);
+  const quizId = useLobbyStore((s) => s.quizId);
   const numberOfRounds = useLobbyStore((s) => s.numberOfRounds);
 
   const phase = useGameStore((s) => s.phase);
@@ -29,7 +29,7 @@ export default function Game() {
   const roundNumber = useGameStore((s) => s.roundNumber);
   const startedAt = useGameStore((s) => s.startedAt);
   const timeLimit = useGameStore((s) => s.timeLimit);
-  const countryId = useGameStore((s) => s.countryId);
+  const questionId = useGameStore((s) => s.questionId);
   const myAnswer = useGameStore((s) => s.myAnswer);
   const answerResult = useGameStore((s) => s.answerResult);
   const roundResults = useGameStore((s) => s.roundResults);
@@ -75,10 +75,10 @@ export default function Game() {
   }, [reset]);
 
   function handleSubmitAnswer(answerIndex: number) {
-    if (!responseStartTime || !countryId) return;
+    if (!responseStartTime || !questionId) return;
     const responseTime = Date.now() - responseStartTime;
 
-    submitAnswer(countryId, answerIndex, responseTime);
+    submitAnswer(questionId, answerIndex, responseTime);
   }
 
   if (!storeGameId || !myPlayerId) return null;
@@ -92,7 +92,9 @@ export default function Game() {
           <p className="eyebrow game__eyebrow">IN PROGRESS</p>
           <h1 className="game__heading">CAPITAL RUSH</h1>
           <div className="game__meta">
-            <span className="game__tag">{difficulty?.toUpperCase()}</span>
+            <span className="game__tag">
+              {quizId ? `QUIZ ${quizId.slice(0, 8)}` : "QUIZ"}
+            </span>
             <span className="game__tag">{numberOfRounds} ROUNDS</span>
             {phase === "question" && (
               <span className="game__tag">ROUND {roundNumber}</span>

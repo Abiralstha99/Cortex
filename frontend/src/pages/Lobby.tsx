@@ -18,7 +18,7 @@ export default function Lobby() {
   const players = useLobbyStore((s) => s.players);
   const hostId = useLobbyStore((s) => s.hostId);
   const gameId = useLobbyStore((s) => s.gameId);
-  const difficulty = useLobbyStore((s) => s.difficulty);
+  const quizId = useLobbyStore((s) => s.quizId);
   const numberOfRounds = useLobbyStore((s) => s.numberOfRounds);
   const status = useLobbyStore((s) => s.status);
   const toast = useLobbyStore((s) => s.toast);
@@ -62,7 +62,7 @@ export default function Lobby() {
 
         <LobbyHeader
           roomCode={normalized}
-          difficulty={difficulty}
+          quizId={quizId}
           numberOfRounds={numberOfRounds}
           connected={connected}
         />

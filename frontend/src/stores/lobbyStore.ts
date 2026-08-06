@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Difficulty, LobbyPlayer, WaitingGame } from "../lib/api";
+import type { LobbyPlayer, WaitingGame } from "../lib/api";
 
 type LobbyStatus = "idle" | "joining" | "in_lobby" | "starting" | "started" | "error";
 
@@ -7,7 +7,7 @@ type JoinedSnapshot = {
   gameId: string;
   roomCode: string;
   hostId: string;
-  difficulty: Difficulty;
+  quizId: string;
   numberOfRounds: number;
   players: LobbyPlayer[];
 };
@@ -16,7 +16,7 @@ type LobbyState = {
   roomCode: string | null;
   gameId: string | null;
   hostId: string | null;
-  difficulty: Difficulty | null;
+  quizId: string | null;
   numberOfRounds: number | null;
   players: LobbyPlayer[];
   status: LobbyStatus;
@@ -38,7 +38,7 @@ const initialState = {
   roomCode: null as string | null,
   gameId: null as string | null,
   hostId: null as string | null,
-  difficulty: null as Difficulty | null,
+  quizId: null as string | null,
   numberOfRounds: null as number | null,
   players: [] as LobbyPlayer[],
   status: "idle" as LobbyStatus,
@@ -54,7 +54,7 @@ export const useLobbyStore = create<LobbyState>((set, get) => ({
       gameId: snapshot.gameId,
       roomCode: snapshot.roomCode,
       hostId: snapshot.hostId,
-      difficulty: snapshot.difficulty,
+      quizId: snapshot.quizId,
       numberOfRounds: snapshot.numberOfRounds,
       players: snapshot.players,
       status: "in_lobby",

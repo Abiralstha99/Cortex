@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import type { Difficulty, LobbyPlayer, WaitingGame } from "../lib/api";
+import type { LobbyPlayer, WaitingGame } from "../lib/api";
 import { useCurrentUser } from "./useCurrentUser";
 import { useSocket } from "./useSocket";
 import { useLobbyStore } from "../stores/lobbyStore";
@@ -9,7 +9,7 @@ type JoinedPayload = {
   gameId: string;
   roomCode: string;
   hostId: string;
-  difficulty: Difficulty;
+  quizId: string;
   numberOfRounds: number;
   players: LobbyPlayer[];
 };

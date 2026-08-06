@@ -18,14 +18,24 @@ export async function createGame(req: Request, res: Response) {
     return res.status(404).json({ message: "Host not found" });
   }
 
-  const { difficulty, rounds } = req.body as CreateWaitingGameInput;
+  const { quizId, rounds } = req.body as CreateWaitingGameInput;
 
-  const game = await createWaitingGame({
-    hostId: user.id,
-    hostUsername: user.username,
-    difficulty,
-    rounds,
-  });
+  try {
+    const game = await createWaitingGame({
+      hostId: user.id,
+      hostUsername: user.username,
+      quizId,
+      rounds,
+    });
 
-  res.status(201).json(game);
+    res.status(201).json(game);
+  } catch (error) {
+    if (error instanceof Error && error.message === "Quiz not found") {
+      return res.status(404).json({ message: "Quiz not found" });
+    }
+    if (error instanceof Error && error.message === "Quiz has no questions") {
+      return res.status(400).json({ message: error.message });
+    }
+    throw error;
+  }
 }

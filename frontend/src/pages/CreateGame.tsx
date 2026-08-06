@@ -3,21 +3,29 @@ import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
 import AppHeader from "../components/AppHeader";
-import { createWaitingGame, type Difficulty } from "../lib/api";
+import { createWaitingGame } from "../lib/api";
 import "./CreateGame.css";
 
-const DIFFICULTIES: Difficulty[] = ["Easy", "Medium", "Hard"];
+// TODO(Phase 4): replace with quiz picker + GET /api/quizzes.
+// Until then, seed a quiz (`npm run seed:quiz`) and set VITE_DEV_QUIZ_ID.
+const DEV_QUIZ_ID = import.meta.env.VITE_DEV_QUIZ_ID as string | undefined;
 
 export default function CreateGame() {
   const navigate = useNavigate();
   const { getToken } = useAuth();
-  const [difficulty, setDifficulty] = useState<Difficulty>("Medium");
+  const [quizId, setQuizId] = useState(DEV_QUIZ_ID ?? "");
   const [rounds, setRounds] = useState(10);
 
   const mutation = useMutation({
-    mutationFn: async ({ difficulty, rounds }: { difficulty: Difficulty; rounds: number }) => {
+    mutationFn: async ({
+      quizId,
+      rounds,
+    }: {
+      quizId: string;
+      rounds: number;
+    }) => {
       const token = await getToken();
-      return createWaitingGame(token, { difficulty, rounds });
+      return createWaitingGame(token, { quizId, rounds });
     },
     onSuccess: (data) => {
       navigate(`/game/lobby/${data.roomCode}`);
@@ -26,7 +34,7 @@ export default function CreateGame() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    mutation.mutate({ difficulty, rounds });
+    mutation.mutate({ quizId: quizId.trim(), rounds });
   }
 
   return (
@@ -38,21 +46,27 @@ export default function CreateGame() {
 
         <form className="create-game__form" onSubmit={handleSubmit}>
           <div className="create-game__field">
-            <label className="create-game__label" htmlFor="difficulty">
-              DIFFICULTY
+            <label className="create-game__label" htmlFor="quizId">
+              QUIZ ID
             </label>
-            <div className="create-game__difficulty-group">
-              {DIFFICULTIES.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  className={`create-game__difficulty-btn${difficulty === d ? " create-game__difficulty-btn--active" : ""}`}
-                  onClick={() => setDifficulty(d)}
-                >
-                  {d.toUpperCase()}
-                </button>
-              ))}
-            </div>
+            {/* TODO(Phase 4): full quiz picker UI */}
+            <input
+              id="quizId"
+              className="create-game__rounds-value"
+              style={{
+                width: "100%",
+                textAlign: "left",
+                fontSize: "0.85rem",
+                padding: "0.5rem",
+              }}
+              value={quizId}
+              onChange={(e) => setQuizId(e.target.value)}
+              placeholder="UUID from npm run seed:quiz"
+              required
+            />
+            <span className="create-game__rounds-hint">
+              Paste a quiz UUID (Phase 2 temporary). Phase 4 will add a picker.
+            </span>
           </div>
 
           <div className="create-game__field">
@@ -83,14 +97,16 @@ export default function CreateGame() {
 
           {mutation.error && (
             <p className="create-game__error">
-              {mutation.error instanceof Error ? mutation.error.message : "Failed to create game"}
+              {mutation.error instanceof Error
+                ? mutation.error.message
+                : "Failed to create game"}
             </p>
           )}
 
           <button
             type="submit"
             className="create-game__submit"
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || !quizId.trim()}
           >
             {mutation.isPending ? "CREATING…" : "CREATE ROOM"}
           </button>

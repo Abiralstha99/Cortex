@@ -1,8 +1,5 @@
 // This file defines the types for the waiting room and game room
 
-import type { Difficulty } from "../schemas/game.js";
-
-export type { Difficulty };
 export type GameStatus = "waiting" | "playing" | "finished" | "cancelled";
 
 // `id` is the Postgres users.id (not the Clerk id — see the id boundary note
@@ -16,7 +13,7 @@ export type Player = {
 
 export type WaitingRoom = {
   gameId: string;
-  difficulty: Difficulty;
+  quizId: string;
   players: Player[];
   status: GameStatus;
   hostId: string;
@@ -28,16 +25,25 @@ export type WaitingRoom = {
 export type ActiveGame = Omit<WaitingRoom, "status"> & {
   status: "playing";
   currentRound: number;
-  usedCountryIds: number[];
+  usedQuestionIds: string[];
+};
+
+/** Question payload loaded from Postgres / nextQuestion prefetch */
+export type QuestionPick = {
+  id: string;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
 };
 
 // Current round state — promoted at the start of each round.
 export type Round = {
-  countryId: number;
-  country: string;
-  capital: string; // server-only: not broadcast to clients
-  options: string[]; // 4 MCQ choices, index-aligned with correctIndex
-  correctIndex: number; // server-only: not broadcast to clients
+  questionId: string;
+  question: string;
+  options: string[];
+  correctIndex: number; // server-only until round end
+  explanation: string; // server-only until round end
   startedAt: string;
   roundNumber: number;
 };
@@ -47,12 +53,12 @@ export type Round = {
 export type SubmissionRecord = {
   playerId: string;
   roundNumber: number;
-  countryId: number;
-  answerIndex: number; // index of the selected MCQ option
+  questionId: string;
+  answerIndex: number;
   correct: boolean;
   pointsEarned: number;
-  placement: number | null; // null if incorrect
-  submittedAt: string; // ISO date
+  placement: number | null;
+  submittedAt: string;
 };
 
 // Payload broadcast to the submitting player after their answer is processed.
@@ -60,7 +66,7 @@ export type AnswerResult = {
   correct: boolean;
   pointsEarned: number;
   placement: number | null;
-  correctAnswer: string; // only revealed to the submitting player before round ends
+  correctAnswer: string;
 };
 
 // One entry in the round-end leaderboard broadcast.
@@ -68,17 +74,20 @@ export type LeaderboardEntry = {
   rank: number;
   playerId: string;
   username: string;
-  score: number; // cumulative score so far
+  score: number;
 };
 
 // Payload for the round_finished broadcast.
 export type RoundFinishedPayload = {
   roundNumber: number;
   correctAnswer: string;
-  submissions: Pick<SubmissionRecord, "playerId" | "correct" | "pointsEarned" | "placement">[];
+  submissions: Pick<
+    SubmissionRecord,
+    "playerId" | "correct" | "pointsEarned" | "placement"
+  >[];
   leaderboard: LeaderboardEntry[];
   isLastRound: boolean;
-  nextRoundIn: number; // ms until new_question fires (0 if last round)
+  nextRoundIn: number;
 };
 
 // Payload for the game_finished broadcast.

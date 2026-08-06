@@ -5,42 +5,38 @@
 //   ttl:   mirrors GAME_KEY (set on creation, deleted on empty/finish)
 export const ROOM_CODE_KEY = (roomCode: string) => `room-code:${roomCode}`;
 
-
 // GAME_KEY       game:<gameId>                 hash
 //   Waiting-room fields (set on creation):
 //     gameId          string   — UUID
 //     roomCode        string   — 6-char code
 //     hostId          string   — Postgres users.id of the host
-//     difficulty      string   — "Easy" | "Medium" | "Hard"
+//     quizId          string   — Postgres quizzes.id UUID
 //     numberOfRounds  string   — coerced number
-//     players         string   — JSON: Player[]  { id, username, ready }
+//     players         string   — JSON: Player[]  { id, username, ready, score }
 //     status          string   — "waiting" | "playing" | "finished" | "cancelled"
 //     createdAt       string   — ISO date
 //   Added when game starts (status → "playing"):
 //     currentRound    string   — coerced number, starts at 0
-//     usedCountryIds  string   — JSON: number[]  grows each round
+//     usedQuestionIds string   — JSON: string[] (question UUIDs) grows each round
 export const GAME_KEY = (gameId: string) => `game:${gameId}`;
 
 // ROUND_KEY      game:<gameId>:round           hash
 //   Set at the start of each round by startRound():
 //     roundNumber       string   — coerced number
-//     countryId         string   — coerced number
-//     country           string   — country name shown to players
-//     capital           string   — correct answer (server-only, not broadcast)
-//     correctIndex      string   — coerced number, index of the correct MCQ option
-//                                  (used by Lua script to grade submissions)
-//     startedAt         string   — ISO date, used to enforce the round timer
-//     submissionCount   string   — atomically incremented (HINCRBY) inside the
-//                                  Lua submission script; when == totalPlayers
-//                                  the last-submission path triggers early round-end
+//     questionId        string   — questions.id UUID
+//     question          string   — prompt text shown to players
+//     options           string   — JSON string[4]
+//     correctIndex      string   — 0-3 (server-only until round_finished)
+//     explanation       string   — server-only (broadcast at round end later)
+//     startedAt         string   — ISO date
+//     submissionCount   string   — HINCRBY in Lua submission script
 export const ROUND_KEY = (gameId: string) => `game:${gameId}:round`;
 
-// NEXT_COUNTRY_KEY  game:<gameId>:nextCountry  string
-//   Temporary prefetch buffer — written by prefetchNextCountry() in the
-//   background while players answer the current round.
-//   value: JSON  { id: number, name: string, capital: string }
+// NEXT_QUESTION_KEY  game:<gameId>:nextQuestion  string
+//   Prefetch buffer — JSON QuestionPick { id, question, options, correctIndex, explanation }
 //   lifecycle: written after startRound(), consumed + deleted by the next startRound()
-export const NEXT_COUNTRY_KEY = (gameId: string) => `game:${gameId}:nextCountry`;
+export const NEXT_QUESTION_KEY = (gameId: string) =>
+  `game:${gameId}:nextQuestion`;
 
 // CORRECT_COUNT_KEY  game:<gameId>:round:<n>:correctCount   string (integer)
 //   Atomically incremented (INCR) each time a player submits a correct answer.
@@ -54,8 +50,11 @@ export const CORRECT_COUNT_KEY = (gameId: string, round: number) =>
 //   Written atomically inside the Lua submission script.
 //   value: JSON SubmissionRecord — see types/room.types.ts
 //   Acts as the duplicate-submission guard: SET NX, rejected if already exists.
-export const SUBMISSION_KEY = (gameId: string, round: number, playerId: string) =>
-  `game:${gameId}:round:${round}:submissions:${playerId}`;
+export const SUBMISSION_KEY = (
+  gameId: string,
+  round: number,
+  playerId: string,
+) => `game:${gameId}:round:${round}:submissions:${playerId}`;
 
 // ROUND_ENDED_KEY  game:<gameId>:round:<n>:ended   string
 //   SET NX guard — whichever path (BullMQ job or last-submission handler) sets

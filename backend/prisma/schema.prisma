@@ -10,17 +10,16 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Difficulty {
-  Easy
-  Medium
-  Hard
-}
-
 enum GameStatus {
   waiting
   playing
   finished
   cancelled
+}
+
+enum SourceType {
+  pdf
+  text
 }
 
 model User {
@@ -39,34 +38,57 @@ model User {
   wonGames     Game[]       @relation("GameWinner")
   gamePlayers  GamePlayer[]
   answers      Answer[]
+  quizzes      Quiz[]
 
   @@map("users")
 }
 
-model Country {
-  id         Int        @id @default(autoincrement())
-  name       String     @db.VarChar(100)
-  capital    String     @db.VarChar(100)
-  continent  String     @db.VarChar(50)
-  difficulty Difficulty
-  createdAt  DateTime   @default(now()) @map("created_at")
+model Quiz {
+  id            String     @id @default(uuid()) @db.Uuid
+  ownerId       String     @map("owner_id") @db.Uuid
+  title         String     @db.VarChar(255)
+  sourceType    SourceType @map("source_type")
+  questionCount Int        @map("question_count")
+  createdAt     DateTime   @default(now()) @map("created_at")
 
+  owner     User       @relation(fields: [ownerId], references: [id])
+  questions Question[]
+  games     Game[]
+
+  @@index([ownerId])
+  @@map("quizzes")
+}
+
+model Question {
+  id           String   @id @default(uuid()) @db.Uuid
+  quizId       String   @map("quiz_id") @db.Uuid
+  question     String   @db.Text
+  options      Json
+  correctIndex Int      @map("correct_index")
+  explanation  String   @db.Text
+  position     Int
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   answers Answer[]
 
-  @@map("countries")
+  @@unique([quizId, position])
+  @@index([quizId])
+  @@map("questions")
 }
 
 model Game {
   id         String     @id @default(uuid()) @db.Uuid
   roomCode   String     @unique @map("room_code") @db.VarChar(6)
+  quizId     String     @map("quiz_id") @db.Uuid
   hostId     String     @map("host_id") @db.Uuid
   status     GameStatus @default(waiting)
-  difficulty Difficulty
   rounds     Int        @default(10)
   createdAt  DateTime   @default(now()) @map("created_at")
   finishedAt DateTime?  @map("finished_at")
   winnerId   String?    @map("winner_id") @db.Uuid
 
+  quiz        Quiz         @relation(fields: [quizId], references: [id])
   host        User         @relation("GameHost", fields: [hostId], references: [id])
   winner      User?        @relation("GameWinner", fields: [winnerId], references: [id])
   gamePlayers GamePlayer[]
@@ -74,6 +96,7 @@ model Game {
 
   @@index([hostId])
   @@index([winnerId])
+  @@index([quizId])
   @@index([createdAt])
   @@map("games")
 }
@@ -100,19 +123,19 @@ model Answer {
   id             String   @id @default(uuid()) @db.Uuid
   gameId         String   @map("game_id") @db.Uuid
   userId         String   @map("user_id") @db.Uuid
-  countryId      Int      @map("country_id")
-  answer         String   @db.VarChar(255)
+  questionId     String   @map("question_id") @db.Uuid
+  answerIndex    Int      @map("answer_index")
   correct        Boolean
   points         Int
   responseTimeMs Int      @map("response_time_ms")
   createdAt      DateTime @default(now()) @map("created_at")
 
-  game    Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id])
-  country Country @relation(fields: [countryId], references: [id])
+  game     Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+  question Question @relation(fields: [questionId], references: [id])
 
-  @@unique([gameId, userId, countryId])
+  @@unique([gameId, userId, questionId])
   @@index([userId])
-  @@index([countryId])
+  @@index([questionId])
   @@map("answers")
 }

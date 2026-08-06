@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
+// TODO(Phase 4): remove Difficulty once create-room UI selects a saved quiz.
 export type Difficulty = "Easy" | "Medium" | "Hard";
 
 export type LobbyPlayer = {
@@ -10,7 +11,7 @@ export type LobbyPlayer = {
 
 export type WaitingGame = {
   gameId: string;
-  difficulty: Difficulty;
+  quizId: string;
   numberOfRounds: number;
   players: LobbyPlayer[];
   status: string;
@@ -32,9 +33,10 @@ export async function apiFetch(
   return fetch(`${API_URL}${path}`, { ...init, headers });
 }
 
+// TODO(Phase 4): body should come from a quiz picker, not a dev env fallback.
 export async function createWaitingGame(
   token: string | null,
-  body: { difficulty: Difficulty; rounds: number },
+  body: { quizId: string; rounds: number },
 ): Promise<WaitingGame> {
   const res = await apiFetch("/api/games/waiting/", token, {
     method: "POST",
@@ -52,8 +54,8 @@ export async function createWaitingGame(
 // Game event payloads
 export type NewQuestionPayload = {
   roundNumber: number;
-  countryId: number;
-  country: string;
+  questionId: string;
+  question: string;
   options: string[];
   startedAt: string; // ISO timestamp
 };

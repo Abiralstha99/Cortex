@@ -159,7 +159,7 @@ function deserializeRoom(
 ): WaitingRoom {
   return {
     gameId: raw.gameId!,
-    difficulty: raw.difficulty as WaitingRoom["difficulty"],
+    quizId: raw.quizId!,
     numberOfRounds: Number(raw.numberOfRounds),
     players,
     status: "waiting",
@@ -334,8 +334,8 @@ export async function startGame(
       id: game.gameId,
       roomCode: game.roomCode,
       hostId: game.hostId,
+      quizId: game.quizId,
       status: "playing",
-      difficulty: game.difficulty,
       rounds: game.numberOfRounds,
     },
   });
@@ -347,7 +347,7 @@ export async function startGame(
       GAME_KEY(gameId),
       "status",
       "playing",
-      "usedCountryIds",
+      "usedQuestionIds",
       "[]",
     );
   } catch (err) {

@@ -1,16 +1,15 @@
 import { Copy, Wifi, WifiOff } from "lucide-react";
-import type { Difficulty } from "../../lib/api";
 
 type LobbyHeaderProps = {
   roomCode: string | null;
-  difficulty: Difficulty | null;
+  quizId: string | null;
   numberOfRounds: number | null;
   connected: boolean;
 };
 
 export default function LobbyHeader({
   roomCode,
-  difficulty,
+  quizId,
   numberOfRounds,
   connected,
 }: LobbyHeaderProps) {
@@ -34,8 +33,10 @@ export default function LobbyHeader({
       </div>
 
       <div className="lobby-header__meta">
-        {difficulty && (
-          <span className="lobby-header__tag">{difficulty.toUpperCase()}</span>
+        {quizId && (
+          <span className="lobby-header__tag">
+            QUIZ {quizId.slice(0, 8).toUpperCase()}
+          </span>
         )}
         {numberOfRounds != null && (
           <span className="lobby-header__tag">{numberOfRounds} ROUNDS</span>

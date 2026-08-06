@@ -76,9 +76,9 @@ export function useGameSocket(gameId: string) {
     applyGameFinished,
   ]);
 
-  function submitAnswer(countryId: number, answerIndex: number, responseTime: number) {
+  function submitAnswer(questionId: string, answerIndex: number, responseTime: number) {
     if (!socket) return;
-    socket.emit("submit_answer", { gameId, countryId, answerIndex, responseTime });
+    socket.emit("submit_answer", { gameId, questionId, answerIndex, responseTime });
     useGameStore.getState().submitAnswer(answerIndex);
   }
 

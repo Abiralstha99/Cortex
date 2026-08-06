@@ -7,7 +7,9 @@
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate",
     "start": "node dist/index.js",
-    "seed": "tsx scripts/seedCountries.ts"
+    "seed": "tsx scripts/seedCountries.ts",
+    "seed:quiz": "tsx scripts/seedSampleQuiz.ts",
+    "smoke:pick-question": "tsx scripts/smokePickQuestion.ts"
   },
   "type": "module",
   "devDependencies": {
