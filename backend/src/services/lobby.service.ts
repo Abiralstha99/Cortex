@@ -54,6 +54,7 @@ const JOIN_PLAYERS_LUA = `
     id = playerId,
     username = ARGV[2],
     ready = false,
+    score = 0,
   }
 
   local encoded = cjson.encode(players)

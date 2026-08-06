@@ -40,7 +40,7 @@ export async function createWaitingGame({
     gameId,
     difficulty,
     numberOfRounds: rounds,
-    players: [{ id: hostId, username: hostUsername, ready: false }],
+    players: [{ id: hostId, username: hostUsername, ready: false, score: 0 }],
     status: "waiting",
     hostId,
     roomCode,
