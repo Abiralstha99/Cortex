@@ -1,45 +1,144 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import AppHeader from "../components/AppHeader";
+import Countdown from "../components/game/Countdown";
+import QuestionCard from "../components/game/QuestionCard";
+import Timer from "../components/game/Timer";
+import AnswerFeedback from "../components/game/AnswerFeedback";
+import RoundResults from "../components/game/RoundResults";
+import GameResults from "../components/game/GameResults";
 import { useLobbyStore } from "../stores/lobbyStore";
+import { useGameStore } from "../stores/gameStore";
+import { useGameSocket } from "../hooks/useGameSocket";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 import "./Game.css";
 
 export default function Game() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  const { id: myPlayerId } = useCurrentUser();
 
-  const players = useLobbyStore((s) => s.players);
+  const storeGameId = useLobbyStore((s) => s.gameId);
   const difficulty = useLobbyStore((s) => s.difficulty);
   const numberOfRounds = useLobbyStore((s) => s.numberOfRounds);
-  const storeGameId = useLobbyStore((s) => s.gameId);
 
-  // Guard: if someone lands here directly with no game state, send them home
+  const phase = useGameStore((s) => s.phase);
+  const countdownMs = useGameStore((s) => s.countdownMs);
+  const question = useGameStore((s) => s.question);
+  const options = useGameStore((s) => s.options);
+  const roundNumber = useGameStore((s) => s.roundNumber);
+  const startedAt = useGameStore((s) => s.startedAt);
+  const timeLimit = useGameStore((s) => s.timeLimit);
+  const countryId = useGameStore((s) => s.countryId);
+  const myAnswer = useGameStore((s) => s.myAnswer);
+  const answerResult = useGameStore((s) => s.answerResult);
+  const roundResults = useGameStore((s) => s.roundResults);
+  const gameResults = useGameStore((s) => s.gameResults);
+  const reset = useGameStore((s) => s.reset);
+
+  const { connected, submitAnswer } = useGameSocket(gameId ?? "");
+
+  const [responseStartTime, setResponseStartTime] = useState<number | null>(null);
+
+  // Guard: redirect if no gameId in URL or if gameId doesn't match lobby state
   useEffect(() => {
-    if (!storeGameId || storeGameId !== gameId) {
+    if (!gameId) {
+      // No gameId in URL - direct navigation to /game
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
+    if (!storeGameId) {
+      // No lobby state - user refreshed or navigated directly
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
+    if (storeGameId !== gameId) {
+      // GameId mismatch - invalid navigation
       navigate("/dashboard", { replace: true });
     }
   }, [storeGameId, gameId, navigate]);
 
-  if (!storeGameId) return null;
+  // Track response time from when question appears
+  useEffect(() => {
+    if (phase === "question" && startedAt) {
+      setResponseStartTime(Date.now());
+    }
+  }, [phase, startedAt]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, [reset]);
+
+  function handleSubmitAnswer(answerIndex: number) {
+    if (!responseStartTime || !countryId) return;
+    const responseTime = Date.now() - responseStartTime;
+
+    submitAnswer(countryId, answerIndex, responseTime);
+  }
+
+  if (!storeGameId || !myPlayerId) return null;
 
   return (
     <div className="game">
       <AppHeader />
 
       <main className="game__main">
-        <p className="eyebrow game__eyebrow">IN PROGRESS</p>
-        <h1 className="game__heading">CAPITAL RUSH</h1>
-
-        <div className="game__meta">
-          <span className="game__tag">{difficulty?.toUpperCase()}</span>
-          <span className="game__tag">{numberOfRounds} ROUNDS</span>
+        <div className="game__header">
+          <p className="eyebrow game__eyebrow">IN PROGRESS</p>
+          <h1 className="game__heading">CAPITAL RUSH</h1>
+          <div className="game__meta">
+            <span className="game__tag">{difficulty?.toUpperCase()}</span>
+            <span className="game__tag">{numberOfRounds} ROUNDS</span>
+            {phase === "question" && (
+              <span className="game__tag">ROUND {roundNumber}</span>
+            )}
+          </div>
         </div>
 
-        <div className="game__placeholder">
-          <p className="game__placeholder-text">Round logic coming soon.</p>
-          <p className="game__placeholder-sub">
-            {players.length} player{players.length !== 1 ? "s" : ""} connected
-          </p>
+        <div className="game__content">
+          {phase === "idle" && (
+            <div className="game__loading">
+              <p>Starting game...</p>
+            </div>
+          )}
+
+          {phase === "countdown" && <Countdown countdownMs={countdownMs} />}
+
+          {phase === "question" && question && startedAt && (
+            <div className="game__question-phase">
+              <Timer startedAt={startedAt} timeLimit={timeLimit} />
+              <QuestionCard
+                question={`What is the capital of ${question}?`}
+                options={options}
+                onSubmit={handleSubmitAnswer}
+                disabled={myAnswer !== null}
+                selectedIndex={myAnswer}
+              />
+            </div>
+          )}
+
+          {phase === "answered" && answerResult && (
+            <AnswerFeedback result={answerResult} />
+          )}
+
+          {phase === "round_results" && roundResults && (
+            <RoundResults roundResults={roundResults} myPlayerId={myPlayerId} />
+          )}
+
+          {phase === "game_finished" && gameResults && (
+            <GameResults gameResults={gameResults} myPlayerId={myPlayerId} />
+          )}
+
+          {!connected && phase !== "game_finished" && (
+            <div className="game__disconnected">
+              <p>Disconnected from server. Reconnecting...</p>
+            </div>
+          )}
         </div>
       </main>
     </div>
