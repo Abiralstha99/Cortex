@@ -22,6 +22,12 @@ enum SourceType {
   text
 }
 
+enum QuizStatus {
+  processing
+  ready
+  failed
+}
+
 model User {
   id          String   @id @default(uuid()) @db.Uuid
   clerkUserId String   @unique @map("clerk_user_id")
@@ -48,7 +54,9 @@ model Quiz {
   ownerId       String     @map("owner_id") @db.Uuid
   title         String     @db.VarChar(255)
   sourceType    SourceType @map("source_type")
+  status        QuizStatus @default(ready)
   questionCount Int        @map("question_count")
+  errorMessage  String?    @map("error_message") @db.Text
   createdAt     DateTime   @default(now()) @map("created_at")
 
   owner     User       @relation(fields: [ownerId], references: [id])
@@ -56,6 +64,7 @@ model Quiz {
   games     Game[]
 
   @@index([ownerId])
+  @@index([status])
   @@map("quizzes")
 }
 
