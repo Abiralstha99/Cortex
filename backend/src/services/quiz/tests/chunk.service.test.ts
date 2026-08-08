@@ -1,12 +1,9 @@
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { chunkText } from "./chunk.service.js";
-import { estimateTokens } from "./tokens.js";
-import { ChunkError } from "./errors.js";
-
-function words(n: number): string {
-  return Array.from({ length: n }, (_, i) => `w${i}`).join(" ");
-}
+import { describe, it } from "node:test";
+import { chunkText } from "../chunk.service.js";
+import { ChunkError } from "../errors.js";
+import { estimateTokens } from "../tokens.js";
+import { words } from "./helpers.js";
 
 describe("chunkText", () => {
   it("throws ChunkError when text is too short after split heuristics", async () => {
@@ -17,7 +14,6 @@ describe("chunkText", () => {
   });
 
   it("returns one or more chunks within token budget", async () => {
-    // ~400 words × 1.3 ≈ 520 tokens — single comfortable chunk
     const text = words(400);
     const chunks = await chunkText(text);
     assert.ok(chunks.length >= 1);
@@ -32,7 +28,6 @@ describe("chunkText", () => {
     const text = `${paragraph}\n\n${paragraph}\n\n${paragraph}`;
     const chunks = await chunkText(text);
     assert.ok(chunks.length >= 1);
-    // merged chunks should not all be tiny
     assert.ok(chunks.some((c) => estimateTokens(c) >= 200));
   });
 });

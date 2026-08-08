@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { cleanText } from "./clean.service.js";
+import { cleanText } from "../clean.service.js";
 
 describe("cleanText", () => {
   it("collapses whitespace and normalizes newlines", () => {
