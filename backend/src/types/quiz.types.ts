@@ -22,7 +22,7 @@ export type PipelinePrepareResult = {
   requestedCount: number;
 };
 
-export type GenerateForBatchesResult = {
+export type GenerateAllBatchesResult = {
   questions: GeneratedQuestion[];
   generatedCount: number;
   failedBatches: number;
