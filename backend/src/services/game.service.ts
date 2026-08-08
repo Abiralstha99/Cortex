@@ -33,10 +33,14 @@ export async function createWaitingGame({
 
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
-    select: { id: true, questionCount: true },
+    select: { id: true, questionCount: true, status: true },
   });
   if (!quiz) {
     throw new Error("Quiz not found");
+  }
+  // Only ready quizzes exist for new pipeline writes; reject non-ready (legacy/partial rows)
+  if (quiz.status !== "ready") {
+    throw new Error("Quiz is not ready");
   }
 
   // Cap rounds to quiz size so pickQuestion cannot exhaust the pool mid-game.

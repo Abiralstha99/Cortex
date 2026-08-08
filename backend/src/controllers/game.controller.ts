@@ -33,6 +33,9 @@ export async function createGame(req: Request, res: Response) {
     if (error instanceof Error && error.message === "Quiz not found") {
       return res.status(404).json({ message: "Quiz not found" });
     }
+    if (error instanceof Error && error.message === "Quiz is not ready") {
+      return res.status(400).json({ message: error.message });
+    }
     if (error instanceof Error && error.message === "Quiz has no questions") {
       return res.status(400).json({ message: error.message });
     }
