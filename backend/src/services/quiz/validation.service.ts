@@ -1,25 +1,5 @@
-import * as z from "zod";
 import type { GeneratedQuestion } from "../../types/quiz.types.js";
-import { ValidationError } from "./errors.js";
-
-const QuestionSchema = z.object({
-  question: z.string().min(10),
-  options: z.tuple([
-    z.string().min(1),
-    z.string().min(1),
-    z.string().min(1),
-    z.string().min(1),
-  ]),
-  correctIndex: z.union([
-    z.literal(0),
-    z.literal(1),
-    z.literal(2),
-    z.literal(3),
-  ]),
-  explanation: z.string().min(10),
-});
-
-const QuestionsArraySchema = z.array(QuestionSchema).min(1);
+import { GeneratedQuestionsArraySchema } from "../../schemas/quiz.js";
 
 // Removes code fences from the raw text
 function stripFences(raw: string): string {
@@ -36,20 +16,22 @@ export function parseAndValidateQuestions(raw: string): GeneratedQuestion[] {
   try {
     parsed = JSON.parse(stripped);
   } catch {
-    throw new ValidationError("Response was not valid JSON");
+    throw new Error("Response was not valid JSON");
   }
-  const result = QuestionsArraySchema.safeParse(parsed);
-  if (!result.success) {
-    throw new ValidationError(
-      result.error.issues.map((i) => i.message).join("; "),
-    );
+
+  try {
+    const result = GeneratedQuestionsArraySchema.parse(parsed);
+    return result.map((q) => ({
+      question: q.question,
+      options: q.options,
+      correctIndex: q.correctIndex,
+      explanation: q.explanation,
+    }));
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Question validation failed";
+    throw new Error(message);
   }
-  return result.data.map((q) => ({
-    question: q.question,
-    options: q.options,
-    correctIndex: q.correctIndex,
-    explanation: q.explanation,
-  }));
 }
 
 function normalizeQuestion(q: string): string {

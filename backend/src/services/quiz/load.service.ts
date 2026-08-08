@@ -1,6 +1,5 @@
 import { PDFParse } from "pdf-parse";
 import { cleanText } from "./clean.service.js";
-import { LoadError } from "./errors.js";
 
 const PDF_MIME = "application/pdf";
 const TEXT_MIME = "text/plain";
@@ -47,8 +46,8 @@ export async function loadDocument(
     try {
       raw = await extractPdfText(input.buffer);
     } catch (err) {
-      if (err instanceof LoadError) throw err;
-      throw new LoadError("Failed to parse PDF");
+      const detail = err instanceof Error ? err.message : "unknown error";
+      throw new Error(`Failed to parse PDF: ${detail}`);
     }
   } else if (
     mime === TEXT_MIME ||
@@ -59,17 +58,17 @@ export async function loadDocument(
     sourceType = "text";
     raw = input.buffer.toString("utf8");
   } else {
-    throw new LoadError(`Unsupported file type: ${input.mimeType}`);
+    throw new Error(`Unsupported file type: ${input.mimeType}`);
   }
 
   const text = cleanText(raw);
   if (text.length === 0) {
-    throw new LoadError("Document produced no readable text");
+    throw new Error("Document produced no readable text");
   }
 
   const wordCount = text.split(/\s+/).filter(Boolean).length;
   if (wordCount < 50) {
-    throw new LoadError("Document too short (minimum 50 words)");
+    throw new Error("Document too short (minimum 50 words)");
   }
 
   return {

@@ -1,5 +1,4 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { ChunkError } from "./errors.js";
 import { estimateTokens } from "./tokens.js";
 
 const MIN_CHUNK_TOKENS = 200;
@@ -15,7 +14,7 @@ const SPLITTER_OVERLAP_CHARS = 200;
 export async function chunkText(text: string): Promise<string[]> {
   const trimmed = text.trim();
   if (estimateTokens(trimmed) < 50) {
-    throw new ChunkError("Text too short to chunk");
+    throw new Error("Text too short to chunk");
   }
 
   const splitter = new RecursiveCharacterTextSplitter({
@@ -30,7 +29,7 @@ export async function chunkText(text: string): Promise<string[]> {
   const finalChunks = splitOversizedChunks(merged);
 
   if (finalChunks.length === 0) {
-    throw new ChunkError("No chunks produced");
+    throw new Error("No chunks produced");
   }
 
   return finalChunks;

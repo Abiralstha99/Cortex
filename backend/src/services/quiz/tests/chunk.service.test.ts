@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { chunkText } from "../chunk.service.js";
-import { ChunkError } from "../errors.js";
 import { estimateTokens } from "../tokens.js";
 import { words } from "./helpers.js";
 
 describe("chunkText", () => {
-  it("throws ChunkError when text is too short after split heuristics", async () => {
+  it("throws when text is too short after split heuristics", async () => {
     await assert.rejects(
       () => chunkText("tiny"),
-      (err: unknown) => err instanceof ChunkError,
+      (err: unknown) =>
+        err instanceof Error && err.message === "Text too short to chunk",
     );
   });
 

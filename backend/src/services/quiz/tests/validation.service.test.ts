@@ -4,7 +4,6 @@ import {
   parseAndValidateQuestions,
   dedupeQuestions,
 } from "../validation.service.js";
-import { ValidationError } from "../errors.js";
 import type { GeneratedQuestion } from "../../../types/quiz.types.js";
 
 const good = {
@@ -22,19 +21,17 @@ describe("parseAndValidateQuestions", () => {
     assert.equal(out[0]!.correctIndex, 0);
   });
 
-  it("throws ValidationError on invalid JSON", () => {
+  it("throws on invalid JSON", () => {
     assert.throws(
       () => parseAndValidateQuestions("not-json"),
-      (e: unknown) => e instanceof ValidationError,
+      (e: unknown) =>
+        e instanceof Error && e.message === "Response was not valid JSON",
     );
   });
 
   it("throws when options length is not 4", () => {
     const bad = { ...good, options: ["a", "b"] };
-    assert.throws(
-      () => parseAndValidateQuestions(JSON.stringify([bad])),
-      ValidationError,
-    );
+    assert.throws(() => parseAndValidateQuestions(JSON.stringify([bad])), Error);
   });
 });
 
