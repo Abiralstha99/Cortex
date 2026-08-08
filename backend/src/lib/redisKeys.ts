@@ -68,3 +68,19 @@ export const ROUND_ENDED_KEY = (gameId: string, round: number) =>
 //   so we use underscores instead. This is separate from ROUND_ENDED_KEY.
 export const ROUND_END_JOB_ID = (gameId: string, round: number) =>
   `game_${gameId}_round_${round}_end`;
+
+// QUIZ_GEN_JOB_KEY  quiz-gen:job:<jobId>   string (JSON QuizGenJob)
+//   Pollable async generation status: processing | ready | failed.
+//   Ready includes quizId (Postgres). Failed includes errorMessage.
+//   TTL ~1 hour — jobs are not durable history.
+export const QUIZ_GEN_JOB_KEY = (jobId: string) => `quiz-gen:job:${jobId}`;
+
+// QUIZ_GEN_WORK_KEY  quiz-gen:work:<jobId>   string (JSON QuizGenWorkPayload)
+//   Transient planned batches for the BullMQ worker. TTL 1 hour.
+//   Cleared when the job finishes (ready or failed).
+export const QUIZ_GEN_WORK_KEY = (jobId: string) => `quiz-gen:work:${jobId}`;
+
+// QUIZ_GEN_INFLIGHT_KEY  quiz-gen:inflight:<ownerId>   string
+//   Short SET NX guard against double-click double enqueue (not a content cache).
+export const QUIZ_GEN_INFLIGHT_KEY = (ownerId: string) =>
+  `quiz-gen:inflight:${ownerId}`;
