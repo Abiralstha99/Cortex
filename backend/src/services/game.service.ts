@@ -9,6 +9,7 @@ import { reserveRoomCode } from "../lib/roomCode.js";
 import redis from "../lib/redis.js";
 import { GAME_KEY } from "../lib/redisKeys.js";
 import { prisma } from "../lib/prisma.js";
+import { assertQuizPlayableForHost, capRoundsToQuiz } from "./gamePlay.helpers.js";
 
 const WAITING_ROOM_EXPIRATION_TIME = 60 * 60; // 1 hour
 
@@ -33,21 +34,12 @@ export async function createWaitingGame({
 
   const quiz = await prisma.quiz.findUnique({
     where: { id: quizId },
-    select: { id: true, questionCount: true, status: true },
+    select: { id: true, ownerId: true, questionCount: true, status: true },
   });
-  if (!quiz) {
-    throw new Error("Quiz not found");
-  }
-  // Only ready quizzes exist for new pipeline writes; reject non-ready (legacy/partial rows)
-  if (quiz.status !== "ready") {
-    throw new Error("Quiz is not ready");
-  }
 
-  // Cap rounds to quiz size so pickQuestion cannot exhaust the pool mid-game.
-  const numberOfRounds = Math.min(rounds, quiz.questionCount);
-  if (numberOfRounds < 1) {
-    throw new Error("Quiz has no questions");
-  }
+  assertQuizPlayableForHost(quiz, hostId);
+
+  const numberOfRounds = capRoundsToQuiz(rounds, quiz.questionCount);
 
   const gameId = crypto.randomUUID();
   const roomCode = await reserveRoomCode(gameId);

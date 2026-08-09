@@ -28,6 +28,7 @@ import {
 import redis from "../lib/redis.js";
 import { getRoundSubmissions, ROUND_TIME_LIMIT_MS } from "./answer.service.js";
 import { startRound } from "./round.service.js";
+import { publicNewQuestionFromRound } from "./gamePlay.helpers.js";
 
 export const BETWEEN_ROUND_DELAY_MS = 3000;
 
@@ -209,13 +210,10 @@ export async function endRound(
         const nextRound = await startRound(gameId);
 
         // Emit new_question to the room
-        io.to(`game:${gameId}`).emit("new_question", {
-          roundNumber: nextRound.roundNumber,
-          questionId: nextRound.questionId,
-          question: nextRound.question,
-          options: nextRound.options,
-          startedAt: nextRound.startedAt,
-        });
+        io.to(`game:${gameId}`).emit(
+          "new_question",
+          publicNewQuestionFromRound(nextRound),
+        );
 
         // Schedule round-end job
         await scheduleRoundEnd(

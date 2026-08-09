@@ -10,6 +10,7 @@ import { scheduleRoundEnd } from "../services/roundEnd.service.js";
 import { ROUND_TIME_LIMIT_MS } from "../services/answer.service.js";
 import { JoinGamePayloadSchema } from "../schemas/game.js";
 import { parseSocketPayload } from "./parsePayload.js";
+import { publicNewQuestionFromRound } from "../services/gamePlay.helpers.js";
 
 const ROUND_START_DELAY_MS = 3000;
 
@@ -108,13 +109,10 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
           // By now, the question fetch should be done (or nearly done)
           const round = await roundPromise;
 
-          io.to(`game:${game.gameId}`).emit("new_question", {
-            roundNumber: round.roundNumber,
-            questionId: round.questionId,
-            question: round.question,
-            options: round.options,
-            startedAt: round.startedAt,
-          });
+          io.to(`game:${game.gameId}`).emit(
+            "new_question",
+            publicNewQuestionFromRound(round),
+          );
 
           // Schedule the BullMQ job to end this round after the time limit
           await scheduleRoundEnd(
