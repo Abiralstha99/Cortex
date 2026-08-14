@@ -1,5 +1,4 @@
-import type { AnswerResult } from "../../lib/api";
-import "./AnswerFeedback.css";
+import type { AnswerResult } from "@/lib/api";
 
 type AnswerFeedbackProps = {
   result: AnswerResult;
@@ -17,20 +16,26 @@ export default function AnswerFeedback({ result }: AnswerFeedbackProps) {
     : null;
 
   return (
-    <div className={`answer-feedback ${result.correct ? "answer-feedback--correct" : "answer-feedback--wrong"}`}>
-      <div className="answer-feedback__status">
+    <div
+      className={`rounded-lg border p-6 text-center ${
+        result.correct
+          ? "bg-pastel-mint border-code"
+          : "bg-pastel-blush border-rose"
+      }`}
+    >
+      <div className="text-lg font-semibold text-ink mb-2">
         {result.correct ? "✓ CORRECT" : "✗ WRONG"}
       </div>
-      <div className="answer-feedback__points">
+      <div className="font-mono text-2xl font-bold text-ink mb-2">
         +{result.pointsEarned} points
       </div>
       {placementText && (
-        <div className="answer-feedback__placement">{placementText}</div>
+        <div className="font-mono text-muted mb-2">{placementText}</div>
       )}
-      <div className="answer-feedback__answer">
+      <div className="text-ink">
         Correct answer: <strong>{result.correctAnswer}</strong>
       </div>
-      <p className="answer-feedback__wait">Waiting for other players...</p>
+      <p className="mt-4 text-sm text-muted">Waiting for other players...</p>
     </div>
   );
 }

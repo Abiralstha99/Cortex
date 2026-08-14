@@ -1,5 +1,4 @@
-import type { LeaderboardEntry } from "../../lib/api";
-import "./Leaderboard.css";
+import type { LeaderboardEntry } from "@/lib/api";
 
 type LeaderboardProps = {
   entries: LeaderboardEntry[];
@@ -8,19 +7,23 @@ type LeaderboardProps = {
 
 export default function Leaderboard({ entries, highlightPlayerId }: LeaderboardProps) {
   return (
-    <div className="leaderboard">
-      <h3 className="leaderboard__title">LEADERBOARD</h3>
-      <div className="leaderboard__table">
+    <div className="rounded-lg border border-border bg-surface p-6">
+      <h3 className="label-caps text-muted mb-4">Leaderboard</h3>
+      <div className="space-y-1">
         {entries.map((entry) => (
           <div
             key={entry.playerId}
-            className={`leaderboard__row ${
-              entry.playerId === highlightPlayerId ? "leaderboard__row--highlight" : ""
+            className={`flex items-center justify-between rounded-md px-4 py-2 ${
+              entry.playerId === highlightPlayerId ? "bg-pastel-blush" : ""
             }`}
           >
-            <div className="leaderboard__rank">{entry.rank}</div>
-            <div className="leaderboard__username">{entry.username}</div>
-            <div className="leaderboard__score">{entry.score} pts</div>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-sm font-bold text-muted w-6 text-right">
+                {entry.rank}
+              </span>
+              <span className="text-ink font-medium">{entry.username}</span>
+            </div>
+            <span className="font-mono text-sm text-muted">{entry.score} pts</span>
           </div>
         ))}
       </div>

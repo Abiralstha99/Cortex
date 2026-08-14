@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import type { GameFinishedPayload } from "../../lib/api";
-import Leaderboard from "./Leaderboard";
-import "./GameResults.css";
+import type { GameFinishedPayload } from "@/lib/api";
+import Leaderboard from "@/components/game/Leaderboard";
+import { Button } from "@/components/ui/button";
 
 type GameResultsProps = {
   gameResults: GameFinishedPayload;
@@ -19,29 +19,24 @@ export default function GameResults({ gameResults, myPlayerId }: GameResultsProp
   }
 
   return (
-    <div className="game-results">
-      <div className="game-results__header">
-        <h2 className="game-results__title">GAME FINISHED!</h2>
+    <div className="space-y-6 text-center">
+      <div className="rounded-lg border border-border bg-surface p-8">
+        <h2 className="text-2xl font-bold text-ink mb-3">Game finished!</h2>
         {isWinner ? (
-          <p className="game-results__winner game-results__winner--me">
-            🎉 YOU WON! 🎉
-          </p>
+          <p className="text-xl text-rose font-semibold">🎉 YOU WON! 🎉</p>
         ) : (
-          <p className="game-results__winner">
-            Winner: <strong>{winner.username}</strong> ({winner.score} pts)
+          <p className="text-lg text-muted">
+            Winner: <strong className="text-ink">{winner.username}</strong>{" "}
+            <span className="font-mono">({winner.score} pts)</span>
           </p>
         )}
       </div>
 
       <Leaderboard entries={finalLeaderboard} highlightPlayerId={myPlayerId} />
 
-      <button
-        type="button"
-        className="game-results__exit-btn"
-        onClick={handleExit}
-      >
-        BACK TO DASHBOARD
-      </button>
+      <Button variant="rose" onClick={handleExit} className="w-full">
+        Back to Dashboard
+      </Button>
     </div>
   );
 }

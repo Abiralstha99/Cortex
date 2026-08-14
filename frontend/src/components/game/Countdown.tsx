@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import "./Countdown.css";
 
 type CountdownProps = {
   countdownMs: number;
@@ -17,10 +16,10 @@ export default function Countdown({ countdownMs }: CountdownProps) {
   }, []);
 
   return (
-    <div className="countdown">
-      <h2 className="countdown__heading">GET READY!</h2>
-      <div className="countdown__number">{remaining}</div>
-      <p className="countdown__text">Game starting...</p>
+    <div className="flex flex-col items-center justify-center py-16">
+      <h2 className="text-2xl font-semibold text-ink mb-4">Get ready!</h2>
+      <div className="font-mono text-7xl font-bold text-ink">{remaining}</div>
+      <p className="mt-4 text-muted">Game starting...</p>
     </div>
   );
 }

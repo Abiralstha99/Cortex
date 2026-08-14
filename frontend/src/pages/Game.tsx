@@ -1,17 +1,16 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import AppHeader from "../components/AppHeader";
-import Countdown from "../components/game/Countdown";
-import QuestionCard from "../components/game/QuestionCard";
-import Timer from "../components/game/Timer";
-import AnswerFeedback from "../components/game/AnswerFeedback";
-import RoundResults from "../components/game/RoundResults";
-import GameResults from "../components/game/GameResults";
-import { useLobbyStore } from "../stores/lobbyStore";
-import { useGameStore } from "../stores/gameStore";
-import { useGameSocket } from "../hooks/useGameSocket";
-import { useCurrentUser } from "../hooks/useCurrentUser";
-import "./Game.css";
+import AppHeader from "@/components/AppHeader";
+import Countdown from "@/components/game/Countdown";
+import QuestionCard from "@/components/game/QuestionCard";
+import Timer from "@/components/game/Timer";
+import AnswerFeedback from "@/components/game/AnswerFeedback";
+import RoundResults from "@/components/game/RoundResults";
+import GameResults from "@/components/game/GameResults";
+import { useLobbyStore } from "@/stores/lobbyStore";
+import { useGameStore } from "@/stores/gameStore";
+import { useGameSocket } from "@/hooks/useGameSocket";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function Game() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -43,19 +42,16 @@ export default function Game() {
   // Guard: redirect if no gameId in URL or if gameId doesn't match lobby state
   useEffect(() => {
     if (!gameId) {
-      // No gameId in URL - direct navigation to /game
       navigate("/dashboard", { replace: true });
       return;
     }
 
     if (!storeGameId) {
-      // No lobby state - user refreshed or navigated directly
       navigate("/dashboard", { replace: true });
       return;
     }
 
     if (storeGameId !== gameId) {
-      // GameId mismatch - invalid navigation
       navigate("/dashboard", { replace: true });
     }
   }, [storeGameId, gameId, navigate]);
@@ -84,27 +80,31 @@ export default function Game() {
   if (!storeGameId || !myPlayerId) return null;
 
   return (
-    <div className="game">
+    <div className="min-h-screen bg-background">
       <AppHeader />
 
-      <main className="game__main">
-        <div className="game__header">
-          <p className="eyebrow game__eyebrow">IN PROGRESS</p>
-          <h1 className="game__heading">CAPITAL RUSH</h1>
-          <div className="game__meta">
-            <span className="game__tag">
+      <main className="mx-auto max-w-3xl px-4 py-8">
+        <div className="mb-8 text-center">
+          <p className="label-caps text-muted mb-1">IN PROGRESS</p>
+          <h1 className="text-3xl font-bold text-ink">QuizRush</h1>
+          <div className="mt-3 flex items-center justify-center gap-3">
+            <span className="label-caps rounded bg-surface px-2 py-1 border border-border text-muted">
               {quizId ? `QUIZ ${quizId.slice(0, 8)}` : "QUIZ"}
             </span>
-            <span className="game__tag">{numberOfRounds} ROUNDS</span>
+            <span className="label-caps rounded bg-surface px-2 py-1 border border-border text-muted">
+              {numberOfRounds} ROUNDS
+            </span>
             {phase === "question" && (
-              <span className="game__tag">ROUND {roundNumber}</span>
+              <span className="label-caps rounded bg-surface px-2 py-1 border border-border text-muted">
+                ROUND {roundNumber}
+              </span>
             )}
           </div>
         </div>
 
-        <div className="game__content">
+        <div className="space-y-6">
           {phase === "idle" && (
-            <div className="game__loading">
+            <div className="text-center py-12 text-muted">
               <p>Starting game...</p>
             </div>
           )}
@@ -112,10 +112,10 @@ export default function Game() {
           {phase === "countdown" && <Countdown countdownMs={countdownMs} />}
 
           {phase === "question" && question && startedAt && (
-            <div className="game__question-phase">
+            <div className="space-y-6">
               <Timer startedAt={startedAt} timeLimit={timeLimit} />
               <QuestionCard
-                question={`What is the capital of ${question}?`}
+                question={question}
                 options={options}
                 onSubmit={handleSubmitAnswer}
                 disabled={myAnswer !== null}
@@ -137,7 +137,7 @@ export default function Game() {
           )}
 
           {!connected && phase !== "game_finished" && (
-            <div className="game__disconnected">
+            <div className="rounded-lg border border-rose bg-pastel-blush p-4 text-center text-rose">
               <p>Disconnected from server. Reconnecting...</p>
             </div>
           )}
