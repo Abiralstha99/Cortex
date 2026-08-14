@@ -1,0 +1,10 @@
+Photosynthesis is the process by which green plants convert light energy into chemical energy.
+Chlorophyll absorbs light, primarily in the blue and red wavelengths.
+The light-dependent reactions occur in the thylakoid membranes and produce ATP and NADPH.
+The Calvin cycle fixes carbon dioxide into sugars in the stroma of the chloroplast.
+Water is split during photolysis, releasing oxygen as a byproduct.
+Stomata regulate gas exchange and transpiration in leaves.
+Guard cells open and close stomata in response to light, CO2, and water status.
+Cellular respiration breaks down glucose to release energy as ATP in mitochondria.
+Glycolysis occurs in the cytoplasm and does not require oxygen.
+The Krebs cycle oxidizes acetyl-CoA and feeds electrons into the electron transport chain.

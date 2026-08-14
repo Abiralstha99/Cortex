@@ -1,116 +1,183 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
-import AppHeader from "../components/AppHeader";
-import { createWaitingGame } from "../lib/api";
-import "./CreateGame.css";
+import AppHeader from "@/components/AppHeader";
+import {
+  createWaitingGame,
+  generateQuizForGame,
+  listQuizzes,
+  markWaitingQuizFailed,
+  type QuizSummary,
+} from "@/lib/api";
+import QuizPickerList from "@/components/quiz-rooms/QuizPickerList";
+import RoomPreviewCard from "@/components/quiz-rooms/RoomPreviewCard";
+import RoomSettings from "@/components/quiz-rooms/RoomSettings";
+import UploadPanel from "@/components/quiz-rooms/UploadPanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
-// TODO(Phase 4): replace with quiz picker + GET /api/quizzes.
-// Until then, seed a quiz (`npm run seed:quiz`) and set VITE_DEV_QUIZ_ID.
-const DEV_QUIZ_ID = import.meta.env.VITE_DEV_QUIZ_ID as string | undefined;
+type CreationSource = "upload" | "past";
 
 export default function CreateGame() {
   const navigate = useNavigate();
   const { getToken } = useAuth();
-  const [quizId, setQuizId] = useState(DEV_QUIZ_ID ?? "");
+  const [activeTab, setActiveTab] = useState<CreationSource>("upload");
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [questionCount, setQuestionCount] = useState(10);
+  const [selectedQuiz, setSelectedQuiz] = useState<QuizSummary | null>(null);
   const [rounds, setRounds] = useState(10);
 
-  const mutation = useMutation({
-    mutationFn: async ({
-      quizId,
-      rounds,
-    }: {
-      quizId: string;
-      rounds: number;
-    }) => {
+  const quizzesQuery = useQuery({
+    queryKey: ["quizzes"],
+    queryFn: async () => {
       const token = await getToken();
-      return createWaitingGame(token, { quizId, rounds });
-    },
-    onSuccess: (data) => {
-      navigate(`/game/lobby/${data.roomCode}`);
+      return listQuizzes(token);
     },
   });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    mutation.mutate({ quizId: quizId.trim(), rounds });
-  }
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const token = await getToken();
+
+      if (activeTab === "upload") {
+        if (!uploadFile) throw new Error("Choose a PDF or TXT file");
+        if (rounds > questionCount) {
+          throw new Error("Question count must cover every round");
+        }
+
+        const game = await createWaitingGame(token, { rounds });
+        return {
+          game,
+          generation: { token, file: uploadFile, count: questionCount },
+        };
+      }
+
+      if (!selectedQuiz) throw new Error("No quiz selected");
+      const game = await createWaitingGame(token, {
+        quizId: selectedQuiz.id,
+        rounds: Math.min(rounds, selectedQuiz.questionCount),
+      });
+      return { game, generation: null };
+    },
+    onSuccess: (data) => {
+      navigate(`/game/lobby/${data.game.roomCode}`);
+
+      if (data.generation) {
+        const { token, file, count } = data.generation;
+        void generateQuizForGame(
+          token,
+          data.game.gameId,
+          file,
+          count,
+        ).catch(async (error: unknown) => {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Failed to start quiz generation";
+          await markWaitingQuizFailed(
+            token,
+            data.game.gameId,
+            message,
+          ).catch(() => {
+            // Best-effort recovery; the original generation error is primary.
+          });
+        });
+      }
+    },
+  });
+
+  const maxRounds =
+    activeTab === "upload"
+      ? Math.min(20, questionCount)
+      : selectedQuiz
+        ? Math.min(20, selectedQuiz.questionCount)
+        : 20;
+  const canLaunch =
+    activeTab === "upload"
+      ? uploadFile !== null
+      : selectedQuiz !== null;
+  const previewTitle =
+    activeTab === "upload"
+      ? (uploadFile?.name.replace(/\.(pdf|txt)$/i, "") ?? null)
+      : (selectedQuiz?.title ?? null);
+  const previewQuestionCount =
+    activeTab === "upload"
+      ? uploadFile
+        ? questionCount
+        : null
+      : (selectedQuiz?.questionCount ?? null);
 
   return (
-    <div className="create-game">
+    <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="create-game__main">
-        <p className="eyebrow create-game__eyebrow">NEW ROOM</p>
-        <h1 className="create-game__heading">CREATE A GAME</h1>
+      <main className="mx-auto max-w-6xl px-6 py-10">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+          {/* Left: picker + settings */}
+          <div className="lg:col-span-3 space-y-6">
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => setActiveTab(value as CreationSource)}
+            >
+              <TabsList>
+                <TabsTrigger value="upload">Upload PDF</TabsTrigger>
+                <TabsTrigger value="past">Past Quizzes</TabsTrigger>
+              </TabsList>
+              <TabsContent value="upload">
+                <UploadPanel
+                  file={uploadFile}
+                  count={questionCount}
+                  onFileChange={setUploadFile}
+                  onCountChange={(count) => {
+                    setQuestionCount(count);
+                    setRounds((current) => Math.min(current, count));
+                  }}
+                />
+              </TabsContent>
+              <TabsContent value="past">
+                <QuizPickerList
+                  quizzes={quizzesQuery.data ?? []}
+                  isLoading={quizzesQuery.isLoading}
+                  selectedId={selectedQuiz?.id ?? null}
+                  onSelect={setSelectedQuiz}
+                />
+              </TabsContent>
+            </Tabs>
 
-        <form className="create-game__form" onSubmit={handleSubmit}>
-          <div className="create-game__field">
-            <label className="create-game__label" htmlFor="quizId">
-              QUIZ ID
-            </label>
-            {/* TODO(Phase 4): full quiz picker UI */}
-            <input
-              id="quizId"
-              className="create-game__rounds-value"
-              style={{
-                width: "100%",
-                textAlign: "left",
-                fontSize: "0.85rem",
-                padding: "0.5rem",
-              }}
-              value={quizId}
-              onChange={(e) => setQuizId(e.target.value)}
-              placeholder="UUID from npm run seed:quiz"
-              required
+            <RoomSettings
+              rounds={rounds}
+              maxRounds={maxRounds}
+              onRoundsChange={setRounds}
             />
-            <span className="create-game__rounds-hint">
-              Paste a quiz UUID (Phase 2 temporary). Phase 4 will add a picker.
-            </span>
+
+            {mutation.error && (
+              <p className="text-sm text-red-600">
+                {mutation.error instanceof Error
+                  ? mutation.error.message
+                  : "Failed to create game"}
+              </p>
+            )}
+
+            <Button
+              variant="rose"
+              size="lg"
+              className="w-full"
+              disabled={!canLaunch || mutation.isPending}
+              onClick={() => mutation.mutate()}
+            >
+              {mutation.isPending ? "Creating…" : "Launch lobby →"}
+            </Button>
           </div>
 
-          <div className="create-game__field">
-            <label className="create-game__label" htmlFor="rounds">
-              ROUNDS
-            </label>
-            <div className="create-game__rounds-row">
-              <button
-                type="button"
-                className="create-game__rounds-btn"
-                onClick={() => setRounds((r) => Math.max(3, r - 1))}
-                aria-label="Decrease rounds"
-              >
-                −
-              </button>
-              <span className="create-game__rounds-value">{rounds}</span>
-              <button
-                type="button"
-                className="create-game__rounds-btn"
-                onClick={() => setRounds((r) => Math.min(20, r + 1))}
-                aria-label="Increase rounds"
-              >
-                +
-              </button>
-            </div>
-            <span className="create-game__rounds-hint">3 – 20 rounds</span>
+          {/* Right: preview */}
+          <div className="lg:col-span-2">
+            <RoomPreviewCard
+              quizTitle={previewTitle}
+              questionCount={previewQuestionCount}
+              rounds={rounds}
+            />
           </div>
-
-          {mutation.error && (
-            <p className="create-game__error">
-              {mutation.error instanceof Error
-                ? mutation.error.message
-                : "Failed to create game"}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            className="create-game__submit"
-            disabled={mutation.isPending || !quizId.trim()}
-          >
-            {mutation.isPending ? "CREATING…" : "CREATE ROOM"}
-          </button>
-        </form>
+        </div>
       </main>
     </div>
   );

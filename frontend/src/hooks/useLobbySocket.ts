@@ -1,5 +1,9 @@
 import { useEffect } from "react";
-import type { LobbyPlayer, WaitingGame } from "../lib/api";
+import type {
+  LobbyPlayer,
+  QuizGenStatus,
+  WaitingGame,
+} from "../lib/api";
 import { useCurrentUser } from "./useCurrentUser";
 import { useSocket } from "./useSocket";
 import { useLobbyStore } from "../stores/lobbyStore";
@@ -9,15 +13,25 @@ type JoinedPayload = {
   gameId: string;
   roomCode: string;
   hostId: string;
-  quizId: string;
+  quizId: string | null;
+  quizGenStatus: QuizGenStatus;
+  quizGenError: string | null;
   numberOfRounds: number;
   players: LobbyPlayer[];
+};
+
+type QuizStatusPayload = {
+  quizId: string | null;
+  quizGenStatus: QuizGenStatus;
+  quizGenError: string | null;
+  numberOfRounds?: number;
 };
 
 export function useLobbySocket(roomCode: string) {
   const { socket, connected, error: socketError } = useSocket();
   const { id: myUserId } = useCurrentUser();
   const applyJoined = useLobbyStore((s) => s.applyJoined);
+  const applyQuizStatus = useLobbyStore((s) => s.applyQuizStatus);
   const applyPlayerJoined = useLobbyStore((s) => s.applyPlayerJoined);
   const applyPlayerReady = useLobbyStore((s) => s.applyPlayerReady);
   const applyPlayerLeft = useLobbyStore((s) => s.applyPlayerLeft);
@@ -38,6 +52,8 @@ export function useLobbySocket(roomCode: string) {
     setStatus("joining");
 
     const onJoined = (payload: JoinedPayload) => applyJoined(payload);
+    const onQuizStatus = (payload: QuizStatusPayload) =>
+      applyQuizStatus(payload);
     const onPlayerJoined = (player: LobbyPlayer) => applyPlayerJoined(player);
     const onPlayerReady = (payload: { id: string; ready: boolean }) =>
       applyPlayerReady(payload);
@@ -55,6 +71,7 @@ export function useLobbySocket(roomCode: string) {
     };
 
     socket.on("joined", onJoined);
+    socket.on("quiz_status", onQuizStatus);
     socket.on("player_joined", onPlayerJoined);
     socket.on("player_ready", onPlayerReady);
     socket.on("player_left", onPlayerLeft);
@@ -65,6 +82,7 @@ export function useLobbySocket(roomCode: string) {
 
     return () => {
       socket.off("joined", onJoined);
+      socket.off("quiz_status", onQuizStatus);
       socket.off("player_joined", onPlayerJoined);
       socket.off("player_ready", onPlayerReady);
       socket.off("player_left", onPlayerLeft);
@@ -76,6 +94,7 @@ export function useLobbySocket(roomCode: string) {
     connected,
     roomCode,
     applyJoined,
+    applyQuizStatus,
     applyPlayerJoined,
     applyPlayerReady,
     applyPlayerLeft,

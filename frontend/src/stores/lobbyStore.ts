@@ -1,5 +1,9 @@
 import { create } from "zustand";
-import type { LobbyPlayer, WaitingGame } from "../lib/api";
+import type {
+  LobbyPlayer,
+  QuizGenStatus,
+  WaitingGame,
+} from "../lib/api";
 
 type LobbyStatus = "idle" | "joining" | "in_lobby" | "starting" | "started" | "error";
 
@@ -7,9 +11,18 @@ type JoinedSnapshot = {
   gameId: string;
   roomCode: string;
   hostId: string;
-  quizId: string;
+  quizId: string | null;
+  quizGenStatus: QuizGenStatus;
+  quizGenError: string | null;
   numberOfRounds: number;
   players: LobbyPlayer[];
+};
+
+type QuizStatusSnapshot = {
+  quizId: string | null;
+  quizGenStatus: QuizGenStatus;
+  quizGenError: string | null;
+  numberOfRounds?: number;
 };
 
 type LobbyState = {
@@ -17,12 +30,15 @@ type LobbyState = {
   gameId: string | null;
   hostId: string | null;
   quizId: string | null;
+  quizGenStatus: QuizGenStatus;
+  quizGenError: string | null;
   numberOfRounds: number | null;
   players: LobbyPlayer[];
   status: LobbyStatus;
   toast: string | null;
   myUserId: string | null;
   applyJoined: (snapshot: JoinedSnapshot) => void;
+  applyQuizStatus: (snapshot: QuizStatusSnapshot) => void;
   applyPlayerJoined: (player: LobbyPlayer) => void;
   applyPlayerReady: (payload: { id: string; ready: boolean }) => void;
   applyPlayerLeft: (payload: { id: string; game: WaitingGame }) => void;
@@ -30,7 +46,7 @@ type LobbyState = {
   setStatus: (status: LobbyStatus) => void;
   setToast: (message: string | null) => void;
   applyGameStarted: (payload: { gameId: string }) => void;
-  attemptStart: () => void;
+  attemptStart: () => boolean;
   reset: () => void;
 };
 
@@ -39,6 +55,8 @@ const initialState = {
   gameId: null as string | null,
   hostId: null as string | null,
   quizId: null as string | null,
+  quizGenStatus: "none" as QuizGenStatus,
+  quizGenError: null as string | null,
   numberOfRounds: null as number | null,
   players: [] as LobbyPlayer[],
   status: "idle" as LobbyStatus,
@@ -55,11 +73,21 @@ export const useLobbyStore = create<LobbyState>((set, get) => ({
       roomCode: snapshot.roomCode,
       hostId: snapshot.hostId,
       quizId: snapshot.quizId,
+      quizGenStatus: snapshot.quizGenStatus,
+      quizGenError: snapshot.quizGenError,
       numberOfRounds: snapshot.numberOfRounds,
       players: snapshot.players,
       status: "in_lobby",
       toast: null,
     }),
+
+  applyQuizStatus: (snapshot) =>
+    set((state) => ({
+      quizId: snapshot.quizId,
+      quizGenStatus: snapshot.quizGenStatus,
+      quizGenError: snapshot.quizGenError,
+      numberOfRounds: snapshot.numberOfRounds ?? state.numberOfRounds,
+    })),
 
   applyPlayerJoined: (player) =>
     set((state) => {
@@ -93,12 +121,21 @@ export const useLobbyStore = create<LobbyState>((set, get) => ({
     set({ gameId, status: "started", toast: null }),
 
   attemptStart: () => {
-    const { players } = get();
+    const { players, quizGenStatus, quizId } = get();
+    if (quizGenStatus === "failed") {
+      set({ toast: "Quiz generation failed" });
+      return false;
+    }
+    if (quizGenStatus !== "ready" || !quizId) {
+      set({ toast: "Quiz is still generating" });
+      return false;
+    }
     if (players.some((p) => !p.ready)) {
       set({ toast: "All players yet to ready" });
-      return;
+      return false;
     }
     set({ toast: null, status: "starting" });
+    return true;
   },
 
   reset: () => set(initialState),
