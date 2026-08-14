@@ -8,7 +8,7 @@ USER app
 
 WORKDIR /app
 
-COPY package.json .
+COPY package.json package-lock.json ./
 
 # Sometimes the owner of the files is root, and the app cannot access the files,so we need to change the owner to the app user
 USER root
@@ -18,7 +18,7 @@ RUN chown -R app:app /app
 # Now after changing the owner, we need to set the user back to the app user
 USER app
 
-RUN npm install
+RUN npm ci
 
 COPY . .
 
