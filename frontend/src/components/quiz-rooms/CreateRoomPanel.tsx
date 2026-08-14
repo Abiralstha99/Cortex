@@ -1,0 +1,54 @@
+import type { QuizSummary } from "@/lib/api";
+import QuizPickerList from "@/components/quiz-rooms/QuizPickerList";
+import RoomSettings from "@/components/quiz-rooms/RoomSettings";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+interface CreateRoomPanelProps {
+  quizzes: QuizSummary[];
+  isLoading: boolean;
+  selectedQuiz: QuizSummary | null;
+  onSelectQuiz: (quiz: QuizSummary) => void;
+  rounds: number;
+  maxRounds: number;
+  onRoundsChange: (n: number) => void;
+}
+
+export default function CreateRoomPanel({
+  quizzes,
+  isLoading,
+  selectedQuiz,
+  onSelectQuiz,
+  rounds,
+  maxRounds,
+  onRoundsChange,
+}: CreateRoomPanelProps) {
+  return (
+    <div className="space-y-6">
+      <Tabs defaultValue="past">
+        <TabsList>
+          <TabsTrigger value="past">Past Quizzes</TabsTrigger>
+          <TabsTrigger value="upload">Upload PDF</TabsTrigger>
+        </TabsList>
+        <TabsContent value="past">
+          <QuizPickerList
+            quizzes={quizzes}
+            isLoading={isLoading}
+            selectedId={selectedQuiz?.id ?? null}
+            onSelect={onSelectQuiz}
+          />
+        </TabsContent>
+        <TabsContent value="upload">
+          <div className="rounded-xl border border-dashed border-border p-12 text-center text-muted">
+            <p>Upload PDF panel coming soon…</p>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <RoomSettings
+        rounds={rounds}
+        maxRounds={maxRounds}
+        onRoundsChange={onRoundsChange}
+      />
+    </div>
+  );
+}
