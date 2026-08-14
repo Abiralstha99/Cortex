@@ -1,7 +1,7 @@
 import { useAuth, SignIn } from "@clerk/react";
 import { useLocation, Navigate } from "react-router-dom";
-import AuthLayout from "../components/AuthLayout";
-import { clerkAppearance } from "../clerk/appearance";
+import AuthLayout from "@/components/AuthLayout";
+import { clerkAppearance } from "@/clerk/appearance";
 
 export default function Login() {
   const { isSignedIn } = useAuth();

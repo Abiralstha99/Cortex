@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import "./AuthLayout.css";
+import { Zap } from "lucide-react";
 
 export default function AuthLayout({
   heading,
@@ -12,18 +12,25 @@ export default function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="auth-layout">
-      <Link to="/" className="auth-layout__wordmark">
-        CAPITAL<span className="auth-layout__wordmark--accent">RUSH</span>
+    <div className="flex min-h-screen flex-col items-center bg-background px-6 py-12">
+      {/* Wordmark */}
+      <Link
+        to="/"
+        className="mb-12 flex items-center gap-1.5 self-start text-ink no-underline"
+      >
+        <Zap size={18} className="text-rose" />
+        <span className="text-lg font-semibold tracking-tight">QuizRush</span>
       </Link>
 
-      <div className="auth-layout__intro">
-        <p className="eyebrow">GEOGRAPHY &middot; REAL-TIME &middot; MULTIPLAYER</p>
-        <h1 className="auth-layout__heading">{heading}</h1>
-        <p className="auth-layout__subtitle">{subtitle}</p>
+      {/* Intro */}
+      <div className="mb-6 w-full max-w-sm text-center">
+        <p className="label-caps mb-3 text-muted">NOTES → QUIZ → COMPETE</p>
+        <h1 className="text-3xl font-bold text-ink">{heading}</h1>
+        <p className="mt-1 text-sm text-muted">{subtitle}</p>
       </div>
 
-      <div className="auth-layout__form">{children}</div>
+      {/* Clerk form */}
+      <div className="w-full max-w-sm">{children}</div>
     </div>
   );
 }
