@@ -3,7 +3,7 @@
 It creates a REDIS waiting game lobby and adds the host as the first player.
 */
 
-import type { WaitingRoom } from "../types/room.types.js";
+import type { QuizGenStatus, WaitingRoom } from "../types/room.types.js";
 import crypto from "crypto";
 import { reserveRoomCode } from "../lib/roomCode.js";
 import redis from "../lib/redis.js";
@@ -21,7 +21,7 @@ export async function createWaitingGame({
 }: {
   hostId: string;
   hostUsername: string;
-  quizId: string;
+  quizId?: string;
   rounds: number;
 }) {
   if (!hostId) {
@@ -32,21 +32,30 @@ export async function createWaitingGame({
     throw new Error("Host username is required");
   }
 
-  const quiz = await prisma.quiz.findUnique({
-    where: { id: quizId },
-    select: { id: true, ownerId: true, questionCount: true, status: true },
-  });
+  let resolvedQuizId: string | null = null;
+  let numberOfRounds = rounds;
+  let quizGenStatus: QuizGenStatus = "processing";
 
-  assertQuizPlayableForHost(quiz, hostId);
-
-  const numberOfRounds = capRoundsToQuiz(rounds, quiz.questionCount);
+  if (quizId) {
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: quizId },
+      select: { id: true, ownerId: true, questionCount: true, status: true },
+    });
+    assertQuizPlayableForHost(quiz, hostId);
+    resolvedQuizId = quiz.id;
+    numberOfRounds = capRoundsToQuiz(rounds, quiz.questionCount);
+    quizGenStatus = "ready";
+  }
 
   const gameId = crypto.randomUUID();
   const roomCode = await reserveRoomCode(gameId);
 
   const game: WaitingRoom = {
     gameId,
-    quizId: quiz.id,
+    quizId: resolvedQuizId,
+    quizGenStatus,
+    quizGenJobId: null,
+    quizGenError: null,
     numberOfRounds,
     players: [{ id: hostId, username: hostUsername, ready: false, score: 0 }],
     status: "waiting",
@@ -63,7 +72,10 @@ export async function createWaitingGame({
       .multi()
       .hset(GAME_KEY(gameId), {
         gameId: game.gameId,
-        quizId: game.quizId,
+        quizId: game.quizId ?? "",
+        quizGenStatus: game.quizGenStatus,
+        quizGenJobId: "",
+        quizGenError: "",
         numberOfRounds: String(game.numberOfRounds),
         players: JSON.stringify(game.players),
         status: game.status,

@@ -40,6 +40,8 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
         roomCode: game.roomCode,
         hostId: game.hostId,
         quizId: game.quizId,
+        quizGenStatus: game.quizGenStatus,
+        quizGenError: game.quizGenError,
         numberOfRounds: game.numberOfRounds,
         players: game.players,
       });

@@ -15,6 +15,8 @@ import { ROOM_CODE_KEY, GAME_KEY } from "../lib/redisKeys.js";
 import type { Player, WaitingRoom } from "../types/room.types.js";
 import { RoomCodeSchema } from "../schemas/common.js";
 import { prisma } from "../lib/prisma.js";
+import { assertCanStartWithQuiz } from "./gamePlay.helpers.js";
+import { waitingQuizPublicState } from "./waitingQuiz.helpers.js";
 
 const MAX_PLAYERS = 8;
 const JOIN_PLAYERS_LUA = `
@@ -157,9 +159,13 @@ function deserializeRoom(
   raw: Record<string, string>,
   players: Player[],
 ): WaitingRoom {
+  const publicQuiz = waitingQuizPublicState(raw);
   return {
     gameId: raw.gameId!,
-    quizId: raw.quizId!,
+    quizId: publicQuiz.quizId,
+    quizGenStatus: publicQuiz.quizGenStatus,
+    quizGenJobId: raw.quizGenJobId?.trim() ? raw.quizGenJobId : null,
+    quizGenError: publicQuiz.quizGenError,
     numberOfRounds: Number(raw.numberOfRounds),
     players,
     status: "waiting",
@@ -327,6 +333,8 @@ export async function startGame(
     throw new Error("All players must be ready to start the game");
   }
 
+  assertCanStartWithQuiz(game.quizId, game.quizGenStatus);
+
   // Create the durable Postgres record. The Redis gameId becomes the Postgres
   // primary key so the two layers always refer to the same UUID.
   const dbGame = await prisma.game.create({
@@ -334,7 +342,7 @@ export async function startGame(
       id: game.gameId,
       roomCode: game.roomCode,
       hostId: game.hostId,
-      quizId: game.quizId,
+      quizId: game.quizId!,
       status: "playing",
       rounds: game.numberOfRounds,
     },

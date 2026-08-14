@@ -10,7 +10,10 @@ export const ROOM_CODE_KEY = (roomCode: string) => `room-code:${roomCode}`;
 //     gameId          string   — UUID
 //     roomCode        string   — 6-char code
 //     hostId          string   — Postgres users.id of the host
-//     quizId          string   — Postgres quizzes.id UUID
+//     quizId          string   — Postgres quizzes.id UUID, or "" if not ready
+//     quizGenStatus   string   — "none" | "processing" | "ready" | "failed"
+//     quizGenJobId    string   — async job id or ""
+//     quizGenError    string   — last failure message or ""
 //     numberOfRounds  string   — coerced number
 //     players         string   — JSON: Player[]  { id, username, ready, score }
 //     status          string   — "waiting" | "playing" | "finished" | "cancelled"

@@ -235,7 +235,7 @@ export async function getQuiz(quizId: string, ownerId: string) {
  */
 export async function getAllQuizzes(ownerId: string) {
   const quizzes = await prisma.quiz.findMany({
-    where: { ownerId, status: "ready" },
+    where: { ownerId, status: "ready", questionCount: { gt: 0 } },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,

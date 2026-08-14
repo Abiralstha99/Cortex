@@ -5,6 +5,15 @@ import { SocketAuth } from "./auth.js";
 import { registerLobbyHandlers } from "./lobbyHandler.js";
 import { registerGameHandlers } from "./gameHandler.js";
 
+let ioInstance: Server | undefined;
+
+export function getIO(): Server {
+  if (!ioInstance) {
+    throw new Error("Socket.io server has not been initialized");
+  }
+  return ioInstance;
+}
+
 export function attachSocket(httpServer: HTTPServer): Server {
   const clientOrigin = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
 
@@ -14,6 +23,7 @@ export function attachSocket(httpServer: HTTPServer): Server {
       credentials: true,
     },
   });
+  ioInstance = io;
 
   io.use(SocketAuth);
 

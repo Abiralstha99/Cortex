@@ -1,0 +1,33 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import {
+  CreateWaitingGameSchema,
+  DEFAULT_ROUNDS,
+  WaitingGameIdParamsSchema,
+} from "../game.js";
+
+describe("CreateWaitingGameSchema", () => {
+  it("accepts a room request without an existing quiz", () => {
+    assert.deepEqual(CreateWaitingGameSchema.parse({}), {
+      rounds: DEFAULT_ROUNDS,
+    });
+  });
+
+  it("accepts a room request with an existing quiz", () => {
+    const quizId = "d9428888-122b-11e1-b85c-61cd3cbb3210";
+
+    assert.deepEqual(CreateWaitingGameSchema.parse({ quizId, rounds: 5 }), {
+      quizId,
+      rounds: 5,
+    });
+  });
+});
+
+describe("WaitingGameIdParamsSchema", () => {
+  it("accepts UUID game IDs and rejects malformed IDs", () => {
+    const gameId = "d9428888-122b-11e1-b85c-61cd3cbb3210";
+
+    assert.deepEqual(WaitingGameIdParamsSchema.parse({ gameId }), { gameId });
+    assert.equal(WaitingGameIdParamsSchema.safeParse({ gameId: "bad" }).success, false);
+  });
+});

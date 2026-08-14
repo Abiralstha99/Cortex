@@ -22,6 +22,9 @@ function deserializeActiveGame(raw: Record<string, string>): ActiveGame {
   return {
     gameId: raw.gameId,
     quizId: raw.quizId,
+    quizGenStatus: "ready",
+    quizGenJobId: raw.quizGenJobId?.trim() ? raw.quizGenJobId : null,
+    quizGenError: null,
     players,
     status: "playing",
     hostId: raw.hostId,
@@ -80,6 +83,7 @@ export async function prefetchNextQuestion(gameId: string): Promise<void> {
   }
 
   const game = deserializeActiveGame(raw);
+  if (!game.quizId) throw new Error("Game has no playable quiz");
   const next = await pickQuestion(game.quizId, game.usedQuestionIds);
 
   try {
@@ -95,6 +99,7 @@ export async function startRound(gameId: string): Promise<Round> {
     throw new Error("Game not found");
   }
   const game = deserializeActiveGame(raw);
+  if (!game.quizId) throw new Error("Game has no playable quiz");
 
   const prefetched = await redis.get(NEXT_QUESTION_KEY(gameId));
   const picked: QuestionPick = prefetched

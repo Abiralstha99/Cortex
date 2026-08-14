@@ -272,6 +272,9 @@ export async function runQuizGeneration(
     if (pipeline.plannedLlmCalls <= MAX_SYNC_LLM_CALLS) {
       // ── Sync path: small document, respond within the same HTTP request ──
       const result = await generateAllBatches(pipeline.batches, requestedCount);
+      if (result.questions.length === 0) {
+        throw new Error("No questions generated");
+      }
 
       // Persist the completed quiz + questions to Postgres in one transaction
       const quiz = await createReadyQuiz({

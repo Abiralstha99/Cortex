@@ -2,6 +2,8 @@
 
 export type GameStatus = "waiting" | "playing" | "finished" | "cancelled";
 
+export type QuizGenStatus = "none" | "processing" | "ready" | "failed";
+
 // `id` is the Postgres users.id (not the Clerk id — see the id boundary note
 // in CLAUDE.md). `ready` gates the host's ability to start the game.
 export type Player = {
@@ -13,7 +15,10 @@ export type Player = {
 
 export type WaitingRoom = {
   gameId: string;
-  quizId: string;
+  quizId: string | null;
+  quizGenStatus: QuizGenStatus;
+  quizGenJobId: string | null;
+  quizGenError: string | null;
   players: Player[];
   status: GameStatus;
   hostId: string;

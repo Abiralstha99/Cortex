@@ -1,4 +1,4 @@
-import type { Round } from "../types/room.types.js";
+import type { QuizGenStatus, Round } from "../types/room.types.js";
 
 export type QuizPlayGate = {
   id: string;
@@ -23,6 +23,29 @@ export function assertQuizPlayableForHost(
   }
   if (quiz.questionCount < 1) {
     throw new Error("Quiz has no questions");
+  }
+}
+
+export function normalizeWaitingQuizId(
+  quizId: string | null | undefined,
+): string | null {
+  if (quizId == null) return null;
+  const trimmed = quizId.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+export function assertCanStartWithQuiz(
+  quizId: string | null | undefined,
+  quizGenStatus: QuizGenStatus,
+): asserts quizId is string {
+  if (quizGenStatus === "processing") {
+    throw new Error("Quiz is still generating");
+  }
+  if (quizGenStatus === "failed") {
+    throw new Error("Quiz generation failed");
+  }
+  if (quizGenStatus === "none" || !normalizeWaitingQuizId(quizId)) {
+    throw new Error("Quiz not ready");
   }
 }
 
