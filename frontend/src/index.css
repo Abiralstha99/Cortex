@@ -1,65 +1,59 @@
-:root {
-  --bg: #0b0f14;
-  --bg-raised: #10151b;
-  --border: #23282f;
-  --border-strong: #343b44;
-  --text: #f5f5f0;
-  --text-muted: #9096a1;
-  --text-dim: #5c6270;
-  --accent: #5b8cff;
-  --accent-dim: rgba(91, 140, 255, 0.12);
-  --danger: #ff6b6b;
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/ibm-plex-mono/400.css";
 
-  --font-display: "Barlow Condensed", "Inter", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+@theme {
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  font: 16px/1.5 var(--font-body);
-  color-scheme: dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Light surfaces */
+  --color-background: #f7f7f5;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  /* Quiet track for segmented controls (tabs) — must stay light */
+  --color-track: #e8e8e4;
+
+  /* Ink + secondary text (matches How It Works / brand) */
+  --color-ink: #0b0f14;
+  --color-foreground: #0b0f14;
+  --color-muted: #6b7280;
+  --color-muted-foreground: #6b7280;
+
+  /* Brand accent — same rose as “rush” / step numbers */
+  --color-rose: #d64561;
+  --color-primary: #d64561;
+  --color-primary-foreground: #ffffff;
+
+  /* Dark panels (Room Preview, How It Works) */
+  --color-preview: #0f172a;
+  --color-code: #34d399;
+  --color-data: #3b82f6;
+
+  --color-pastel-cream: #f7f1e8;
+  --color-pastel-mint: #e8f5ef;
+  --color-pastel-lavender: #eef0fb;
+  --color-pastel-blush: #f8ebee;
 }
 
-* {
-  box-sizing: border-box;
-}
+@layer base {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
 
-html,
-body,
-#root {
-  min-height: 100%;
-}
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--color-background);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+  }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-}
-
-button,
-input {
-  font-family: inherit;
-  color: inherit;
-}
-
-a {
-  color: inherit;
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.eyebrow {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
-  margin: 0 0 1rem;
+  .label-caps {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 }
