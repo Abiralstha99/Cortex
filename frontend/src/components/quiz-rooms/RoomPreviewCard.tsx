@@ -1,13 +1,13 @@
 interface RoomPreviewCardProps {
   quizTitle: string | null;
   questionCount: number | null;
-  rounds: number;
+  maxPlayers: number;
 }
 
 export default function RoomPreviewCard({
   quizTitle,
   questionCount,
-  rounds,
+  maxPlayers,
 }: RoomPreviewCardProps) {
   return (
     <div className="sticky top-24 rounded-2xl bg-preview p-6 text-white">
@@ -20,14 +20,14 @@ export default function RoomPreviewCard({
       </h2>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <span className="rounded-md bg-rose/20 px-2.5 py-1 text-xs font-medium text-rose">
-          {rounds} rounds
-        </span>
         {questionCount !== null && (
-          <span className="rounded-md bg-white/10 px-2.5 py-1 text-xs font-medium text-white/90">
+          <span className="rounded-md bg-rose/20 px-2.5 py-1 text-xs font-medium text-rose">
             {questionCount} questions
           </span>
         )}
+        <span className="rounded-md bg-white/10 px-2.5 py-1 text-xs font-medium text-white/90">
+          {maxPlayers} players
+        </span>
       </div>
 
       <div className="mt-6 border-t border-white/10 pt-5">

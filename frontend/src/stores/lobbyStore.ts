@@ -15,6 +15,7 @@ type JoinedSnapshot = {
   quizGenStatus: QuizGenStatus;
   quizGenError: string | null;
   numberOfRounds: number;
+  maxPlayers: number;
   players: LobbyPlayer[];
 };
 
@@ -33,6 +34,7 @@ type LobbyState = {
   quizGenStatus: QuizGenStatus;
   quizGenError: string | null;
   numberOfRounds: number | null;
+  maxPlayers: number | null;
   players: LobbyPlayer[];
   status: LobbyStatus;
   toast: string | null;
@@ -58,6 +60,7 @@ const initialState = {
   quizGenStatus: "none" as QuizGenStatus,
   quizGenError: null as string | null,
   numberOfRounds: null as number | null,
+  maxPlayers: null as number | null,
   players: [] as LobbyPlayer[],
   status: "idle" as LobbyStatus,
   toast: null as string | null,
@@ -76,6 +79,7 @@ export const useLobbyStore = create<LobbyState>((set, get) => ({
       quizGenStatus: snapshot.quizGenStatus,
       quizGenError: snapshot.quizGenError,
       numberOfRounds: snapshot.numberOfRounds,
+      maxPlayers: snapshot.maxPlayers,
       players: snapshot.players,
       status: "in_lobby",
       toast: null,

@@ -17,6 +17,7 @@ export type WaitingGame = {
   quizGenStatus: QuizGenStatus;
   quizGenError: string | null;
   numberOfRounds: number;
+  maxPlayers: number;
   players: LobbyPlayer[];
   status: string;
   hostId: string;
@@ -40,7 +41,7 @@ export async function apiFetch(
 // TODO(Phase 4): body should come from a quiz picker, not a dev env fallback.
 export async function createWaitingGame(
   token: string | null,
-  body: { quizId?: string; rounds: number },
+  body: { quizId?: string; rounds: number; maxPlayers: number },
 ): Promise<WaitingGame> {
   const res = await apiFetch("/api/games/waiting/", token, {
     method: "POST",

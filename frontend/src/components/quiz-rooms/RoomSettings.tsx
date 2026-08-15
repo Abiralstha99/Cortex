@@ -1,38 +1,37 @@
 interface RoomSettingsProps {
-  rounds: number;
-  maxRounds: number;
-  onRoundsChange: (n: number) => void;
+  players: number;
+  onPlayersChange: (n: number) => void;
 }
 
-export default function RoomSettings({
-  rounds,
-  maxRounds,
-  onRoundsChange,
-}: RoomSettingsProps) {
-  const minRounds = 3;
+const MIN_PLAYERS = 2;
+const MAX_PLAYERS = 8;
 
+export default function RoomSettings({
+  players,
+  onPlayersChange,
+}: RoomSettingsProps) {
   return (
     <div className="space-y-2">
-      <p className="text-xs uppercase tracking-widest text-muted">Rounds</p>
+      <p className="text-xs uppercase tracking-widest text-muted">Players</p>
 
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => onRoundsChange(Math.max(minRounds, rounds - 1))}
-          disabled={rounds <= minRounds}
-          aria-label="Decrease rounds"
+          onClick={() => onPlayersChange(Math.max(MIN_PLAYERS, players - 1))}
+          disabled={players <= MIN_PLAYERS}
+          aria-label="Decrease players"
           className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
         >
           −
         </button>
         <span className="w-10 text-center font-mono text-xl font-semibold text-ink">
-          {rounds}
+          {players}
         </span>
         <button
           type="button"
-          onClick={() => onRoundsChange(Math.min(maxRounds, rounds + 1))}
-          disabled={rounds >= maxRounds}
-          aria-label="Increase rounds"
+          onClick={() => onPlayersChange(Math.min(MAX_PLAYERS, players + 1))}
+          disabled={players >= MAX_PLAYERS}
+          aria-label="Increase players"
           className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
         >
           +
@@ -40,7 +39,7 @@ export default function RoomSettings({
       </div>
 
       <p className="text-xs text-muted">
-        {minRounds} – {maxRounds} rounds
+        {MIN_PLAYERS} – {MAX_PLAYERS} players
       </p>
     </div>
   );

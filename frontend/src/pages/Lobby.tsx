@@ -19,6 +19,7 @@ export default function Lobby() {
   const hostId = useLobbyStore((s) => s.hostId);
   const gameId = useLobbyStore((s) => s.gameId);
   const numberOfRounds = useLobbyStore((s) => s.numberOfRounds);
+  const maxPlayers = useLobbyStore((s) => s.maxPlayers);
   const quizId = useLobbyStore((s) => s.quizId);
   const quizGenStatus = useLobbyStore((s) => s.quizGenStatus);
   const status = useLobbyStore((s) => s.status);
@@ -81,7 +82,12 @@ export default function Lobby() {
           {/* Meta info */}
           <div className="mt-3 flex items-center justify-center gap-4 text-xs text-muted">
             {numberOfRounds != null && (
-              <span className="font-mono">{numberOfRounds} rounds</span>
+              <span className="font-mono">{numberOfRounds} questions</span>
+            )}
+            {maxPlayers != null && (
+              <span className="font-mono">
+                {players.length}/{maxPlayers} players
+              </span>
             )}
             <span className={`flex items-center gap-1 ${connected ? "text-code" : "text-rose"}`}>
               {connected ? <Wifi size={12} /> : <WifiOff size={12} />}

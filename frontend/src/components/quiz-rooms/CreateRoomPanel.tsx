@@ -8,9 +8,8 @@ interface CreateRoomPanelProps {
   isLoading: boolean;
   selectedQuiz: QuizSummary | null;
   onSelectQuiz: (quiz: QuizSummary) => void;
-  rounds: number;
-  maxRounds: number;
-  onRoundsChange: (n: number) => void;
+  maxPlayers: number;
+  onPlayersChange: (n: number) => void;
 }
 
 export default function CreateRoomPanel({
@@ -18,9 +17,8 @@ export default function CreateRoomPanel({
   isLoading,
   selectedQuiz,
   onSelectQuiz,
-  rounds,
-  maxRounds,
-  onRoundsChange,
+  maxPlayers,
+  onPlayersChange,
 }: CreateRoomPanelProps) {
   return (
     <div className="space-y-6">
@@ -45,9 +43,8 @@ export default function CreateRoomPanel({
       </Tabs>
 
       <RoomSettings
-        rounds={rounds}
-        maxRounds={maxRounds}
-        onRoundsChange={onRoundsChange}
+        players={maxPlayers}
+        onPlayersChange={onPlayersChange}
       />
     </div>
   );

@@ -17,6 +17,7 @@ type JoinedPayload = {
   quizGenStatus: QuizGenStatus;
   quizGenError: string | null;
   numberOfRounds: number;
+  maxPlayers: number;
   players: LobbyPlayer[];
 };
 

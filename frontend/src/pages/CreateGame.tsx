@@ -26,7 +26,7 @@ export default function CreateGame() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [questionCount, setQuestionCount] = useState(10);
   const [selectedQuiz, setSelectedQuiz] = useState<QuizSummary | null>(null);
-  const [rounds, setRounds] = useState(10);
+  const [maxPlayers, setMaxPlayers] = useState(8);
 
   const quizzesQuery = useQuery({
     queryKey: ["quizzes"],
@@ -42,11 +42,12 @@ export default function CreateGame() {
 
       if (activeTab === "upload") {
         if (!uploadFile) throw new Error("Choose a PDF or TXT file");
-        if (rounds > questionCount) {
-          throw new Error("Question count must cover every round");
-        }
 
-        const game = await createWaitingGame(token, { rounds });
+        // Play one round per generated question.
+        const game = await createWaitingGame(token, {
+          rounds: questionCount,
+          maxPlayers,
+        });
         return {
           game,
           generation: { token, file: uploadFile, count: questionCount },
@@ -56,7 +57,8 @@ export default function CreateGame() {
       if (!selectedQuiz) throw new Error("No quiz selected");
       const game = await createWaitingGame(token, {
         quizId: selectedQuiz.id,
-        rounds: Math.min(rounds, selectedQuiz.questionCount),
+        rounds: selectedQuiz.questionCount,
+        maxPlayers,
       });
       return { game, generation: null };
     },
@@ -87,12 +89,6 @@ export default function CreateGame() {
     },
   });
 
-  const maxRounds =
-    activeTab === "upload"
-      ? Math.min(20, questionCount)
-      : selectedQuiz
-        ? Math.min(20, selectedQuiz.questionCount)
-        : 20;
   const canLaunch =
     activeTab === "upload"
       ? uploadFile !== null
@@ -113,7 +109,6 @@ export default function CreateGame() {
       <AppHeader />
       <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-          {/* Left: picker + settings */}
           <div className="lg:col-span-3 space-y-6">
             <Tabs
               value={activeTab}
@@ -128,10 +123,7 @@ export default function CreateGame() {
                   file={uploadFile}
                   count={questionCount}
                   onFileChange={setUploadFile}
-                  onCountChange={(count) => {
-                    setQuestionCount(count);
-                    setRounds((current) => Math.min(current, count));
-                  }}
+                  onCountChange={setQuestionCount}
                 />
               </TabsContent>
               <TabsContent value="past">
@@ -145,9 +137,8 @@ export default function CreateGame() {
             </Tabs>
 
             <RoomSettings
-              rounds={rounds}
-              maxRounds={maxRounds}
-              onRoundsChange={setRounds}
+              players={maxPlayers}
+              onPlayersChange={setMaxPlayers}
             />
 
             {mutation.error && (
@@ -169,12 +160,11 @@ export default function CreateGame() {
             </Button>
           </div>
 
-          {/* Right: preview */}
           <div className="lg:col-span-2">
             <RoomPreviewCard
               quizTitle={previewTitle}
               questionCount={previewQuestionCount}
-              rounds={rounds}
+              maxPlayers={maxPlayers}
             />
           </div>
         </div>

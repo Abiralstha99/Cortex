@@ -68,7 +68,7 @@ export default function QuizGenerationPanel({
           title="Quiz ready"
           detail={
             numberOfRounds != null
-              ? `${numberOfRounds} rounds ready to play`
+              ? `${numberOfRounds} questions ready to play`
               : "Ready to play"
           }
         />
