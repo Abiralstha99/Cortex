@@ -18,11 +18,13 @@ export async function createWaitingGame({
   hostUsername,
   quizId,
   rounds,
+  maxPlayers,
 }: {
   hostId: string;
   hostUsername: string;
   quizId?: string;
   rounds: number;
+  maxPlayers: number;
 }) {
   if (!hostId) {
     throw new Error("Host user ID is required");
@@ -57,6 +59,7 @@ export async function createWaitingGame({
     quizGenJobId: null,
     quizGenError: null,
     numberOfRounds,
+    maxPlayers,
     players: [{ id: hostId, username: hostUsername, ready: false, score: 0 }],
     status: "waiting",
     hostId,
@@ -77,6 +80,7 @@ export async function createWaitingGame({
         quizGenJobId: "",
         quizGenError: "",
         numberOfRounds: String(game.numberOfRounds),
+        maxPlayers: String(game.maxPlayers),
         players: JSON.stringify(game.players),
         status: game.status,
         hostId: game.hostId,

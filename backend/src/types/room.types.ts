@@ -25,6 +25,7 @@ export type WaitingRoom = {
   roomCode: string;
   createdAt: Date;
   numberOfRounds: number;
+  maxPlayers: number;
 };
 
 export type ActiveGame = Omit<WaitingRoom, "status"> & {

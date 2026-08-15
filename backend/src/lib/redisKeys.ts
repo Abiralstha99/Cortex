@@ -14,7 +14,8 @@ export const ROOM_CODE_KEY = (roomCode: string) => `room-code:${roomCode}`;
 //     quizGenStatus   string   — "none" | "processing" | "ready" | "failed"
 //     quizGenJobId    string   — async job id or ""
 //     quizGenError    string   — last failure message or ""
-//     numberOfRounds  string   — coerced number
+//     numberOfRounds  string   — coerced number (questions to play)
+//     maxPlayers      string   — coerced number (lobby capacity, default 8)
 //     players         string   — JSON: Player[]  { id, username, ready, score }
 //     status          string   — "waiting" | "playing" | "finished" | "cancelled"
 //     createdAt       string   — ISO date

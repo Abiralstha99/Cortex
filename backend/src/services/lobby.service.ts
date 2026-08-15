@@ -167,6 +167,7 @@ function deserializeRoom(
     quizGenJobId: raw.quizGenJobId?.trim() ? raw.quizGenJobId : null,
     quizGenError: publicQuiz.quizGenError,
     numberOfRounds: Number(raw.numberOfRounds),
+    maxPlayers: Number(raw.maxPlayers || MAX_PLAYERS),
     players,
     status: "waiting",
     hostId: raw.hostId!,
@@ -189,13 +190,19 @@ export async function joinWaitingGame({
     throw new Error("Room not found");
   }
 
+  const existing = (await redis.hgetall(GAME_KEY(gameId))) as Record<
+    string,
+    string
+  >;
+  const maxPlayers = Number(existing.maxPlayers || MAX_PLAYERS);
+
   const result = (await redis.eval(
     JOIN_PLAYERS_LUA,
     1, // number of KEYS
     GAME_KEY(gameId),
     playerId,
     playerUsername,
-    String(MAX_PLAYERS),
+    String(maxPlayers),
   )) as [string, string?];
 
   const [status, playersJson] = result;

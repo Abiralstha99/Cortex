@@ -1,18 +1,29 @@
 import * as z from "zod";
 import { RoomCodeSchema } from "./common.js";
 
-export const MIN_ROUNDS = 3;
-export const MAX_ROUNDS = 20;
+export const MIN_ROUNDS = 1;
+export const MAX_ROUNDS = 50;
 export const DEFAULT_ROUNDS = 10;
+
+export const MIN_PLAYERS = 2;
+export const MAX_PLAYERS = 8;
+export const DEFAULT_PLAYERS = 8;
 
 export const CreateWaitingGameSchema = z.object({
   quizId: z.string().uuid().optional(),
+  // Play length — typically equals the quiz question count.
   rounds: z
     .number()
     .int()
     .min(MIN_ROUNDS)
     .max(MAX_ROUNDS)
     .default(DEFAULT_ROUNDS),
+  maxPlayers: z
+    .number()
+    .int()
+    .min(MIN_PLAYERS)
+    .max(MAX_PLAYERS)
+    .default(DEFAULT_PLAYERS),
 });
 
 export const WaitingGameIdParamsSchema = z.object({

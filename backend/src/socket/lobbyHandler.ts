@@ -43,6 +43,7 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
         quizGenStatus: game.quizGenStatus,
         quizGenError: game.quizGenError,
         numberOfRounds: game.numberOfRounds,
+        maxPlayers: game.maxPlayers,
         players: game.players,
       });
 
