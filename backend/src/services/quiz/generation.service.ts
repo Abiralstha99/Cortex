@@ -1,9 +1,9 @@
-import { createXai } from "@ai-sdk/xai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
 import type { QuestionBatch } from "../../types/quiz.types.js";
 
 /**
- * Single-batch question generation via xAI Grok (Vercel AI SDK).
+ * Single-batch question generation via Google Gemini (Vercel AI SDK).
  */
 
 const SYSTEM_PROMPT = `You generate multiple-choice study questions from source notes.
@@ -20,7 +20,7 @@ Rules:
 - Questions must be answerable from the provided source text only.
 - Prefer distinct coverage of the material.`;
 
-const DEFAULT_MODEL = "grok-4.20-non-reasoning";
+const DEFAULT_MODEL = "gemini-3.5-flash";
 
 export type CallLlmForBatchInput = {
   batch: QuestionBatch;
@@ -47,7 +47,7 @@ Generate exactly ${batch.questionCount} multiple-choice questions as a JSON arra
 
 /**
  * One raw LLM call for a single batch (not validated).
- * Prefer deps.complete in tests; otherwise xAI with XAI_API_KEY / XAI_MODEL.
+ * Prefer deps.complete in tests; otherwise Gemini with GEMINI_API_KEY / GEMINI_MODEL.
  */
 export async function callLlmForBatch(
   input: CallLlmForBatchInput,
@@ -57,17 +57,17 @@ export async function callLlmForBatch(
     return deps.complete(buildUserPrompt(input));
   }
 
-  const apiKey = process.env.XAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("XAI_API_KEY is not configured");
+    throw new Error("GEMINI_API_KEY is not configured");
   }
 
-  const xai = createXai({ apiKey });
-  const model = process.env.XAI_MODEL ?? DEFAULT_MODEL;
+  const google = createGoogleGenerativeAI({ apiKey });
+  const model = process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
 
   try {
     const { text } = await generateText({
-      model: xai(model),
+      model: google(model),
       system: SYSTEM_PROMPT,
       prompt: buildUserPrompt(input),
       temperature: 0.3,
@@ -75,11 +75,11 @@ export async function callLlmForBatch(
     });
 
     if (!text) {
-      throw new Error("Empty completion from xAI");
+      throw new Error("Empty completion from Gemini");
     }
     return text;
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "xAI request failed";
+    const msg = err instanceof Error ? err.message : "Gemini request failed";
     throw new Error(msg);
   }
 }
