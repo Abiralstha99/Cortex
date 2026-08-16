@@ -21,6 +21,7 @@ export default function QuizGenerationPanel({
   const applyQuizStatus = useLobbyStore((state) => state.applyQuizStatus);
 
   const [file, setFile] = useState<File | null>(null);
+  const [quizTitle, setQuizTitle] = useState("");
   const [questionCount, setQuestionCount] = useState<number | null>(null);
   const [retryError, setRetryError] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
@@ -34,7 +35,13 @@ export default function QuizGenerationPanel({
 
     try {
       const token = await getToken();
-      await generateQuizForGame(token, gameId, file, effectiveQuestionCount);
+      await generateQuizForGame(
+        token,
+        gameId,
+        file,
+        effectiveQuestionCount,
+        quizTitle.trim() || undefined,
+      );
       applyQuizStatus({
         quizId: null,
         quizGenStatus: "processing",
@@ -100,6 +107,8 @@ export default function QuizGenerationPanel({
                 count={effectiveQuestionCount}
                 onFileChange={setFile}
                 onCountChange={setQuestionCount}
+                title={quizTitle}
+                onTitleChange={setQuizTitle}
               />
               {retryError && (
                 <p className="mt-3 text-sm text-rose">{retryError}</p>

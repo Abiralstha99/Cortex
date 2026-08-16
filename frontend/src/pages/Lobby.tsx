@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { LogOut, Play, Copy, Wifi, WifiOff, Crown, Check, X } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
@@ -50,8 +50,31 @@ export default function Lobby() {
     navigate("/dashboard");
   }
 
-  function copyCode() {
-    navigator.clipboard.writeText(normalized);
+  const [copied, setCopied] = useState(false);
+
+  async function copyCode() {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(normalized);
+      } else {
+        // Fallback for non-HTTPS / insecure contexts (e.g. localhost HTTP)
+        const textArea = document.createElement("textarea");
+        textArea.value = normalized;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Last-resort: show the code in a prompt for manual copy
+      window.prompt("Copy the room code:", normalized);
+    }
   }
 
   return (
@@ -73,9 +96,9 @@ export default function Lobby() {
               type="button"
               onClick={copyCode}
               className="text-muted hover:text-ink transition-colors"
-              aria-label="Copy room code"
+              aria-label={copied ? "Copied!" : "Copy room code"}
             >
-              <Copy size={16} />
+              {copied ? <Check size={16} className="text-code" /> : <Copy size={16} />}
             </button>
           </div>
 
