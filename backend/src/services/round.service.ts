@@ -33,6 +33,7 @@ function deserializeActiveGame(raw: Record<string, string>): ActiveGame {
     numberOfRounds: Number(raw.numberOfRounds),
     currentRound: Number(raw.currentRound ?? 0),
     usedQuestionIds,
+    maxPlayers: Number(raw.maxPlayers),
   };
 }
 
@@ -84,7 +85,25 @@ export async function prefetchNextQuestion(gameId: string): Promise<void> {
 
   const game = deserializeActiveGame(raw);
   if (!game.quizId) throw new Error("Game has no playable quiz");
-  const next = await pickQuestion(game.quizId, game.usedQuestionIds);
+
+  // Last round already started — nothing left to prefetch.
+  if (game.currentRound >= game.numberOfRounds) {
+    return;
+  }
+
+  let next: QuestionPick;
+  try {
+    next = await pickQuestion(game.quizId, game.usedQuestionIds);
+  } catch (error) {
+    // Exhausted pool is expected when rounds outpace remaining questions.
+    if (
+      error instanceof Error &&
+      error.message === "No unused questions left in quiz"
+    ) {
+      return;
+    }
+    throw error;
+  }
 
   try {
     await redis.set(NEXT_QUESTION_KEY(gameId), JSON.stringify(next));
@@ -140,9 +159,29 @@ export async function startRound(gameId: string): Promise<Round> {
       .del(NEXT_QUESTION_KEY(gameId))
       .exec();
 
-    void prefetchNextQuestion(gameId);
+    // Prefetch is best-effort; never let a rejection take down the process.
+    if (roundNumber < game.numberOfRounds) {
+      void prefetchNextQuestion(gameId).catch((error) => {
+        console.error(`prefetchNextQuestion failed [gameId=${gameId}]:`, error);
+      });
+    }
     return round;
   } catch (error) {
     throw new Error("Failed to start round", { cause: error });
   }
+}
+
+/**
+ * Sets the round clock to "now". Use when startRound ran early (e.g. during the
+ * pre-game countdown) so the client timer and late-answer checks align with when
+ * the question is actually shown.
+ */
+export async function beginRoundClock(gameId: string): Promise<string> {
+  const exists = await redis.exists(ROUND_KEY(gameId));
+  if (!exists) {
+    throw new Error("Round not found");
+  }
+  const startedAt = new Date().toISOString();
+  await redis.hset(ROUND_KEY(gameId), "startedAt", startedAt);
+  return startedAt;
 }

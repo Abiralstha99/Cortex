@@ -5,7 +5,7 @@ import {
   leaveWaitingGame,
   startGame,
 } from "../services/lobby.service.js";
-import { startRound } from "../services/round.service.js";
+import { startRound, beginRoundClock } from "../services/round.service.js";
 import { scheduleRoundEnd } from "../services/roundEnd.service.js";
 import { ROUND_TIME_LIMIT_MS } from "../services/answer.service.js";
 import { JoinGamePayloadSchema } from "../schemas/game.js";
@@ -103,21 +103,20 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
         countdownMs: ROUND_START_DELAY_MS,
       });
 
-      // Start fetching the first question IMMEDIATELY (parallel with countdown)
+      // Prefetch the first question during the countdown, then start the clock
+      // only when players actually see the question (avoids a ~3s timer deficit).
       const roundPromise = startRound(game.gameId);
 
-      // Wait for countdown to complete
       setTimeout(async () => {
         try {
-          // By now, the question fetch should be done (or nearly done)
           const round = await roundPromise;
+          const startedAt = await beginRoundClock(game.gameId);
 
           io.to(`game:${game.gameId}`).emit(
             "new_question",
-            publicNewQuestionFromRound(round),
+            publicNewQuestionFromRound({ ...round, startedAt }),
           );
 
-          // Schedule the BullMQ job to end this round after the time limit
           await scheduleRoundEnd(
             game.gameId,
             round.roundNumber,

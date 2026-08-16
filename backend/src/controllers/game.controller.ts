@@ -5,7 +5,7 @@ import type {
   FailWaitingQuizInput,
   WaitingGameIdParams,
 } from "../schemas/game.js";
-import { GenerateCountSchema } from "../schemas/quiz.js";
+import { GenerateCountSchema, QuizTitleSchema } from "../schemas/quiz.js";
 import { prisma } from "../lib/prisma.js";
 import redis from "../lib/redis.js";
 import { GAME_KEY } from "../lib/redisKeys.js";
@@ -75,7 +75,9 @@ export async function generateForWaitingGame(req: Request, res: Response) {
     return res.status(404).json({ message: "Room not found" });
   }
   if (game.hostId !== user.id) {
-    return res.status(403).json({ message: "Only the host can generate a quiz" });
+    return res
+      .status(403)
+      .json({ message: "Only the host can generate a quiz" });
   }
   if (game.status !== "waiting") {
     return res.status(409).json({ message: "Game has already started" });
@@ -92,6 +94,14 @@ export async function generateForWaitingGame(req: Request, res: Response) {
     });
   }
 
+  const titleResult = QuizTitleSchema.safeParse(req.body?.title);
+  if (!titleResult.success) {
+    return res.status(400).json({
+      message: "Invalid title",
+      errors: titleResult.error.issues,
+    });
+  }
+
   const io = getIO();
   scheduleWaitingQuizGeneration({
     gameId,
@@ -100,6 +110,7 @@ export async function generateForWaitingGame(req: Request, res: Response) {
     mimeType: req.file.mimetype,
     originalName: req.file.originalname,
     requestedCount: countResult.data,
+    ...(titleResult.data !== undefined ? { title: titleResult.data } : {}),
     onStatus: (payload) => {
       io.to(`game:${gameId}`).emit("quiz_status", payload);
     },
@@ -127,7 +138,9 @@ export async function failWaitingQuiz(req: Request, res: Response) {
     return res.status(404).json({ message: "Room not found" });
   }
   if (game.hostId !== user.id) {
-    return res.status(403).json({ message: "Only the host can update the quiz" });
+    return res
+      .status(403)
+      .json({ message: "Only the host can update the quiz" });
   }
   if (game.status !== "waiting") {
     return res.status(409).json({ message: "Game has already started" });
