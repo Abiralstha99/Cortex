@@ -4,21 +4,33 @@ import { FileText, Upload } from "lucide-react";
 const ACCEPTED_TYPES = ["application/pdf", "text/plain"];
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
+function titleFromFilename(name: string): string {
+  return name.replace(/\.(pdf|txt)$/i, "").trim();
+}
+
 type UploadPanelProps = {
   file: File | null;
-  count: number;
   onFileChange: (file: File) => void;
-  onCountChange: (count: number) => void;
+  /** Quiz display name — shown when provided. */
+  title?: string;
+  onTitleChange?: (title: string) => void;
+  /** Optional question count — shown when provided (e.g. lobby retry). */
+  count?: number;
+  onCountChange?: (count: number) => void;
 };
 
 export default function UploadPanel({
   file,
-  count,
   onFileChange,
+  title,
+  onTitleChange,
+  count,
   onCountChange,
 }: UploadPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const showTitle = title !== undefined && onTitleChange != null;
+  const showQuestionCount = count != null && onCountChange != null;
 
   const handleFileSelect = useCallback(
     (selectedFile: File) => {
@@ -31,9 +43,17 @@ export default function UploadPanel({
         return;
       }
       onFileChange(selectedFile);
+      // Prefill name from filename when the field is empty or still mirrors the prior file.
+      if (onTitleChange) {
+        const suggested = titleFromFilename(selectedFile.name);
+        const previousSuggested = file ? titleFromFilename(file.name) : "";
+        if (!title?.trim() || title.trim() === previousSuggested) {
+          onTitleChange(suggested);
+        }
+      }
       setError(null);
     },
-    [onFileChange],
+    [file, onFileChange, onTitleChange, title],
   );
 
   const handleDrop = useCallback(
@@ -51,7 +71,6 @@ export default function UploadPanel({
 
   return (
     <div className="space-y-4">
-      {/* Dropzone */}
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -94,11 +113,33 @@ export default function UploadPanel({
             </p>
           </div>
         )}
-
       </div>
 
-      {/* Question count */}
-      {file && (
+      {showTitle && (
+        <div className="space-y-2">
+          <label
+            htmlFor="quiz-title"
+            className="text-xs uppercase tracking-widest text-muted"
+          >
+            Quiz name
+          </label>
+          <input
+            id="quiz-title"
+            type="text"
+            value={title}
+            maxLength={255}
+            placeholder="e.g. Cell Biology Midterm"
+            onChange={(e) => onTitleChange(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-rose/40"
+          />
+          <p className="text-xs text-muted">
+            Shown in Past Quizzes. Leave blank to use the file name.
+          </p>
+        </div>
+      )}
+
+      {showQuestionCount && (
         <div className="flex items-center justify-between rounded-lg border border-border bg-surface p-3">
           <span className="label-caps text-muted">Questions</span>
           <div className="flex items-center gap-2">
@@ -127,7 +168,6 @@ export default function UploadPanel({
         </div>
       )}
 
-      {/* Error */}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );

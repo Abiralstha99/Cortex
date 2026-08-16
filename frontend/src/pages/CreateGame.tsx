@@ -24,6 +24,7 @@ export default function CreateGame() {
   const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<CreationSource>("upload");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [quizTitle, setQuizTitle] = useState("");
   const [questionCount, setQuestionCount] = useState(10);
   const [selectedQuiz, setSelectedQuiz] = useState<QuizSummary | null>(null);
   const [maxPlayers, setMaxPlayers] = useState(8);
@@ -50,14 +51,19 @@ export default function CreateGame() {
         });
         return {
           game,
-          generation: { token, file: uploadFile, count: questionCount },
+          generation: {
+            token,
+            file: uploadFile,
+            count: questionCount,
+            title: quizTitle.trim() || undefined,
+          },
         };
       }
 
       if (!selectedQuiz) throw new Error("No quiz selected");
       const game = await createWaitingGame(token, {
         quizId: selectedQuiz.id,
-        rounds: selectedQuiz.questionCount,
+        rounds: Math.min(questionCount, selectedQuiz.questionCount),
         maxPlayers,
       });
       return { game, generation: null };
@@ -66,43 +72,43 @@ export default function CreateGame() {
       navigate(`/game/lobby/${data.game.roomCode}`);
 
       if (data.generation) {
-        const { token, file, count } = data.generation;
+        const { token, file, count, title } = data.generation;
         void generateQuizForGame(
           token,
           data.game.gameId,
           file,
           count,
+          title,
         ).catch(async (error: unknown) => {
           const message =
             error instanceof Error
               ? error.message
               : "Failed to start quiz generation";
-          await markWaitingQuizFailed(
-            token,
-            data.game.gameId,
-            message,
-          ).catch(() => {
-            // Best-effort recovery; the original generation error is primary.
-          });
+          await markWaitingQuizFailed(token, data.game.gameId, message).catch(
+            () => {
+              // Best-effort recovery; the original generation error is primary.
+            },
+          );
         });
       }
     },
   });
 
   const canLaunch =
-    activeTab === "upload"
-      ? uploadFile !== null
-      : selectedQuiz !== null;
+    activeTab === "upload" ? uploadFile !== null : selectedQuiz !== null;
   const previewTitle =
     activeTab === "upload"
-      ? (uploadFile?.name.replace(/\.(pdf|txt)$/i, "") ?? null)
+      ? quizTitle.trim() ||
+        uploadFile?.name.replace(/\.(pdf|txt)$/i, "") ||
+        null
       : (selectedQuiz?.title ?? null);
+  const pastQuizCap = selectedQuiz?.questionCount ?? null;
   const previewQuestionCount =
     activeTab === "upload"
-      ? uploadFile
-        ? questionCount
-        : null
-      : (selectedQuiz?.questionCount ?? null);
+      ? questionCount
+      : pastQuizCap != null
+        ? Math.min(questionCount, pastQuizCap)
+        : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,9 +127,9 @@ export default function CreateGame() {
               <TabsContent value="upload">
                 <UploadPanel
                   file={uploadFile}
-                  count={questionCount}
                   onFileChange={setUploadFile}
-                  onCountChange={setQuestionCount}
+                  title={quizTitle}
+                  onTitleChange={setQuizTitle}
                 />
               </TabsContent>
               <TabsContent value="past">
@@ -131,7 +137,12 @@ export default function CreateGame() {
                   quizzes={quizzesQuery.data ?? []}
                   isLoading={quizzesQuery.isLoading}
                   selectedId={selectedQuiz?.id ?? null}
-                  onSelect={setSelectedQuiz}
+                  onSelect={(quiz) => {
+                    setSelectedQuiz(quiz);
+                    setQuestionCount(
+                      Math.min(questionCount, quiz.questionCount),
+                    );
+                  }}
                 />
               </TabsContent>
             </Tabs>
@@ -139,6 +150,13 @@ export default function CreateGame() {
             <RoomSettings
               players={maxPlayers}
               onPlayersChange={setMaxPlayers}
+              questions={questionCount}
+              onQuestionsChange={setQuestionCount}
+              maxQuestions={
+                activeTab === "past" && pastQuizCap != null
+                  ? pastQuizCap
+                  : undefined
+              }
             />
 
             {mutation.error && (

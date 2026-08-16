@@ -61,22 +61,23 @@ export async function generateQuizForGame(
   gameId: string,
   file: File,
   count: number,
+  title?: string,
 ): Promise<{ status: "processing" }> {
   const form = new FormData();
   form.append("file", file);
   form.append("count", String(count));
+  if (title?.trim()) {
+    form.append("title", title.trim());
+  }
 
   const headers: HeadersInit = {};
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(
-    `${API_URL}/api/games/waiting/${gameId}/generate`,
-    {
-      method: "POST",
-      headers,
-      body: form,
-    },
-  );
+  const res = await fetch(`${API_URL}/api/games/waiting/${gameId}/generate`, {
+    method: "POST",
+    headers,
+    body: form,
+  });
   if (!res.ok) {
     const data = (await res.json().catch(() => null)) as {
       message?: string;
@@ -94,14 +95,10 @@ export async function markWaitingQuizFailed(
   gameId: string,
   message: string,
 ): Promise<void> {
-  const res = await apiFetch(
-    `/api/games/waiting/${gameId}/quiz/fail`,
-    token,
-    {
-      method: "POST",
-      body: JSON.stringify({ message }),
-    },
-  );
+  const res = await apiFetch(`/api/games/waiting/${gameId}/quiz/fail`, token, {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
   if (!res.ok) {
     throw new Error("Failed to update quiz generation status");
   }
@@ -201,10 +198,14 @@ export async function generateQuiz(
   token: string | null,
   file: File,
   count: number,
+  title?: string,
 ): Promise<GenerateResult> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("count", String(count));
+  if (title?.trim()) {
+    formData.append("title", title.trim());
+  }
 
   const headers: HeadersInit = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;

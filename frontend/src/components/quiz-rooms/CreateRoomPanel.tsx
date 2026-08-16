@@ -10,6 +10,8 @@ interface CreateRoomPanelProps {
   onSelectQuiz: (quiz: QuizSummary) => void;
   maxPlayers: number;
   onPlayersChange: (n: number) => void;
+  questions: number;
+  onQuestionsChange: (n: number) => void;
 }
 
 export default function CreateRoomPanel({
@@ -19,6 +21,8 @@ export default function CreateRoomPanel({
   onSelectQuiz,
   maxPlayers,
   onPlayersChange,
+  questions,
+  onQuestionsChange,
 }: CreateRoomPanelProps) {
   return (
     <div className="space-y-6">
@@ -45,6 +49,9 @@ export default function CreateRoomPanel({
       <RoomSettings
         players={maxPlayers}
         onPlayersChange={onPlayersChange}
+        questions={questions}
+        onQuestionsChange={onQuestionsChange}
+        maxQuestions={selectedQuiz?.questionCount}
       />
     </div>
   );

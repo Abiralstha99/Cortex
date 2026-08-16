@@ -1,46 +1,100 @@
 interface RoomSettingsProps {
   players: number;
   onPlayersChange: (n: number) => void;
+  questions: number;
+  onQuestionsChange: (n: number) => void;
+  /** Upper bound for questions (e.g. selected past quiz size). Defaults to 50. */
+  maxQuestions?: number;
 }
 
 const MIN_PLAYERS = 2;
 const MAX_PLAYERS = 8;
+const MIN_QUESTIONS = 5;
+const DEFAULT_MAX_QUESTIONS = 50;
+const QUESTION_STEP = 5;
 
 export default function RoomSettings({
   players,
   onPlayersChange,
+  questions,
+  onQuestionsChange,
+  maxQuestions = DEFAULT_MAX_QUESTIONS,
 }: RoomSettingsProps) {
-  return (
-    <div className="space-y-2">
-      <p className="text-xs uppercase tracking-widest text-muted">Players</p>
+  const questionsCap = Math.max(MIN_QUESTIONS, maxQuestions);
 
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => onPlayersChange(Math.max(MIN_PLAYERS, players - 1))}
-          disabled={players <= MIN_PLAYERS}
-          aria-label="Decrease players"
-          className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
-        >
-          −
-        </button>
-        <span className="w-10 text-center font-mono text-xl font-semibold text-ink">
-          {players}
-        </span>
-        <button
-          type="button"
-          onClick={() => onPlayersChange(Math.min(MAX_PLAYERS, players + 1))}
-          disabled={players >= MAX_PLAYERS}
-          aria-label="Increase players"
-          className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
-        >
-          +
-        </button>
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <p className="text-xs uppercase tracking-widest text-muted">Questions</p>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() =>
+              onQuestionsChange(
+                Math.max(MIN_QUESTIONS, questions - QUESTION_STEP),
+              )
+            }
+            disabled={questions <= MIN_QUESTIONS}
+            aria-label="Decrease questions"
+            className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
+          >
+            −
+          </button>
+          <span className="w-10 text-center font-mono text-xl font-semibold text-ink">
+            {questions}
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              onQuestionsChange(
+                Math.min(questionsCap, questions + QUESTION_STEP),
+              )
+            }
+            disabled={questions >= questionsCap}
+            aria-label="Increase questions"
+            className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
+          >
+            +
+          </button>
+        </div>
+
+        <p className="text-xs text-muted">
+          {MIN_QUESTIONS} – {questionsCap} questions
+        </p>
       </div>
 
-      <p className="text-xs text-muted">
-        {MIN_PLAYERS} – {MAX_PLAYERS} players
-      </p>
+      <div className="space-y-2">
+        <p className="text-xs uppercase tracking-widest text-muted">Players</p>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onPlayersChange(Math.max(MIN_PLAYERS, players - 1))}
+            disabled={players <= MIN_PLAYERS}
+            aria-label="Decrease players"
+            className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
+          >
+            −
+          </button>
+          <span className="w-10 text-center font-mono text-xl font-semibold text-ink">
+            {players}
+          </span>
+          <button
+            type="button"
+            onClick={() => onPlayersChange(Math.min(MAX_PLAYERS, players + 1))}
+            disabled={players >= MAX_PLAYERS}
+            aria-label="Increase players"
+            className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
+          >
+            +
+          </button>
+        </div>
+
+        <p className="text-xs text-muted">
+          {MIN_PLAYERS} – {MAX_PLAYERS} players
+        </p>
+      </div>
     </div>
   );
 }
