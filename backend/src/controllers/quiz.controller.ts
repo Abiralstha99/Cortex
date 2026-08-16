@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { GenerateCountSchema } from "../schemas/quiz.js";
+import { GenerateCountSchema, QuizTitleSchema } from "../schemas/quiz.js";
 import { prisma } from "../lib/prisma.js";
 import { runQuizGeneration } from "../services/quiz/pipeline.js";
 import {
@@ -39,6 +39,13 @@ export async function generateQuiz(req: Request, res: Response) {
         .json({ error: "Invalid count", details: countResult.error.issues });
     }
 
+    const titleResult = QuizTitleSchema.safeParse(req.body?.title);
+    if (!titleResult.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid title", details: titleResult.error.issues });
+    }
+
     // Run the quiz generation pipeline (sync or async depending on size)
     const result = await runQuizGeneration({
       ownerId,
@@ -46,6 +53,7 @@ export async function generateQuiz(req: Request, res: Response) {
       mimeType: req.file.mimetype,
       originalName: req.file.originalname,
       requestedCount: countResult.data,
+      ...(titleResult.data !== undefined ? { title: titleResult.data } : {}),
     });
 
     // Sync path → 200 with quiz data

@@ -98,6 +98,7 @@ export function scheduleWaitingQuizGeneration(input: {
   mimeType: string;
   originalName: string;
   requestedCount: number;
+  title?: string;
   onStatus: (payload: WaitingQuizStatusPayload) => void;
 }) {
   const { gameId, onStatus } = input;
@@ -122,6 +123,7 @@ export function scheduleWaitingQuizGeneration(input: {
         mimeType: input.mimeType,
         originalName: input.originalName,
         requestedCount: input.requestedCount,
+        ...(input.title !== undefined ? { title: input.title } : {}),
       });
 
       if (result.mode === "async") {

@@ -4,6 +4,14 @@ import * as z from "zod";
 // Clients may send 100; response count is still ≤ 50.
 export const GenerateCountSchema = z.coerce.number().int().min(1);
 
+/** Optional display name; empty/missing falls back to the uploaded filename. */
+export const QuizTitleSchema = z
+  .string()
+  .trim()
+  .max(255)
+  .optional()
+  .transform((value) => (value && value.length > 0 ? value : undefined));
+
 export const QuizIdParamsSchema = z.object({
   quizId: z.string().uuid(),
 });
@@ -35,6 +43,7 @@ export const GeneratedQuestionsArraySchema = z
   .min(1);
 
 export type GenerateCount = z.infer<typeof GenerateCountSchema>;
+export type QuizTitle = z.infer<typeof QuizTitleSchema>;
 export type QuizIdParams = z.infer<typeof QuizIdParamsSchema>;
 export type JobIdParams = z.infer<typeof JobIdParamsSchema>;
 export type GeneratedQuestionInput = z.infer<typeof GeneratedQuestionSchema>;

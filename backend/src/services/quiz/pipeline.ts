@@ -69,6 +69,8 @@ export type RunQuizGenerationInput = {
   mimeType: string;
   originalName: string;
   requestedCount: number;
+  /** When set, overrides the filename-derived title stored on the quiz. */
+  title?: string;
 };
 
 export type RunQuizGenerationResult =
@@ -210,8 +212,9 @@ export async function preparePipeline(input: {
   mimeType: string;
   originalName: string;
   requestedCount: number;
+  title?: string;
 }): Promise<PipelinePrepareResult> {
-  const { buffer, mimeType, originalName, requestedCount } = input;
+  const { buffer, mimeType, originalName, requestedCount, title } = input;
   if (requestedCount < 1 || requestedCount > MAX_QUESTIONS) {
     throw new Error(`Requested count must be between 1 and ${MAX_QUESTIONS}`);
   }
@@ -229,8 +232,10 @@ export async function preparePipeline(input: {
     throw new Error("No planned LLM calls");
   }
 
+  const trimmedTitle = title?.trim().slice(0, 255);
+
   return {
-    title: text.title,
+    title: trimmedTitle || text.title,
     sourceType: text.sourceType,
     batches,
     plannedLlmCalls,
