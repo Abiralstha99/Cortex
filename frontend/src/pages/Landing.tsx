@@ -22,12 +22,15 @@ export default function Landing() {
         navigate("/login", { state });
       }
     },
-    [isLoaded, isSignedIn, navigate]
+    [isLoaded, isSignedIn, navigate],
   );
 
   const scrollToHowItWorks = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    howItWorksRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    howItWorksRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }, []);
 
   return (

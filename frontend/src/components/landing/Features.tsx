@@ -31,7 +31,7 @@ const features = [
 
 export function Features() {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-20">
+    <section id="features" className="mx-auto max-w-6xl px-6 py-20">
       <p className="label-caps mb-3 text-muted">FEATURES</p>
       <h2 className="mb-10 text-3xl font-bold tracking-tight text-ink md:text-4xl">
         Everything you need to compete
