@@ -19,12 +19,14 @@ export async function createWaitingGame({
   quizId,
   rounds,
   maxPlayers,
+  isPublic = false,
 }: {
   hostId: string;
   hostUsername: string;
   quizId?: string;
   rounds: number;
   maxPlayers: number;
+  isPublic?: boolean;
 }) {
   if (!hostId) {
     throw new Error("Host user ID is required");
@@ -58,7 +60,7 @@ export async function createWaitingGame({
     quizGenStatus,
     quizGenJobId: null,
     quizGenError: null,
-    isPublic: false,
+    isPublic,
     numberOfRounds,
     maxPlayers,
     players: [{ id: hostId, username: hostUsername, ready: false, score: 0 }],
@@ -80,6 +82,7 @@ export async function createWaitingGame({
         quizGenStatus: game.quizGenStatus,
         quizGenJobId: "",
         quizGenError: "",
+        isPublic: game.isPublic ? "1" : "0",
         numberOfRounds: String(game.numberOfRounds),
         maxPlayers: String(game.maxPlayers),
         players: JSON.stringify(game.players),
@@ -90,6 +93,9 @@ export async function createWaitingGame({
       })
       .expire(GAME_KEY(gameId), WAITING_ROOM_EXPIRATION_TIME)
       .exec();
+    if (game.isPublic) {
+      await indexPublicWaitingRoom(game.gameId, game.createdAt.getTime());
+    }
     console.log(`Waiting room created for game ${gameId}`);
     return game;
   } catch (error) {

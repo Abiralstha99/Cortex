@@ -30,7 +30,8 @@ export async function createGame(req: Request, res: Response) {
     return res.status(404).json({ message: "Host not found" });
   }
 
-  const { quizId, rounds, maxPlayers } = req.body as CreateWaitingGameInput;
+  const { quizId, rounds, maxPlayers, isPublic } =
+    req.body as CreateWaitingGameInput;
 
   try {
     const game = await createWaitingGame({
@@ -39,6 +40,7 @@ export async function createGame(req: Request, res: Response) {
       ...(quizId !== undefined ? { quizId } : {}),
       rounds,
       maxPlayers,
+      isPublic,
     });
 
     res.status(201).json(game);
