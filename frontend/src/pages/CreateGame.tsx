@@ -28,6 +28,7 @@ export default function CreateGame() {
   const [questionCount, setQuestionCount] = useState(10);
   const [selectedQuiz, setSelectedQuiz] = useState<QuizSummary | null>(null);
   const [maxPlayers, setMaxPlayers] = useState(8);
+  const [isPublic, setIsPublic] = useState(false);
 
   const quizzesQuery = useQuery({
     queryKey: ["quizzes"],
@@ -48,6 +49,7 @@ export default function CreateGame() {
         const game = await createWaitingGame(token, {
           rounds: questionCount,
           maxPlayers,
+          isPublic,
         });
         return {
           game,
@@ -65,6 +67,7 @@ export default function CreateGame() {
         quizId: selectedQuiz.id,
         rounds: Math.min(questionCount, selectedQuiz.questionCount),
         maxPlayers,
+        isPublic,
       });
       return { game, generation: null };
     },
@@ -152,6 +155,8 @@ export default function CreateGame() {
               onPlayersChange={setMaxPlayers}
               questions={questionCount}
               onQuestionsChange={setQuestionCount}
+              isPublic={isPublic}
+              onIsPublicChange={setIsPublic}
               maxQuestions={
                 activeTab === "past" && pastQuizCap != null
                   ? pastQuizCap
@@ -183,6 +188,7 @@ export default function CreateGame() {
               quizTitle={previewTitle}
               questionCount={previewQuestionCount}
               maxPlayers={maxPlayers}
+              isPublic={isPublic}
             />
           </div>
         </div>

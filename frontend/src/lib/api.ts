@@ -25,6 +25,18 @@ export type WaitingGame = {
   createdAt: string | Date;
 };
 
+export type PublicWaitingRoomSummary = {
+  gameId: string;
+  roomCode: string;
+  hostId: string;
+  hostUsername: string;
+  playerCount: number;
+  maxPlayers: number;
+  numberOfRounds: number;
+  quizGenStatus: QuizGenStatus;
+  createdAt: string;
+};
+
 export async function apiFetch(
   path: string,
   token: string | null,
@@ -41,7 +53,12 @@ export async function apiFetch(
 // TODO(Phase 4): body should come from a quiz picker, not a dev env fallback.
 export async function createWaitingGame(
   token: string | null,
-  body: { quizId?: string; rounds: number; maxPlayers: number },
+  body: {
+    quizId?: string;
+    rounds: number;
+    maxPlayers: number;
+    isPublic?: boolean;
+  },
 ): Promise<WaitingGame> {
   const res = await apiFetch("/api/games/waiting/", token, {
     method: "POST",
@@ -54,6 +71,16 @@ export async function createWaitingGame(
     throw new Error(data?.message ?? "Failed to create game");
   }
   return res.json() as Promise<WaitingGame>;
+}
+
+export async function listPublicWaitingGames(
+  token: string | null,
+): Promise<PublicWaitingRoomSummary[]> {
+  const res = await apiFetch("/api/games/waiting/public", token);
+  if (!res.ok) {
+    throw new Error("Failed to load public rooms");
+  }
+  return res.json() as Promise<PublicWaitingRoomSummary[]>;
 }
 
 export async function generateQuizForGame(

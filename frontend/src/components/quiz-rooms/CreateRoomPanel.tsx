@@ -12,6 +12,8 @@ interface CreateRoomPanelProps {
   onPlayersChange: (n: number) => void;
   questions: number;
   onQuestionsChange: (n: number) => void;
+  isPublic: boolean;
+  onIsPublicChange: (value: boolean) => void;
 }
 
 export default function CreateRoomPanel({
@@ -23,6 +25,8 @@ export default function CreateRoomPanel({
   onPlayersChange,
   questions,
   onQuestionsChange,
+  isPublic,
+  onIsPublicChange,
 }: CreateRoomPanelProps) {
   return (
     <div className="space-y-6">
@@ -51,6 +55,8 @@ export default function CreateRoomPanel({
         onPlayersChange={onPlayersChange}
         questions={questions}
         onQuestionsChange={onQuestionsChange}
+        isPublic={isPublic}
+        onIsPublicChange={onIsPublicChange}
         maxQuestions={selectedQuiz?.questionCount}
       />
     </div>

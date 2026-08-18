@@ -1,8 +1,12 @@
+import { Switch } from "@/components/ui/switch";
+
 interface RoomSettingsProps {
   players: number;
   onPlayersChange: (n: number) => void;
   questions: number;
   onQuestionsChange: (n: number) => void;
+  isPublic: boolean;
+  onIsPublicChange: (value: boolean) => void;
   /** Upper bound for questions (e.g. selected past quiz size). Defaults to 50. */
   maxQuestions?: number;
 }
@@ -18,6 +22,8 @@ export default function RoomSettings({
   onPlayersChange,
   questions,
   onQuestionsChange,
+  isPublic,
+  onIsPublicChange,
   maxQuestions = DEFAULT_MAX_QUESTIONS,
 }: RoomSettingsProps) {
   const questionsCap = Math.max(MIN_QUESTIONS, maxQuestions);
@@ -94,6 +100,22 @@ export default function RoomSettings({
         <p className="text-xs text-muted">
           {MIN_PLAYERS} – {MAX_PLAYERS} players
         </p>
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-muted">
+            Public room
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Visible in the live rooms feed
+          </p>
+        </div>
+        <Switch
+          checked={isPublic}
+          onCheckedChange={(value) => onIsPublicChange(value === true)}
+          aria-label="Make room public"
+        />
       </div>
     </div>
   );

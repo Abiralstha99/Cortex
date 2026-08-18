@@ -2,12 +2,14 @@ interface RoomPreviewCardProps {
   quizTitle: string | null;
   questionCount: number | null;
   maxPlayers: number;
+  isPublic: boolean;
 }
 
 export default function RoomPreviewCard({
   quizTitle,
   questionCount,
   maxPlayers,
+  isPublic,
 }: RoomPreviewCardProps) {
   return (
     <div className="sticky top-24 rounded-2xl bg-preview p-6 text-white">
@@ -28,6 +30,11 @@ export default function RoomPreviewCard({
         <span className="rounded-md bg-white/10 px-2.5 py-1 text-xs font-medium text-white/90">
           {maxPlayers} players
         </span>
+        {isPublic && (
+          <span className="rounded-md bg-white/10 px-2.5 py-1 text-xs font-medium text-white/90">
+            Public
+          </span>
+        )}
       </div>
 
       <div className="mt-6 border-t border-white/10 pt-5">
