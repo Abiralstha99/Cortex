@@ -46,6 +46,7 @@ after(async () => {
 
 describe("public waiting index helpers", () => {
   it("persists and indexes a newly created public waiting room", async (t) => {
+    const directZadd = t.mock.method(redis, "zadd");
     const game = await createWaitingGame({
       hostId: "host-1",
       hostUsername: "alice",
@@ -65,6 +66,7 @@ describe("public waiting index helpers", () => {
       await redis.zscore(PUBLIC_WAITING_ZSET, game.gameId),
       String(game.createdAt.getTime()),
     );
+    assert.equal(directZadd.mock.callCount(), 0);
   });
 
   it(

@@ -293,7 +293,14 @@ export async function leaveWaitingGame(
       throw new Error("You are not in this room");
     case "empty":
       await redis.del(ROOM_CODE_KEY(roomCode));
-      await unindexPublicWaitingRoom(gameId);
+      try {
+        await unindexPublicWaitingRoom(gameId);
+      } catch (error) {
+        console.error(
+          `Failed to unindex empty waiting room ${gameId}`,
+          error,
+        );
+      }
       return { game: null, leftPlayerId: leftPlayerId ?? playerId };
     case "ok":
       break;
@@ -373,6 +380,10 @@ export async function startGame(
     throw new Error("Failed to update game state; rolled back", { cause: err });
   }
 
-  await unindexPublicWaitingRoom(gameId);
+  try {
+    await unindexPublicWaitingRoom(gameId);
+  } catch (error) {
+    console.error(`Failed to unindex started game ${gameId}`, error);
+  }
   return { game };
 }

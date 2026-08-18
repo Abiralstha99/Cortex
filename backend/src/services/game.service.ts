@@ -74,7 +74,7 @@ export async function createWaitingGame({
     // Redis hash fields are flat strings, so the `players` object array has to
     // be JSON-encoded — a raw array would be coerced to "[object Object]".
     // Readers must JSON.parse it back.
-    await redis
+    const transaction = redis
       .multi()
       .hset(GAME_KEY(gameId), {
         gameId: game.gameId,
@@ -91,11 +91,17 @@ export async function createWaitingGame({
         roomCode: game.roomCode,
         createdAt: game.createdAt.toISOString(),
       })
-      .expire(GAME_KEY(gameId), WAITING_ROOM_EXPIRATION_TIME)
-      .exec();
+      .expire(GAME_KEY(gameId), WAITING_ROOM_EXPIRATION_TIME);
+
     if (game.isPublic) {
-      await indexPublicWaitingRoom(game.gameId, game.createdAt.getTime());
+      transaction.zadd(
+        PUBLIC_WAITING_ZSET,
+        game.createdAt.getTime(),
+        game.gameId,
+      );
     }
+
+    await transaction.exec();
     console.log(`Waiting room created for game ${gameId}`);
     return game;
   } catch (error) {
