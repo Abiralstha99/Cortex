@@ -24,6 +24,7 @@ export const CreateWaitingGameSchema = z.object({
     .min(MIN_PLAYERS)
     .max(MAX_PLAYERS)
     .default(DEFAULT_PLAYERS),
+  isPublic: z.boolean().default(false),
 });
 
 export const WaitingGameIdParamsSchema = z.object({

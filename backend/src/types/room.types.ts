@@ -19,6 +19,7 @@ export type WaitingRoom = {
   quizGenStatus: QuizGenStatus;
   quizGenJobId: string | null;
   quizGenError: string | null;
+  isPublic: boolean;
   players: Player[];
   status: GameStatus;
   hostId: string;

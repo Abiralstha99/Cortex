@@ -12,6 +12,7 @@ describe("CreateWaitingGameSchema", () => {
     assert.deepEqual(CreateWaitingGameSchema.parse({}), {
       rounds: DEFAULT_ROUNDS,
       maxPlayers: DEFAULT_PLAYERS,
+      isPublic: false,
     });
   });
 
@@ -24,7 +25,15 @@ describe("CreateWaitingGameSchema", () => {
         quizId,
         rounds: 5,
         maxPlayers: 4,
+        isPublic: false,
       },
+    );
+  });
+ 
+  it("accepts isPublic true", () => {
+    assert.equal(
+      CreateWaitingGameSchema.parse({ isPublic: true }).isPublic,
+      true,
     );
   });
 });

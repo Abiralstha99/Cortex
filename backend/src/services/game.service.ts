@@ -58,6 +58,7 @@ export async function createWaitingGame({
     quizGenStatus,
     quizGenJobId: null,
     quizGenError: null,
+    isPublic: false,
     numberOfRounds,
     maxPlayers,
     players: [{ id: hostId, username: hostUsername, ready: false, score: 0 }],
