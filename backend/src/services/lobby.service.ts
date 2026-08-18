@@ -16,6 +16,7 @@ import type { Player, WaitingRoom } from "../types/room.types.js";
 import { RoomCodeSchema } from "../schemas/common.js";
 import { prisma } from "../lib/prisma.js";
 import { assertCanStartWithQuiz } from "./gamePlay.helpers.js";
+import { unindexPublicWaitingRoom } from "./game.service.js";
 import { waitingQuizPublicState } from "./waitingQuiz.helpers.js";
 
 const MAX_PLAYERS = 8;
@@ -166,6 +167,7 @@ function deserializeRoom(
     quizGenStatus: publicQuiz.quizGenStatus,
     quizGenJobId: raw.quizGenJobId?.trim() ? raw.quizGenJobId : null,
     quizGenError: publicQuiz.quizGenError,
+    isPublic: raw.isPublic === "1",
     numberOfRounds: Number(raw.numberOfRounds),
     maxPlayers: Number(raw.maxPlayers || MAX_PLAYERS),
     players,
@@ -291,6 +293,7 @@ export async function leaveWaitingGame(
       throw new Error("You are not in this room");
     case "empty":
       await redis.del(ROOM_CODE_KEY(roomCode));
+      await unindexPublicWaitingRoom(gameId);
       return { game: null, leftPlayerId: leftPlayerId ?? playerId };
     case "ok":
       break;
@@ -370,5 +373,6 @@ export async function startGame(
     throw new Error("Failed to update game state; rolled back", { cause: err });
   }
 
+  await unindexPublicWaitingRoom(gameId);
   return { game };
 }

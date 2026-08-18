@@ -25,6 +25,7 @@ function deserializeActiveGame(raw: Record<string, string>): ActiveGame {
     quizGenStatus: "ready",
     quizGenJobId: raw.quizGenJobId?.trim() ? raw.quizGenJobId : null,
     quizGenError: null,
+    isPublic: raw.isPublic === "1",
     players,
     status: "playing",
     hostId: raw.hostId,
