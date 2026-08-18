@@ -7,7 +7,7 @@ import type { QuizGenStatus, WaitingRoom } from "../types/room.types.js";
 import crypto from "crypto";
 import { reserveRoomCode } from "../lib/roomCode.js";
 import redis from "../lib/redis.js";
-import { GAME_KEY } from "../lib/redisKeys.js";
+import { GAME_KEY, PUBLIC_WAITING_ZSET } from "../lib/redisKeys.js";
 import { prisma } from "../lib/prisma.js";
 import { assertQuizPlayableForHost, capRoundsToQuiz } from "./gamePlay.helpers.js";
 
@@ -94,4 +94,68 @@ export async function createWaitingGame({
   } catch (error) {
     throw new Error("Unable to create game room", { cause: error });
   }
+}
+
+// --- Public waiting index helpers (Task 1) ---
+export type PublicWaitingRoomSummary = {
+  gameId: string;
+  roomCode: string;
+  hostId: string;
+  hostUsername: string;
+  playerCount: number;
+  maxPlayers: number;
+  numberOfRounds: number;
+  quizGenStatus: QuizGenStatus;
+  createdAt: string;
+};
+
+export async function indexPublicWaitingRoom(
+  gameId: string,
+  createdAtMs: number,
+): Promise<void> {
+  await redis.zadd(PUBLIC_WAITING_ZSET, createdAtMs, gameId);
+}
+
+export async function unindexPublicWaitingRoom(gameId: string): Promise<void> {
+  await redis.zrem(PUBLIC_WAITING_ZSET, gameId);
+}
+
+export async function listPublicWaitingRooms(): Promise<
+  PublicWaitingRoomSummary[]
+> {
+  const ids = await redis.zrange(PUBLIC_WAITING_ZSET, 0, -1, "REV");
+  const rooms: PublicWaitingRoomSummary[] = [];
+
+  for (const gameId of ids) {
+    const raw = await redis.hgetall(GAME_KEY(gameId));
+    if (
+      !raw?.gameId ||
+      raw.status !== "waiting" ||
+      raw.isPublic !== "1"
+    ) {
+      await unindexPublicWaitingRoom(gameId);
+      continue;
+    }
+
+    const players = JSON.parse(raw.players ?? "[]") as Array<{
+      id: string;
+      username: string;
+    }>;
+    const host =
+      players.find((p) => p.id === raw.hostId) ?? players[0] ?? null;
+
+    rooms.push({
+      gameId: raw.gameId,
+      roomCode: raw.roomCode!,
+      hostId: raw.hostId!,
+      hostUsername: host?.username ?? "Host",
+      playerCount: players.length,
+      maxPlayers: Number(raw.maxPlayers || 8),
+      numberOfRounds: Number(raw.numberOfRounds || 0),
+      quizGenStatus: (raw.quizGenStatus as QuizGenStatus) || "none",
+      createdAt: raw.createdAt!,
+    });
+  }
+
+  return rooms;
 }

@@ -88,3 +88,9 @@ export const QUIZ_GEN_WORK_KEY = (jobId: string) => `quiz-gen:work:${jobId}`;
 //   Short SET NX guard against double-click double enqueue (not a content cache).
 export const QUIZ_GEN_INFLIGHT_KEY = (ownerId: string) =>
   `quiz-gen:inflight:${ownerId}`;
+//
+// PUBLIC_WAITING_ZSET  public-waiting   sorted set
+//   member: gameId
+//   score:  createdAt epoch ms (newest = highest)
+//   lifecycle: ZADD when isPublic on create; ZREM on start / empty leave / list prune
+export const PUBLIC_WAITING_ZSET = "public-waiting";
