@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import PublicRoomsList from "@/components/dashboard/PublicRoomsList";
 import { Button } from "@/components/ui/button";
 
 export default function JoinRoomPanel() {
@@ -68,14 +69,9 @@ export default function JoinRoomPanel() {
         </Button>
       </form>
 
-      {/* Live public rooms — empty state */}
       <div className="space-y-3">
         <p className="label-caps text-muted">Live Public Rooms</p>
-        <div className="rounded-xl border border-dashed border-border p-10 text-center">
-          <p className="text-sm text-muted">
-            No public rooms available right now
-          </p>
-        </div>
+        <PublicRoomsList />
       </div>
     </div>
   );
