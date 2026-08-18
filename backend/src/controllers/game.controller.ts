@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { createWaitingGame } from "../services/game.service.js";
+import { createWaitingGame, listPublicWaitingRooms } from "../services/game.service.js";
 import type {
   CreateWaitingGameInput,
   FailWaitingQuizInput,
@@ -56,6 +56,14 @@ export async function createGame(req: Request, res: Response) {
     }
     throw error;
   }
+}
+
+export async function listPublicWaiting(req: Request, res: Response) {
+  if (!req.userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const rooms = await listPublicWaitingRooms();
+  return res.status(200).json(rooms);
 }
 
 export async function generateForWaitingGame(req: Request, res: Response) {
