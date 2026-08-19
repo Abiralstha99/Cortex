@@ -21,6 +21,24 @@ import {
 import { getIO } from "../socket/index.js";
 import { emitSaveAsPublic } from "../socket/publicWaiting.js";
 
+function broadcastPublicQuizStatus(
+  io: ReturnType<typeof getIO>,
+  gameId: string,
+) {
+  void getPublicWaitingSummary(gameId)
+    .then((summary) => {
+      if (summary) {
+        emitSaveAsPublic(io, summary);
+      }
+    })
+    .catch((error) => {
+      console.error(
+        `Failed to broadcast public quiz status for ${gameId}`,
+        error,
+      );
+    });
+}
+
 export async function createGame(req: Request, res: Response) {
   const clerkUserId = req.userId!;
   if (!clerkUserId) {
@@ -140,25 +158,7 @@ export async function generateForWaitingGame(req: Request, res: Response) {
     ...(titleResult.data !== undefined ? { title: titleResult.data } : {}),
     onStatus: (payload) => {
       io.to(`game:${gameId}`).emit("quiz_status", payload);
-      void getPublicWaitingSummary(gameId)
-        .then((summary) => {
-          if (summary) {
-            try {
-              emitSaveAsPublic(io, summary);
-            } catch (error) {
-              console.error(
-                `Failed to broadcast public quiz status for ${gameId}`,
-                error,
-              );
-            }
-          }
-        })
-        .catch((error) => {
-          console.error(
-            `Failed to broadcast public quiz status for ${gameId}`,
-            error,
-          );
-        });
+      broadcastPublicQuizStatus(io, gameId);
     },
   });
 
@@ -200,24 +200,6 @@ export async function failWaitingQuiz(req: Request, res: Response) {
 
   const io = getIO();
   io.to(`game:${gameId}`).emit("quiz_status", payload);
-  void getPublicWaitingSummary(gameId)
-    .then((summary) => {
-      if (summary) {
-        try {
-          emitSaveAsPublic(io, summary);
-        } catch (error) {
-          console.error(
-            `Failed to broadcast public quiz status for ${gameId}`,
-            error,
-          );
-        }
-      }
-    })
-    .catch((error) => {
-      console.error(
-        `Failed to broadcast public quiz status for ${gameId}`,
-        error,
-      );
-    });
+  broadcastPublicQuizStatus(io, gameId);
   return res.status(200).json(payload);
 }
