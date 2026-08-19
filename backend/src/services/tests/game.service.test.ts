@@ -7,6 +7,8 @@ import {
   indexPublicWaitingRoom,
   listPublicWaitingRooms,
   unindexPublicWaitingRoom,
+  publicWaitingSummaryFromRoom,
+  getPublicWaitingSummary,
 } from "../game.service.js";
 
 const GAME_A = "11111111-1111-1111-1111-111111111111";
@@ -117,6 +119,56 @@ describe("public waiting index helpers", () => {
     await indexPublicWaitingRoom(GAME_A, Date.now());
     await unindexPublicWaitingRoom(GAME_A);
     assert.equal(await redis.zscore(PUBLIC_WAITING_ZSET, GAME_A), null);
+  });
+});
+
+describe("publicWaitingSummaryFromRoom", () => {
+  it("maps host username and player count from the waiting room", () => {
+    const createdAt = new Date("2026-08-18T12:00:00.000Z");
+    const summary = publicWaitingSummaryFromRoom({
+      gameId: GAME_A,
+      quizId: null,
+      quizGenStatus: "ready",
+      quizGenJobId: null,
+      quizGenError: null,
+      isPublic: true,
+      players: [
+        { id: "host-1", username: "alice", ready: true, score: 0 },
+        { id: "p2", username: "bob", ready: false, score: 0 },
+      ],
+      status: "waiting",
+      hostId: "host-1",
+      roomCode: "ABCDEF",
+      createdAt,
+      numberOfRounds: 10,
+      maxPlayers: 8,
+    });
+    assert.deepEqual(summary, {
+      gameId: GAME_A,
+      roomCode: "ABCDEF",
+      hostId: "host-1",
+      hostUsername: "alice",
+      playerCount: 2,
+      maxPlayers: 8,
+      numberOfRounds: 10,
+      quizGenStatus: "ready",
+      createdAt: createdAt.toISOString(),
+    });
+  });
+});
+
+describe("getPublicWaitingSummary", () => {
+  it("returns null for a private waiting room", async () => {
+    await seedWaitingGame(GAME_A, { isPublic: false });
+    assert.equal(await getPublicWaitingSummary(GAME_A), null);
+  });
+
+  it("returns a summary for a public waiting room", async () => {
+    await seedWaitingGame(GAME_A, { isPublic: true });
+    const summary = await getPublicWaitingSummary(GAME_A);
+    assert.equal(summary?.gameId, GAME_A);
+    assert.equal(summary?.hostUsername, "alice");
+    assert.equal(summary?.playerCount, 1);
   });
 });
 

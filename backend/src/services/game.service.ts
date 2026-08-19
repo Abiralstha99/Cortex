@@ -172,3 +172,62 @@ export async function listPublicWaitingRooms(): Promise<
 
   return rooms;
 }
+
+// --- Task 1: summary mapper for save_as_public payloads ---
+export function publicWaitingSummaryFromRoom(
+  game: WaitingRoom,
+): PublicWaitingRoomSummary {
+  const host =
+    game.players.find((player) => player.id === game.hostId) ??
+    game.players[0] ??
+    null;
+  return {
+    gameId: game.gameId,
+    roomCode: game.roomCode,
+    hostId: game.hostId,
+    hostUsername: host?.username ?? "Host",
+    playerCount: game.players.length,
+    maxPlayers: game.maxPlayers,
+    numberOfRounds: game.numberOfRounds,
+    quizGenStatus: game.quizGenStatus,
+    createdAt:
+      game.createdAt instanceof Date
+        ? game.createdAt.toISOString()
+        : String(game.createdAt),
+  };
+}
+
+export async function getPublicWaitingSummary(
+  gameId: string,
+): Promise<PublicWaitingRoomSummary | null> {
+  const raw = await redis.hgetall(GAME_KEY(gameId));
+  if (!raw?.gameId || raw.status !== "waiting" || raw.isPublic !== "1") {
+    return null;
+  }
+  const players = JSON.parse(raw.players ?? "[]") as Array<{
+    id: string;
+    username: string;
+    ready?: boolean;
+    score?: number;
+  }>;
+  return publicWaitingSummaryFromRoom({
+    gameId: raw.gameId,
+    quizId: raw.quizId?.trim() ? raw.quizId : null,
+    quizGenStatus: (raw.quizGenStatus as QuizGenStatus) || "none",
+    quizGenJobId: raw.quizGenJobId?.trim() ? raw.quizGenJobId : null,
+    quizGenError: raw.quizGenError?.trim() ? raw.quizGenError : null,
+    isPublic: true,
+    players: players.map((p) => ({
+      id: p.id,
+      username: p.username,
+      ready: Boolean(p.ready),
+      score: Number(p.score ?? 0),
+    })),
+    status: "waiting",
+    hostId: raw.hostId!,
+    roomCode: raw.roomCode!,
+    createdAt: new Date(raw.createdAt!),
+    numberOfRounds: Number(raw.numberOfRounds || 0),
+    maxPlayers: Number(raw.maxPlayers || 8),
+  });
+}
