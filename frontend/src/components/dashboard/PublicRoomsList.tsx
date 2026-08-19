@@ -41,6 +41,7 @@ export default function PublicRoomsList() {
     if (!socket || !connected) return;
 
     socket.emit("watch_public_rooms");
+    void queryClient.invalidateQueries({ queryKey: PUBLIC_ROOMS_QUERY_KEY });
 
     const onSaveAsPublic = (room: PublicWaitingRoomSummary) => {
       queryClient.setQueryData<PublicWaitingRoomSummary[]>(
