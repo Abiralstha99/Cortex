@@ -1,21 +1,71 @@
+import { useEffect } from "react";
 import { useAuth } from "@clerk/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { listPublicWaitingGames } from "@/lib/api";
+import {
+  listPublicWaitingGames,
+  type PublicWaitingRoomSummary,
+} from "@/lib/api";
+import { useSocket } from "@/hooks/useSocket";
+
+const PUBLIC_ROOMS_QUERY_KEY = ["public-waiting-rooms"] as const;
+
+function upsertPublicRoom(
+  rooms: PublicWaitingRoomSummary[] | undefined,
+  incoming: PublicWaitingRoomSummary,
+): PublicWaitingRoomSummary[] {
+  const next = (rooms ?? []).filter((room) => room.gameId !== incoming.gameId);
+  next.push(incoming);
+  next.sort(
+    (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
+  );
+  return next;
+}
 
 export default function PublicRoomsList() {
   const { getToken } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { socket, connected } = useSocket();
 
   const query = useQuery({
-    queryKey: ["public-waiting-rooms"],
+    queryKey: PUBLIC_ROOMS_QUERY_KEY,
     queryFn: async () => {
       const token = await getToken();
       return listPublicWaitingGames(token);
     },
-    refetchInterval: 15_000,
   });
+
+  useEffect(() => {
+    if (!socket || !connected) return;
+
+    socket.emit("watch_public_rooms");
+
+    const onSaveAsPublic = (room: PublicWaitingRoomSummary) => {
+      queryClient.setQueryData<PublicWaitingRoomSummary[]>(
+        PUBLIC_ROOMS_QUERY_KEY,
+        (current) => upsertPublicRoom(current, room),
+      );
+    };
+
+    const onRemoved = (payload: { gameId: string }) => {
+      queryClient.setQueryData<PublicWaitingRoomSummary[]>(
+        PUBLIC_ROOMS_QUERY_KEY,
+        (current) =>
+          (current ?? []).filter((room) => room.gameId !== payload.gameId),
+      );
+    };
+
+    socket.on("save_as_public", onSaveAsPublic);
+    socket.on("public_room_removed", onRemoved);
+
+    return () => {
+      socket.off("save_as_public", onSaveAsPublic);
+      socket.off("public_room_removed", onRemoved);
+      socket.emit("unwatch_public_rooms");
+    };
+  }, [socket, connected, queryClient]);
 
   if (query.isLoading) {
     return (
