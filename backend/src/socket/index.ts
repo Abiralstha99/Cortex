@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import { SocketAuth } from "./auth.js";
 import { registerLobbyHandlers } from "./lobbyHandler.js";
 import { registerGameHandlers } from "./gameHandler.js";
+import { registerPublicWaitingHandlers } from "./publicWaiting.js";
 
 let ioInstance: Server | undefined;
 
@@ -31,6 +32,7 @@ export function attachSocket(httpServer: HTTPServer): Server {
     console.log(`User ${socket.data.username} connected`);
     registerLobbyHandlers(io, socket);
     registerGameHandlers(io, socket);
+    registerPublicWaitingHandlers(socket);
   });
 
   return io;
