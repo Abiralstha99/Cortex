@@ -1,5 +1,10 @@
 import type { Request, Response } from "express";
-import { createWaitingGame, listPublicWaitingRooms } from "../services/game.service.js";
+import {
+  createWaitingGame,
+  getPublicWaitingSummary,
+  listPublicWaitingRooms,
+  publicWaitingSummaryFromRoom,
+} from "../services/game.service.js";
 import type {
   CreateWaitingGameInput,
   FailWaitingQuizInput,
@@ -14,6 +19,7 @@ import {
   scheduleWaitingQuizGeneration,
 } from "../services/waitingQuiz.service.js";
 import { getIO } from "../socket/index.js";
+import { emitSaveAsPublic } from "../socket/publicWaiting.js";
 
 export async function createGame(req: Request, res: Response) {
   const clerkUserId = req.userId!;
@@ -42,6 +48,17 @@ export async function createGame(req: Request, res: Response) {
       maxPlayers,
       isPublic,
     });
+
+    if (game.isPublic) {
+      try {
+        emitSaveAsPublic(getIO(), publicWaitingSummaryFromRoom(game));
+      } catch (error) {
+        console.error(
+          `Failed to broadcast save_as_public for ${game.gameId}`,
+          error,
+        );
+      }
+    }
 
     res.status(201).json(game);
   } catch (error) {
@@ -123,6 +140,25 @@ export async function generateForWaitingGame(req: Request, res: Response) {
     ...(titleResult.data !== undefined ? { title: titleResult.data } : {}),
     onStatus: (payload) => {
       io.to(`game:${gameId}`).emit("quiz_status", payload);
+      void getPublicWaitingSummary(gameId)
+        .then((summary) => {
+          if (summary) {
+            try {
+              emitSaveAsPublic(io, summary);
+            } catch (error) {
+              console.error(
+                `Failed to broadcast public quiz status for ${gameId}`,
+                error,
+              );
+            }
+          }
+        })
+        .catch((error) => {
+          console.error(
+            `Failed to broadcast public quiz status for ${gameId}`,
+            error,
+          );
+        });
     },
   });
 
@@ -162,6 +198,26 @@ export async function failWaitingQuiz(req: Request, res: Response) {
     return res.status(409).json({ message: "Room is no longer waiting" });
   }
 
-  getIO().to(`game:${gameId}`).emit("quiz_status", payload);
+  const io = getIO();
+  io.to(`game:${gameId}`).emit("quiz_status", payload);
+  void getPublicWaitingSummary(gameId)
+    .then((summary) => {
+      if (summary) {
+        try {
+          emitSaveAsPublic(io, summary);
+        } catch (error) {
+          console.error(
+            `Failed to broadcast public quiz status for ${gameId}`,
+            error,
+          );
+        }
+      }
+    })
+    .catch((error) => {
+      console.error(
+        `Failed to broadcast public quiz status for ${gameId}`,
+        error,
+      );
+    });
   return res.status(200).json(payload);
 }

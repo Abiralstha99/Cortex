@@ -41,7 +41,11 @@ describe("public waiting room cleanup", () => {
 
     const result = await leaveWaitingGame(ROOM_CODE, "host-1");
 
-    assert.deepEqual(result, { game: null, leftPlayerId: "host-1" });
+    assert.deepEqual(result, {
+      game: null,
+      leftPlayerId: "host-1",
+      gameId: GAME_ID,
+    });
     assert.equal(consoleError.mock.callCount(), 1);
   });
 });

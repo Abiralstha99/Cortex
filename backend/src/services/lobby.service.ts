@@ -269,7 +269,11 @@ export async function setPlayerReady(
 export async function leaveWaitingGame(
   roomCode: string,
   playerId: string,
-): Promise<{ game: WaitingRoom | null; leftPlayerId: string }> {
+): Promise<{
+  game: WaitingRoom | null;
+  leftPlayerId: string;
+  gameId: string;
+}> {
   const gameId = await redis.get(ROOM_CODE_KEY(roomCode));
   if (!gameId) {
     throw new Error("Room not found");
@@ -301,7 +305,11 @@ export async function leaveWaitingGame(
           error,
         );
       }
-      return { game: null, leftPlayerId: leftPlayerId ?? playerId };
+      return {
+        game: null,
+        leftPlayerId: leftPlayerId ?? playerId,
+        gameId,
+      };
     case "ok":
       break;
     default:
@@ -318,6 +326,7 @@ export async function leaveWaitingGame(
   return {
     game: deserializeRoom(raw, players),
     leftPlayerId: leftPlayerId ?? playerId,
+    gameId,
   };
 }
 

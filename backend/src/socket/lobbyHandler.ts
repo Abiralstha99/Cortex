@@ -11,6 +11,11 @@ import { ROUND_TIME_LIMIT_MS } from "../services/answer.service.js";
 import { JoinGamePayloadSchema } from "../schemas/game.js";
 import { parseSocketPayload } from "./parsePayload.js";
 import { publicNewQuestionFromRound } from "../services/gamePlay.helpers.js";
+import { publicWaitingSummaryFromRoom } from "../services/game.service.js";
+import {
+  emitPublicRoomRemoved,
+  emitSaveAsPublic,
+} from "./publicWaiting.js";
 
 const ROUND_START_DELAY_MS = 3000;
 
@@ -54,6 +59,16 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
           username: socket.data.username,
           ready: false,
         });
+        if (game.isPublic) {
+          try {
+            emitSaveAsPublic(io, publicWaitingSummaryFromRoom(game));
+          } catch (error) {
+            console.error(
+              `Failed to broadcast save_as_public for ${game.gameId}`,
+              error,
+            );
+          }
+        }
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -96,6 +111,17 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
 
     try {
       const { game } = await startGame(parsed.roomCode);
+
+      if (game.isPublic) {
+        try {
+          emitPublicRoomRemoved(io, game.gameId);
+        } catch (error) {
+          console.error(
+            `Failed to broadcast public_room_removed for ${game.gameId}`,
+            error,
+          );
+        }
+      }
 
       // Emit game_started immediately
       io.to(`game:${game.gameId}`).emit("game_started", {
@@ -145,18 +171,36 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
       return;
     }
     try {
-      const { game, leftPlayerId } = await leaveWaitingGame(
+      const { game, leftPlayerId, gameId } = await leaveWaitingGame(
         parsed.roomCode,
         socket.data.userId,
       );
 
       if (!game) {
+        try {
+          emitPublicRoomRemoved(io, gameId);
+        } catch (error) {
+          console.error(
+            `Failed to broadcast public_room_removed for ${gameId}`,
+            error,
+          );
+        }
         return;
       }
       io.to(`game:${game.gameId}`).emit("player_left", {
         id: leftPlayerId,
         game,
       });
+      if (game.isPublic) {
+        try {
+          emitSaveAsPublic(io, publicWaitingSummaryFromRoom(game));
+        } catch (error) {
+          console.error(
+            `Failed to broadcast save_as_public for ${game.gameId}`,
+            error,
+          );
+        }
+      }
     } catch (error) {
       if (error instanceof Error) {
         socket.emit("error", { message: error.message });
