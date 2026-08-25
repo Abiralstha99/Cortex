@@ -1,41 +1,76 @@
 @import "tailwindcss";
-@import "@fontsource-variable/inter";
+@import "@fontsource-variable/geist";
 @import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
 
 @theme {
-  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  /* Light surfaces */
-  --color-background: #f7f7f5;
+  --color-background: #f4f4f2;
   --color-surface: #ffffff;
-  --color-border: #e5e7eb;
-  /* Quiet track for segmented controls (tabs) — must stay light */
-  --color-track: #e8e8e4;
+  --color-border: #e4e4e0;
+  --color-track: #ebebe7;
 
-  /* Ink + secondary text (matches How It Works / brand) */
   --color-ink: #0b0f14;
   --color-foreground: #0b0f14;
   --color-muted: #6b7280;
   --color-muted-foreground: #6b7280;
 
-  /* Brand accent — same rose as “rush” / step numbers */
   --color-rose: #d64561;
   --color-primary: #d64561;
   --color-primary-foreground: #ffffff;
 
-  /* Dark panels (Room Preview, How It Works) */
   --color-preview: #0f172a;
-  --color-code: #34d399;
-  --color-data: #3b82f6;
+  --color-success: #059669;
+  --color-danger: #dc2626;
+  --color-code: #059669;
+  --color-data: #2563eb;
 
-  --color-pastel-cream: #f7f1e8;
-  --color-pastel-mint: #e8f5ef;
-  --color-pastel-lavender: #eef0fb;
-  --color-pastel-blush: #f8ebee;
+  /* Semantic correct/wrong washes (not decorative pastels) */
+  --color-success-soft: #ecfdf5;
+  --color-danger-soft: #fef2f2;
+
+  /* shadcn aliases — map to Cortex, not default zinc */
+  --color-card: #ffffff;
+  --color-card-foreground: #0b0f14;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0b0f14;
+  --color-secondary: #f4f4f2;
+  --color-secondary-foreground: #0b0f14;
+  --color-accent: #f4f4f2;
+  --color-accent-foreground: #0b0f14;
+  --color-input: #e4e4e0;
+  --color-ring: #d64561;
+  --color-destructive: #dc2626;
+
+  --radius-control: 0.5rem;
+  --radius-panel: 0.75rem;
+
+  /* temporary bridge - delete after pastel call sites migrated */
+  --color-pastel-cream: #f4f4f2;
+  --color-pastel-mint: #ecfdf5;
+  --color-pastel-lavender: #f4f4f2;
+  --color-pastel-blush: #fef2f2;
 }
 
 @layer base {
+  :root {
+    /* Clerk + legacy aliases — same values as @theme */
+    --accent: #d64561;
+    --bg: #f4f4f2;
+    --bg-raised: #ffffff;
+    --text: #0b0f14;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --border: #e4e4e0;
+    --border-strong: #d1d5db;
+    --danger: #dc2626;
+    --font-body: "Geist Variable", "Geist", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+
   html,
   body,
   #root {
@@ -50,10 +85,22 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Use sparingly — max ~1 per 3 landing sections; avoid on most product screens */
   .label-caps {
     font-size: 0.6875rem;
     font-weight: 500;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
