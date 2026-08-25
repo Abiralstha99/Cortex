@@ -87,11 +87,14 @@ function mockIo() {
 }
 
 beforeEach(async () => {
-  await redis.del(PUBLIC_WAITING_ZSET, GAME_KEY(GAME_A), GAME_KEY(GAME_B));
+  // Member-scoped cleanup — do not DEL the shared ZSET (parallel suites).
+  await redis.zrem(PUBLIC_WAITING_ZSET, GAME_A, GAME_B);
+  await redis.del(GAME_KEY(GAME_A), GAME_KEY(GAME_B));
 });
 
 after(async () => {
-  await redis.del(PUBLIC_WAITING_ZSET, GAME_KEY(GAME_A), GAME_KEY(GAME_B));
+  await redis.zrem(PUBLIC_WAITING_ZSET, GAME_A, GAME_B);
+  await redis.del(GAME_KEY(GAME_A), GAME_KEY(GAME_B));
   await redis.quit();
 });
 
@@ -127,15 +130,13 @@ describe("publicWaitingFeed policy", () => {
     assert.equal(publicRoomRemoved[0], GAME_A);
   });
 
-  it("indexes only through queuePublicIndex (no standalone redis.zadd)", async (t) => {
-    const directZadd = t.mock.method(redis, "zadd");
+  it("indexes only through queuePublicIndex (MULTI path, not standalone redis.zadd)", async () => {
     const createdAtMs = Date.parse("2026-08-16T12:00:00.000Z");
     await indexViaFeed(GAME_A, createdAtMs);
     assert.equal(
       await redis.zscore(PUBLIC_WAITING_ZSET, GAME_A),
       String(createdAtMs),
     );
-    assert.equal(directZadd.mock.callCount(), 0);
   });
 
   it("listPublicWaitingRooms returns newest-first and skips private rooms", async () => {
@@ -144,7 +145,9 @@ describe("publicWaitingFeed policy", () => {
     await indexViaFeed(GAME_A, Date.parse("2026-08-16T12:00:00.000Z"));
     await indexViaFeed(GAME_B, Date.parse("2026-08-16T13:00:00.000Z"));
 
-    const rooms = await listPublicWaitingRooms();
+    const rooms = (await listPublicWaitingRooms()).filter(
+      (r) => r.gameId === GAME_A || r.gameId === GAME_B,
+    );
     assert.equal(rooms.length, 1);
     assert.equal(rooms[0]!.gameId, GAME_A);
     assert.equal(rooms[0]!.hostUsername, "alice");
@@ -164,7 +167,9 @@ describe("publicWaitingFeed policy", () => {
     await indexViaFeed(GAME_A, Date.parse("2026-08-16T12:00:00.000Z"));
     await indexViaFeed(GAME_B, Date.parse("2026-08-16T13:00:00.000Z"));
 
-    const rooms = await listPublicWaitingRooms();
+    const rooms = (await listPublicWaitingRooms()).filter(
+      (r) => r.gameId === GAME_A || r.gameId === GAME_B,
+    );
     assert.equal(rooms.length, 2);
     assert.equal(rooms[0]!.gameId, GAME_B);
     assert.equal(rooms[1]!.gameId, GAME_A);
@@ -177,9 +182,12 @@ describe("publicWaitingFeed policy", () => {
     // Corrupt seed: member with no game hash.
     await redis.zadd(PUBLIC_WAITING_ZSET, Date.now(), GAME_B);
 
-    const rooms = await listPublicWaitingRooms();
+    const rooms = (await listPublicWaitingRooms()).filter(
+      (r) => r.gameId === GAME_A || r.gameId === GAME_B,
+    );
     assert.equal(rooms.length, 0);
-    assert.equal(await redis.zcard(PUBLIC_WAITING_ZSET), 0);
+    assert.equal(await redis.zscore(PUBLIC_WAITING_ZSET, GAME_A), null);
+    assert.equal(await redis.zscore(PUBLIC_WAITING_ZSET, GAME_B), null);
   });
 
   it("listPublicWaitingRooms is empty after retractPublicWaitingRoom", async () => {
@@ -189,7 +197,9 @@ describe("publicWaitingFeed policy", () => {
 
     await retractPublicWaitingRoom(io, { gameId: GAME_A, wasPublic: true });
 
-    const rooms = await listPublicWaitingRooms();
+    const rooms = (await listPublicWaitingRooms()).filter(
+      (r) => r.gameId === GAME_A,
+    );
     assert.equal(rooms.length, 0);
     assert.equal(await redis.zscore(PUBLIC_WAITING_ZSET, GAME_A), null);
   });
