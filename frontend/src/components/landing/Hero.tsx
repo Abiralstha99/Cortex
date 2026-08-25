@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-
-const ROOM_CODE_PATTERN = /^[A-Z0-9]{6}$/;
+import RoomCodeInput from "@/components/forms/RoomCodeInput";
+import { isValidRoomCode } from "@/components/forms/room-code-utils";
 
 interface HeroProps {
   onCreateQuiz: () => void;
@@ -16,12 +16,17 @@ export function Hero({ onCreateQuiz, onHowItWorksClick, onJoinRoom }: HeroProps)
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
     const normalized = code.trim().toUpperCase();
-    if (!ROOM_CODE_PATTERN.test(normalized)) {
+    if (!isValidRoomCode(normalized)) {
       setError("Enter the 6-character code exactly as shown to your host.");
       return;
     }
     setError(null);
     onJoinRoom(normalized);
+  };
+
+  const handleChange = (value: string) => {
+    setCode(value);
+    if (error) setError(null);
   };
 
   return (
@@ -61,39 +66,17 @@ export function Hero({ onCreateQuiz, onHowItWorksClick, onJoinRoom }: HeroProps)
         className="flex flex-wrap items-center gap-3"
         noValidate
       >
-        <label htmlFor="hero-room-code" className="label-caps text-muted">
-          Have a code?
-        </label>
-        <input
+        <RoomCodeInput
           id="hero-room-code"
-          type="text"
-          inputMode="text"
-          autoComplete="off"
-          autoCapitalize="characters"
-          spellCheck={false}
-          maxLength={6}
-          placeholder="ABC123"
           value={code}
-          onChange={(e) => {
-            setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""));
-            if (error) setError(null);
-          }}
-          className="h-10 w-32 rounded-md border border-border bg-surface px-3 text-center font-mono text-lg font-semibold tracking-[0.25em] text-ink placeholder:text-muted/50 focus:border-rose focus:outline-none"
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? "hero-room-error" : undefined}
+          onChange={handleChange}
+          error={error}
+          label="Have a code?"
+          className="h-10 w-32 text-lg"
         />
         <Button type="submit" variant="default" size="default">
           Join room
         </Button>
-        {error && (
-          <p
-            id="hero-room-error"
-            className="w-full text-sm text-rose"
-            role="alert"
-          >
-            {error}
-          </p>
-        )}
       </form>
     </section>
   );
