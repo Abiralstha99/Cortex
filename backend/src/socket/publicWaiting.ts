@@ -1,5 +1,5 @@
 import type { Server, Socket } from "socket.io";
-import type { PublicWaitingRoomSummary } from "../services/game.service.js";
+import type { PublicWaitingRoomSummary } from "../types/room.types.js";
 
 export const PUBLIC_WAITING_SOCKET_ROOM = "public-waiting";
 
