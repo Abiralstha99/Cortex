@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from "motion/react";
 import type { AnswerResult } from "@/lib/api";
 
 type AnswerFeedbackProps = {
@@ -5,6 +6,8 @@ type AnswerFeedbackProps = {
 };
 
 export default function AnswerFeedback({ result }: AnswerFeedbackProps) {
+  const reduce = useReducedMotion();
+
   const placementText = result.placement
     ? result.placement === 1
       ? "1st"
@@ -15,14 +18,8 @@ export default function AnswerFeedback({ result }: AnswerFeedbackProps) {
       : `${result.placement}th`
     : null;
 
-  return (
-    <div
-      className={`rounded-[var(--radius-panel)] border p-6 text-center ${
-        result.correct
-          ? "bg-success-soft border-success"
-          : "bg-danger-soft border-danger"
-      }`}
-    >
+  const content = (
+    <>
       <div className="text-lg font-semibold text-ink mb-2">
         {result.correct ? "Correct" : "Wrong"}
       </div>
@@ -36,6 +33,27 @@ export default function AnswerFeedback({ result }: AnswerFeedbackProps) {
         Correct answer: <strong>{result.correctAnswer}</strong>
       </div>
       <p className="mt-4 text-sm text-muted">Waiting for other players...</p>
-    </div>
+    </>
+  );
+
+  const baseClasses = `rounded-[var(--radius-panel)] border p-6 text-center ${
+    result.correct
+      ? "bg-success-soft border-success"
+      : "bg-danger-soft border-danger"
+  }`;
+
+  if (reduce) {
+    return <div className={baseClasses}>{content}</div>;
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className={baseClasses}
+    >
+      {content}
+    </motion.div>
   );
 }

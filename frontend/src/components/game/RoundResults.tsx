@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from "motion/react";
 import type { RoundFinishedPayload } from "@/lib/api";
 import Leaderboard from "@/components/game/Leaderboard";
 
@@ -6,8 +7,44 @@ type RoundResultsProps = {
   myPlayerId: string;
 };
 
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.04 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 6 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.15, ease: "easeOut" as const } },
+};
+
 export default function RoundResults({ roundResults, myPlayerId }: RoundResultsProps) {
   const { roundNumber, correctAnswer, submissions, leaderboard, isLastRound, nextRoundIn } = roundResults;
+  const reduce = useReducedMotion();
+
+  const submissionRows = submissions.map((sub) => {
+    const player = leaderboard.find((p) => p.playerId === sub.playerId);
+    return (
+      <div
+        key={sub.playerId}
+        className={`flex items-center justify-between rounded-[var(--radius-control)] px-4 py-2 ${
+          sub.playerId === myPlayerId ? "bg-rose/5 border border-rose/20" : "bg-background"
+        }`}
+      >
+        <span className="text-ink font-medium">{player?.username ?? "Unknown"}</span>
+        <div className="flex items-center gap-3">
+          <span className={sub.correct ? "text-success" : "text-danger"}>
+            {sub.correct ? "Correct" : "Wrong"}
+          </span>
+          <span className="font-mono text-sm text-muted">+{sub.pointsEarned}</span>
+          {sub.placement && (
+            <span className="font-mono text-xs text-muted">
+              {sub.placement === 1 ? "1st" : sub.placement === 2 ? "2nd" : sub.placement === 3 ? "3rd" : `${sub.placement}th`}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -22,32 +59,42 @@ export default function RoundResults({ roundResults, myPlayerId }: RoundResultsP
 
       <div className="rounded-[var(--radius-panel)] border border-border bg-surface p-6">
         <h3 className="label-caps text-muted mb-4">Submissions</h3>
-        <div className="space-y-1">
-          {submissions.map((sub) => {
-            const player = leaderboard.find((p) => p.playerId === sub.playerId);
-            return (
-              <div
-                key={sub.playerId}
-                className={`flex items-center justify-between rounded-[var(--radius-control)] px-4 py-2 ${
-                  sub.playerId === myPlayerId ? "bg-rose/5 border border-rose/20" : "bg-background"
-                }`}
-              >
-                <span className="text-ink font-medium">{player?.username ?? "Unknown"}</span>
-                <div className="flex items-center gap-3">
-                  <span className={sub.correct ? "text-success" : "text-danger"}>
-                    {sub.correct ? "Correct" : "Wrong"}
-                  </span>
-                  <span className="font-mono text-sm text-muted">+{sub.pointsEarned}</span>
-                  {sub.placement && (
-                    <span className="font-mono text-xs text-muted">
-                      {sub.placement === 1 ? "1st" : sub.placement === 2 ? "2nd" : sub.placement === 3 ? "3rd" : `${sub.placement}th`}
+        {reduce ? (
+          <div className="space-y-1">{submissionRows}</div>
+        ) : (
+          <motion.div
+            className="space-y-1"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {submissions.map((sub) => {
+              const player = leaderboard.find((p) => p.playerId === sub.playerId);
+              return (
+                <motion.div
+                  key={sub.playerId}
+                  variants={itemVariants}
+                  className={`flex items-center justify-between rounded-[var(--radius-control)] px-4 py-2 ${
+                    sub.playerId === myPlayerId ? "bg-rose/5 border border-rose/20" : "bg-background"
+                  }`}
+                >
+                  <span className="text-ink font-medium">{player?.username ?? "Unknown"}</span>
+                  <div className="flex items-center gap-3">
+                    <span className={sub.correct ? "text-success" : "text-danger"}>
+                      {sub.correct ? "Correct" : "Wrong"}
                     </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                    <span className="font-mono text-sm text-muted">+{sub.pointsEarned}</span>
+                    {sub.placement && (
+                      <span className="font-mono text-xs text-muted">
+                        {sub.placement === 1 ? "1st" : sub.placement === 2 ? "2nd" : sub.placement === 3 ? "3rd" : `${sub.placement}th`}
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
       </div>
 
       <Leaderboard entries={leaderboard} highlightPlayerId={myPlayerId} />
