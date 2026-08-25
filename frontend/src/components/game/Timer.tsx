@@ -23,6 +23,8 @@ export default function Timer({ startedAt, timeLimit }: TimerProps) {
   const progress = (elapsed / timeLimit) * 100;
   const circumference = 2 * Math.PI * 45;
 
+  const isUrgent = remaining <= 5;
+
   return (
     <div className="flex flex-col items-center">
       <div className="relative h-24 w-24">
@@ -41,16 +43,17 @@ export default function Timer({ startedAt, timeLimit }: TimerProps) {
             cy="50"
             r="45"
             fill="none"
-            stroke={remaining <= 5 ? "#ef4444" : "#3b82f6"}
+            stroke="currentColor"
             strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray={`${circumference}`}
             strokeDashoffset={`${circumference * (1 - progress / 100)}`}
             transform="rotate(-90 50 50)"
+            className={isUrgent ? "text-danger" : "text-data"}
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`font-mono text-2xl font-bold ${remaining <= 5 ? "text-red-500" : "text-ink"}`}>
+          <span className={`font-mono text-2xl font-bold ${isUrgent ? "text-danger" : "text-ink"}`}>
             {remaining}s
           </span>
         </div>

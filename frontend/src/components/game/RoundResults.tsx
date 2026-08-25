@@ -11,7 +11,7 @@ export default function RoundResults({ roundResults, myPlayerId }: RoundResultsP
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="rounded-[var(--radius-panel)] border border-border bg-surface p-6">
         <h2 className="text-xl font-semibold text-ink mb-1">
           Round {roundNumber} Complete
         </h2>
@@ -20,22 +20,22 @@ export default function RoundResults({ roundResults, myPlayerId }: RoundResultsP
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-surface p-6">
+      <div className="rounded-[var(--radius-panel)] border border-border bg-surface p-6">
         <h3 className="label-caps text-muted mb-4">Submissions</h3>
-        <div className="space-y-2">
+        <div className="space-y-1">
           {submissions.map((sub) => {
             const player = leaderboard.find((p) => p.playerId === sub.playerId);
             return (
               <div
                 key={sub.playerId}
-                className={`flex items-center justify-between rounded-md px-4 py-2 ${
-                  sub.playerId === myPlayerId ? "bg-pastel-blush" : "bg-background"
+                className={`flex items-center justify-between rounded-[var(--radius-control)] px-4 py-2 ${
+                  sub.playerId === myPlayerId ? "bg-rose/5 border border-rose/20" : "bg-background"
                 }`}
               >
                 <span className="text-ink font-medium">{player?.username ?? "Unknown"}</span>
                 <div className="flex items-center gap-3">
-                  <span className={sub.correct ? "text-code" : "text-rose"}>
-                    {sub.correct ? "✓" : "✗"}
+                  <span className={sub.correct ? "text-success" : "text-danger"}>
+                    {sub.correct ? "Correct" : "Wrong"}
                   </span>
                   <span className="font-mono text-sm text-muted">+{sub.pointsEarned}</span>
                   {sub.placement && (

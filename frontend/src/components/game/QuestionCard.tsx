@@ -16,7 +16,7 @@ export default function QuestionCard({
   selectedIndex,
 }: QuestionCardProps) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-6">
+    <div className="rounded-[var(--radius-panel)] border border-border bg-surface p-6">
       <h2 className="text-xl font-semibold text-ink mb-6">{question}</h2>
       <div className="space-y-3">
         {options.map((option, index) => {
@@ -25,9 +25,10 @@ export default function QuestionCard({
             <button
               key={index}
               type="button"
-              className={`flex w-full items-center rounded-lg border p-4 text-left transition-colors ${
+              aria-pressed={isSelected}
+              className={`flex w-full items-center rounded-[var(--radius-control)] border p-4 text-left transition-colors ${
                 isSelected
-                  ? "border-rose bg-pastel-blush"
+                  ? "border-rose bg-rose/5"
                   : "border-border bg-surface hover:border-muted"
               } ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
               onClick={() => onSubmit(index)}

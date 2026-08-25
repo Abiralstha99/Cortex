@@ -7,24 +7,24 @@ type AnswerFeedbackProps = {
 export default function AnswerFeedback({ result }: AnswerFeedbackProps) {
   const placementText = result.placement
     ? result.placement === 1
-      ? "1st!"
+      ? "1st"
       : result.placement === 2
-      ? "2nd!"
+      ? "2nd"
       : result.placement === 3
-      ? "3rd!"
+      ? "3rd"
       : `${result.placement}th`
     : null;
 
   return (
     <div
-      className={`rounded-lg border p-6 text-center ${
+      className={`rounded-[var(--radius-panel)] border p-6 text-center ${
         result.correct
-          ? "bg-pastel-mint border-code"
-          : "bg-pastel-blush border-rose"
+          ? "bg-success-soft border-success"
+          : "bg-danger-soft border-danger"
       }`}
     >
       <div className="text-lg font-semibold text-ink mb-2">
-        {result.correct ? "✓ CORRECT" : "✗ WRONG"}
+        {result.correct ? "Correct" : "Wrong"}
       </div>
       <div className="font-mono text-2xl font-bold text-ink mb-2">
         +{result.pointsEarned} points

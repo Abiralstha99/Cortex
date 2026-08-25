@@ -7,14 +7,14 @@ type LeaderboardProps = {
 
 export default function Leaderboard({ entries, highlightPlayerId }: LeaderboardProps) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-6">
+    <div className="rounded-[var(--radius-panel)] border border-border bg-surface p-6">
       <h3 className="label-caps text-muted mb-4">Leaderboard</h3>
       <div className="space-y-1">
         {entries.map((entry) => (
           <div
             key={entry.playerId}
-            className={`flex items-center justify-between rounded-md px-4 py-2 ${
-              entry.playerId === highlightPlayerId ? "bg-pastel-blush" : ""
+            className={`flex items-center justify-between rounded-[var(--radius-control)] px-4 py-2 ${
+              entry.playerId === highlightPlayerId ? "bg-rose/5 border border-rose/20" : ""
             }`}
           >
             <div className="flex items-center gap-3">

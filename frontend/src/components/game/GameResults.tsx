@@ -20,10 +20,10 @@ export default function GameResults({ gameResults, myPlayerId }: GameResultsProp
 
   return (
     <div className="space-y-6 text-center">
-      <div className="rounded-lg border border-border bg-surface p-8">
-        <h2 className="text-2xl font-bold text-ink mb-3">Game finished!</h2>
+      <div className="rounded-[var(--radius-panel)] border border-border bg-surface p-8">
+        <h2 className="text-2xl font-bold text-ink mb-3">Game finished</h2>
         {isWinner ? (
-          <p className="text-xl text-rose font-semibold">🎉 YOU WON! 🎉</p>
+          <p className="text-xl text-rose font-semibold">You won</p>
         ) : (
           <p className="text-lg text-muted">
             Winner: <strong className="text-ink">{winner.username}</strong>{" "}
