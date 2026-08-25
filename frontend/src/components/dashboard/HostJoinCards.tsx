@@ -1,46 +1,45 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function HostJoinCards() {
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <button
-        type="button"
-        onClick={() => navigate("/game/create")}
-        className="relative rounded-2xl bg-pastel-cream border border-border p-8 text-left cursor-pointer transition-shadow hover:shadow-sm"
-      >
-        <p className="label-caps text-muted mb-2">HOST</p>
-        <h2 className="text-xl font-semibold text-ink mb-2">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      {/* Create - primary weight, spans 2 cols */}
+      <div className="md:col-span-2 rounded-lg border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold text-ink mb-1">
           Create a quiz room
         </h2>
-        <p className="text-muted text-sm">
+        <p className="text-sm text-muted mb-4">
           Upload your notes, generate questions, and host a live session.
         </p>
-        <ArrowRight
-          size={20}
-          className="absolute bottom-8 right-8 text-muted"
-        />
-      </button>
+        <Button
+          variant="rose"
+          onClick={() => navigate("/game/create")}
+        >
+          Create quiz
+          <ArrowRight size={14} className="ml-1.5" />
+        </Button>
+      </div>
 
-      <button
-        type="button"
-        onClick={() => navigate("/game/join")}
-        className="relative rounded-2xl bg-pastel-mint border border-border p-8 text-left cursor-pointer transition-shadow hover:shadow-sm"
-      >
-        <p className="label-caps text-muted mb-2">PLAYER</p>
-        <h2 className="text-xl font-semibold text-ink mb-2">
-          Join a quiz room
+      {/* Join - secondary weight */}
+      <div className="rounded-lg border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold text-ink mb-1">
+          Join a room
         </h2>
-        <p className="text-muted text-sm">
-          Enter a room code from your host and compete in real-time.
+        <p className="text-sm text-muted mb-4">
+          Enter a room code and compete in real-time.
         </p>
-        <ArrowRight
-          size={20}
-          className="absolute bottom-8 right-8 text-muted"
-        />
-      </button>
+        <Button
+          variant="outline"
+          onClick={() => navigate("/game/join")}
+        >
+          Join room
+          <ArrowRight size={14} className="ml-1.5" />
+        </Button>
+      </div>
     </div>
   );
 }

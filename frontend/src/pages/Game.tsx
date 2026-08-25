@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import AppHeader from "@/components/AppHeader";
+import PageShell from "@/components/layout/PageShell";
 import Countdown from "@/components/game/Countdown";
 import QuestionCard from "@/components/game/QuestionCard";
 import Timer from "@/components/game/Timer";
@@ -18,7 +18,6 @@ export default function Game() {
   const { id: myPlayerId } = useCurrentUser();
 
   const storeGameId = useLobbyStore((s) => s.gameId);
-  const quizId = useLobbyStore((s) => s.quizId);
   const numberOfRounds = useLobbyStore((s) => s.numberOfRounds);
 
   const phase = useGameStore((s) => s.phase);
@@ -80,69 +79,56 @@ export default function Game() {
   if (!storeGameId || !myPlayerId) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader />
+    <PageShell maxWidth="3xl">
+      {/* Compact game meta */}
+      <div className="mb-6 flex items-center gap-3 text-xs text-muted">
+        {numberOfRounds != null && (
+          <span className="font-mono">
+            Round {roundNumber ?? "-"} / {numberOfRounds}
+          </span>
+        )}
+      </div>
 
-      <main className="mx-auto max-w-3xl px-4 py-8">
-        <div className="mb-8 text-center">
-          <p className="label-caps text-muted mb-1">IN PROGRESS</p>
-          <h1 className="text-3xl font-bold text-ink">Cortex</h1>
-          <div className="mt-3 flex items-center justify-center gap-3">
-            <span className="label-caps rounded bg-surface px-2 py-1 border border-border text-muted">
-              {quizId ? `QUIZ ${quizId.slice(0, 8)}` : "QUIZ"}
-            </span>
-            <span className="label-caps rounded bg-surface px-2 py-1 border border-border text-muted">
-              {numberOfRounds} ROUNDS
-            </span>
-            {phase === "question" && (
-              <span className="label-caps rounded bg-surface px-2 py-1 border border-border text-muted">
-                ROUND {roundNumber}
-              </span>
-            )}
+      <div className="space-y-6">
+        {phase === "idle" && (
+          <div className="py-12 text-muted">
+            <p>Starting game...</p>
           </div>
-        </div>
+        )}
 
-        <div className="space-y-6">
-          {phase === "idle" && (
-            <div className="text-center py-12 text-muted">
-              <p>Starting game...</p>
-            </div>
-          )}
+        {phase === "countdown" && <Countdown countdownMs={countdownMs} />}
 
-          {phase === "countdown" && <Countdown countdownMs={countdownMs} />}
+        {phase === "question" && question && startedAt && (
+          <div className="space-y-6">
+            <Timer startedAt={startedAt} timeLimit={timeLimit} />
+            <QuestionCard
+              question={question}
+              options={options}
+              onSubmit={handleSubmitAnswer}
+              disabled={myAnswer !== null}
+              selectedIndex={myAnswer}
+            />
+          </div>
+        )}
 
-          {phase === "question" && question && startedAt && (
-            <div className="space-y-6">
-              <Timer startedAt={startedAt} timeLimit={timeLimit} />
-              <QuestionCard
-                question={question}
-                options={options}
-                onSubmit={handleSubmitAnswer}
-                disabled={myAnswer !== null}
-                selectedIndex={myAnswer}
-              />
-            </div>
-          )}
+        {phase === "answered" && answerResult && (
+          <AnswerFeedback result={answerResult} />
+        )}
 
-          {phase === "answered" && answerResult && (
-            <AnswerFeedback result={answerResult} />
-          )}
+        {phase === "round_results" && roundResults && (
+          <RoundResults roundResults={roundResults} myPlayerId={myPlayerId} />
+        )}
 
-          {phase === "round_results" && roundResults && (
-            <RoundResults roundResults={roundResults} myPlayerId={myPlayerId} />
-          )}
+        {phase === "game_finished" && gameResults && (
+          <GameResults gameResults={gameResults} myPlayerId={myPlayerId} />
+        )}
 
-          {phase === "game_finished" && gameResults && (
-            <GameResults gameResults={gameResults} myPlayerId={myPlayerId} />
-          )}
-
-          {!connected && phase !== "game_finished" && (
-            <div className="rounded-lg border border-rose bg-pastel-blush p-4 text-center text-rose">
-              <p>Disconnected from server. Reconnecting...</p>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+        {!connected && phase !== "game_finished" && (
+          <div className="rounded-lg border border-danger bg-danger-soft p-4 text-center text-danger">
+            <p>Disconnected from server. Reconnecting...</p>
+          </div>
+        )}
+      </div>
+    </PageShell>
   );
 }

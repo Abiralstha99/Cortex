@@ -3,6 +3,8 @@ import { useAuth } from "@clerk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import EmptyState from "@/components/feedback/EmptyState";
 import {
   listPublicWaitingGames,
   type PublicWaitingRoomSummary,
@@ -70,15 +72,26 @@ export default function PublicRoomsList() {
 
   if (query.isLoading) {
     return (
-      <p className="py-8 text-center text-sm text-muted">Loading rooms…</p>
+      <div className="divide-y divide-border">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex items-center justify-between py-3">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-3 w-40" />
+            </div>
+            <Skeleton className="h-8 w-14 rounded-md" />
+          </div>
+        ))}
+      </div>
     );
   }
 
   if (query.isError) {
     return (
-      <p className="py-8 text-center text-sm text-rose">
-        Could not load public rooms.
-      </p>
+      <EmptyState
+        title="Could not load public rooms"
+        description="Something went wrong. Try refreshing the page."
+      />
     );
   }
 
@@ -86,27 +99,41 @@ export default function PublicRoomsList() {
 
   if (rooms.length === 0) {
     return (
-      <p className="py-12 text-center text-muted">
-        No public rooms yet. Create one to get started.
-      </p>
+      <EmptyState
+        title="No public rooms yet"
+        description="Create one to get started."
+        action={
+          <Button variant="outline" onClick={() => navigate("/game/create")}>
+            Create quiz
+          </Button>
+        }
+      />
     );
   }
 
   return (
-    <ul className="space-y-3">
+    <ul className="divide-y divide-border">
       {rooms.map((room) => (
         <li
           key={room.gameId}
-          className="flex items-center justify-between gap-4 rounded-xl border border-border bg-surface px-4 py-3"
+          className="flex items-center justify-between gap-4 py-3"
         >
           <div className="min-w-0">
             <p className="font-mono text-sm font-semibold tracking-widest text-ink">
               {room.roomCode}
             </p>
-            <p className="mt-1 truncate text-xs text-muted">
-              Host {room.hostUsername} · {room.playerCount}/{room.maxPlayers}{" "}
-              players · {room.numberOfRounds} Q
-              {room.quizGenStatus !== "ready" ? " · generating…" : ""}
+            <p className="mt-0.5 truncate text-xs text-muted">
+              <span>Host: {room.hostUsername}</span>
+              <span className="mx-2 text-border">|</span>
+              <span>{room.playerCount}/{room.maxPlayers} players</span>
+              <span className="mx-2 text-border">|</span>
+              <span>{room.numberOfRounds} questions</span>
+              {room.quizGenStatus !== "ready" && (
+                <>
+                  <span className="mx-2 text-border">|</span>
+                  <span className="text-muted">generating...</span>
+                </>
+              )}
             </p>
           </div>
           <Button

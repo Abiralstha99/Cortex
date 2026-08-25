@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
-import AppHeader from "@/components/AppHeader";
+import PageShell from "@/components/layout/PageShell";
 import {
   createWaitingGame,
   generateQuizForGame,
@@ -114,85 +114,82 @@ export default function CreateGame() {
         : null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader />
-      <main className="mx-auto max-w-6xl px-6 py-10">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-          <div className="lg:col-span-3 space-y-6">
-            <Tabs
-              value={activeTab}
-              onValueChange={(value) => setActiveTab(value as CreationSource)}
-            >
-              <TabsList>
-                <TabsTrigger value="upload">Upload PDF</TabsTrigger>
-                <TabsTrigger value="past">Past Quizzes</TabsTrigger>
-              </TabsList>
-              <TabsContent value="upload">
-                <UploadPanel
-                  file={uploadFile}
-                  onFileChange={setUploadFile}
-                  title={quizTitle}
-                  onTitleChange={setQuizTitle}
-                />
-              </TabsContent>
-              <TabsContent value="past">
-                <QuizPickerList
-                  quizzes={quizzesQuery.data ?? []}
-                  isLoading={quizzesQuery.isLoading}
-                  selectedId={selectedQuiz?.id ?? null}
-                  onSelect={(quiz) => {
-                    setSelectedQuiz(quiz);
-                    setQuestionCount(
-                      Math.min(questionCount, quiz.questionCount),
-                    );
-                  }}
-                />
-              </TabsContent>
-            </Tabs>
+    <PageShell maxWidth="6xl">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+        <div className="lg:col-span-3 space-y-6">
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as CreationSource)}
+          >
+            <TabsList>
+              <TabsTrigger value="upload">Upload PDF</TabsTrigger>
+              <TabsTrigger value="past">Past Quizzes</TabsTrigger>
+            </TabsList>
+            <TabsContent value="upload">
+              <UploadPanel
+                file={uploadFile}
+                onFileChange={setUploadFile}
+                title={quizTitle}
+                onTitleChange={setQuizTitle}
+              />
+            </TabsContent>
+            <TabsContent value="past">
+              <QuizPickerList
+                quizzes={quizzesQuery.data ?? []}
+                isLoading={quizzesQuery.isLoading}
+                selectedId={selectedQuiz?.id ?? null}
+                onSelect={(quiz) => {
+                  setSelectedQuiz(quiz);
+                  setQuestionCount(
+                    Math.min(questionCount, quiz.questionCount),
+                  );
+                }}
+              />
+            </TabsContent>
+          </Tabs>
 
-            <RoomSettings
-              players={maxPlayers}
-              onPlayersChange={setMaxPlayers}
-              questions={questionCount}
-              onQuestionsChange={setQuestionCount}
-              isPublic={isPublic}
-              onIsPublicChange={setIsPublic}
-              maxQuestions={
-                activeTab === "past" && pastQuizCap != null
-                  ? pastQuizCap
-                  : undefined
-              }
-            />
+          <RoomSettings
+            players={maxPlayers}
+            onPlayersChange={setMaxPlayers}
+            questions={questionCount}
+            onQuestionsChange={setQuestionCount}
+            isPublic={isPublic}
+            onIsPublicChange={setIsPublic}
+            maxQuestions={
+              activeTab === "past" && pastQuizCap != null
+                ? pastQuizCap
+                : undefined
+            }
+          />
 
-            {mutation.error && (
-              <p className="text-sm text-red-600">
-                {mutation.error instanceof Error
-                  ? mutation.error.message
-                  : "Failed to create game"}
-              </p>
-            )}
+          {mutation.error && (
+            <p className="text-sm text-danger">
+              {mutation.error instanceof Error
+                ? mutation.error.message
+                : "Failed to create game"}
+            </p>
+          )}
 
-            <Button
-              variant="rose"
-              size="lg"
-              className="w-full"
-              disabled={!canLaunch || mutation.isPending}
-              onClick={() => mutation.mutate()}
-            >
-              {mutation.isPending ? "Creating…" : "Launch lobby →"}
-            </Button>
-          </div>
-
-          <div className="lg:col-span-2">
-            <RoomPreviewCard
-              quizTitle={previewTitle}
-              questionCount={previewQuestionCount}
-              maxPlayers={maxPlayers}
-              isPublic={isPublic}
-            />
-          </div>
+          <Button
+            variant="rose"
+            size="lg"
+            className="w-full"
+            disabled={!canLaunch || mutation.isPending}
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? "Creating..." : "Launch lobby"}
+          </Button>
         </div>
-      </main>
-    </div>
+
+        <div className="lg:col-span-2">
+          <RoomPreviewCard
+            quizTitle={previewTitle}
+            questionCount={previewQuestionCount}
+            maxPlayers={maxPlayers}
+            isPublic={isPublic}
+          />
+        </div>
+      </div>
+    </PageShell>
   );
 }

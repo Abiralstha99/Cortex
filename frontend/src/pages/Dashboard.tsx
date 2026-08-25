@@ -1,22 +1,22 @@
-import AppHeader from "@/components/AppHeader";
+import { useUser } from "@clerk/react";
+import PageShell from "@/components/layout/PageShell";
 import HostJoinCards from "@/components/dashboard/HostJoinCards";
 import LiveRoomsSection from "@/components/dashboard/LiveRoomsSection";
 
 export default function Dashboard() {
+  const { user } = useUser();
+  const firstName = user?.firstName ?? null;
+
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader />
-      <main className="mx-auto max-w-5xl px-6 py-12">
-        {/* Welcome */}
-        <div className="mb-10 text-center">
-          <p className="label-caps text-muted mb-2">BUILT FOR STUDENTS</p>
-          <h1 className="text-3xl font-normal text-ink">
-            Good to have <span className="font-semibold">you back.</span>
-          </h1>
-        </div>
-        <HostJoinCards />
-        <LiveRoomsSection />
-      </main>
-    </div>
+    <PageShell>
+      {/* Welcome */}
+      <div className="mb-10">
+        <h1 className="text-2xl font-semibold text-ink">
+          Welcome back{firstName ? `, ${firstName}` : ""}.
+        </h1>
+      </div>
+      <HostJoinCards />
+      <LiveRoomsSection />
+    </PageShell>
   );
 }

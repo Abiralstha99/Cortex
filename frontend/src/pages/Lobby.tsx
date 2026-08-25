@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { LogOut, Play, Copy, Wifi, WifiOff, Crown, Check, X } from "lucide-react";
-import AppHeader from "@/components/AppHeader";
+import PageShell from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import QuizGenerationPanel from "@/components/lobby/QuizGenerationPanel";
 import { useLobbySocket } from "@/hooks/useLobbySocket";
@@ -78,108 +78,104 @@ export default function Lobby() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader />
-      <main className="mx-auto max-w-2xl px-6 py-10">
-        {/* Header section */}
-        <div className="mb-8 text-center">
-          <p className="label-caps text-muted mb-2">WAITING ROOM</p>
-          <h1 className="text-2xl font-semibold text-ink mb-4">Lobby</h1>
+    <PageShell maxWidth="2xl">
+      {/* Header section */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-ink mb-4">Lobby</h1>
 
-          {/* Room code */}
-          <div className="inline-flex items-center gap-3 rounded-xl bg-surface border border-border px-6 py-3">
-            <span className="label-caps text-muted">ROOM</span>
-            <span className="font-mono text-2xl font-bold tracking-widest text-ink">
-              {normalized || "------"}
-            </span>
-            <button
-              type="button"
-              onClick={copyCode}
-              className="text-muted hover:text-ink transition-colors"
-              aria-label={copied ? "Copied!" : "Copy room code"}
-            >
-              {copied ? <Check size={16} className="text-code" /> : <Copy size={16} />}
-            </button>
-          </div>
-
-          {/* Meta info */}
-          <div className="mt-3 flex items-center justify-center gap-4 text-xs text-muted">
-            {numberOfRounds != null && (
-              <span className="font-mono">{numberOfRounds} questions</span>
-            )}
-            {maxPlayers != null && (
-              <span className="font-mono">
-                {players.length}/{maxPlayers} players
-              </span>
-            )}
-            <span className={`flex items-center gap-1 ${connected ? "text-code" : "text-rose"}`}>
-              {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
-              {connected ? "Connected" : "Disconnected"}
-            </span>
-          </div>
-        </div>
-
-        {/* Status messages */}
-        {status === "joining" && (
-          <p className="text-center text-sm text-muted mb-6">Joining room…</p>
-        )}
-        {status === "error" && (
-          <p className="text-center text-sm text-rose mb-6">Failed to join room.</p>
-        )}
-
-        <QuizGenerationPanel isHost={isHost} />
-
-        {/* Player list */}
-        <div className="space-y-2 mb-8">
-          {players.map((player) => (
-            <PlayerRow
-              key={player.id}
-              player={player}
-              isHost={player.id === hostId}
-              isSelf={player.id === myUserId}
-            />
-          ))}
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button variant="outline" onClick={toggleReady}>
-            Toggle ready
-          </Button>
-
-          {isHost && (
-            <Button
-              variant="rose"
-              onClick={handleStart}
-              disabled={status === "starting" || !quizReady}
-              title={!quizReady ? "Wait for the quiz to finish generating" : undefined}
-            >
-              <Play size={14} className="mr-1" />
-              {status === "starting" ? "Starting…" : "Start game"}
-            </Button>
-          )}
-
-          <Button variant="ghost" onClick={handleLeave} className="text-muted">
-            <LogOut size={14} className="mr-1" />
-            Leave
-          </Button>
-        </div>
-
-        {/* Toast */}
-        {toast && (
-          <div
-            className="mt-4 mx-auto max-w-sm rounded-lg bg-surface border border-border px-4 py-2 text-center text-sm text-ink cursor-pointer"
-            onClick={() => setToast(null)}
+        {/* Room code */}
+        <div className="inline-flex items-center gap-3 rounded-lg bg-surface border border-border px-5 py-3">
+          <span className="text-xs font-medium text-muted uppercase tracking-wide">Room</span>
+          <span className="font-mono text-2xl font-bold tracking-widest text-ink">
+            {normalized || "------"}
+          </span>
+          <button
+            type="button"
+            onClick={copyCode}
+            className="text-muted hover:text-ink transition-colors"
+            aria-label={copied ? "Copied!" : "Copy room code"}
           >
-            {toast}
-          </div>
+            {copied ? <Check size={16} className="text-success" /> : <Copy size={16} />}
+          </button>
+        </div>
+
+        {/* Meta info */}
+        <div className="mt-3 flex items-center gap-4 text-xs text-muted">
+          {numberOfRounds != null && (
+            <span className="font-mono">{numberOfRounds} questions</span>
+          )}
+          {maxPlayers != null && (
+            <span className="font-mono">
+              {players.length}/{maxPlayers} players
+            </span>
+          )}
+          <span className={`flex items-center gap-1 ${connected ? "text-success" : "text-rose"}`}>
+            {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
+            {connected ? "Connected" : "Disconnected"}
+          </span>
+        </div>
+      </div>
+
+      {/* Status messages */}
+      {status === "joining" && (
+        <p className="text-sm text-muted mb-6">Joining room...</p>
+      )}
+      {status === "error" && (
+        <p className="text-sm text-danger mb-6">Failed to join room.</p>
+      )}
+
+      <QuizGenerationPanel isHost={isHost} />
+
+      {/* Player list */}
+      <div className="space-y-2 mb-8">
+        {players.map((player) => (
+          <PlayerRow
+            key={player.id}
+            player={player}
+            isHost={player.id === hostId}
+            isSelf={player.id === myUserId}
+          />
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="outline" onClick={toggleReady}>
+          Toggle ready
+        </Button>
+
+        {isHost && (
+          <Button
+            variant="rose"
+            onClick={handleStart}
+            disabled={status === "starting" || !quizReady}
+            title={!quizReady ? "Wait for the quiz to finish generating" : undefined}
+          >
+            <Play size={14} className="mr-1" />
+            {status === "starting" ? "Starting..." : "Start game"}
+          </Button>
         )}
-      </main>
-    </div>
+
+        <Button variant="ghost" onClick={handleLeave} className="text-muted">
+          <LogOut size={14} className="mr-1" />
+          Leave
+        </Button>
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className="mt-4 max-w-sm rounded-lg bg-surface border border-border px-4 py-2 text-sm text-ink cursor-pointer"
+          onClick={() => setToast(null)}
+        >
+          {toast}
+        </div>
+      )}
+    </PageShell>
   );
 }
 
-/** Inline player row — replaces the old PlayerCard import */
+/** Inline player row */
 function PlayerRow({
   player,
   isHost,
@@ -192,7 +188,7 @@ function PlayerRow({
   return (
     <div
       className={`flex items-center justify-between rounded-lg border px-4 py-3 ${
-        isSelf ? "border-rose/30 bg-pastel-blush" : "border-border bg-surface"
+        isSelf ? "border-rose/30 bg-rose/5" : "border-border bg-surface"
       }`}
     >
       <div className="flex items-center gap-2">
@@ -201,14 +197,14 @@ function PlayerRow({
           {isSelf && <span className="ml-1 text-xs text-muted">(you)</span>}
         </span>
         {isHost && (
-          <span className="inline-flex items-center gap-0.5 rounded bg-pastel-cream px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ink">
+          <span className="inline-flex items-center gap-0.5 rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
             <Crown size={10} /> Host
           </span>
         )}
       </div>
       <span
         className={`inline-flex items-center gap-1 text-xs font-medium ${
-          player.ready ? "text-code" : "text-muted"
+          player.ready ? "text-success" : "text-muted"
         }`}
       >
         {player.ready ? <Check size={12} /> : <X size={12} />}
