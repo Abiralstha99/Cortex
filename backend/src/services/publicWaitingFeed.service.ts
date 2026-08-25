@@ -12,6 +12,11 @@ import {
   emitSaveAsPublic,
 } from "../socket/publicWaiting.js";
 
+/**
+ * Sole write path into PUBLIC_WAITING_ZSET.
+ * Always append onto an existing MULTI (createWaitingGame); do not add a
+ * standalone redis.zadd indexer alongside this.
+ */
 export function queuePublicIndex(
   transaction: ChainableCommander,
   gameId: string,
