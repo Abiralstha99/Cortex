@@ -6,7 +6,6 @@ import { LandingNav } from "@/components/landing/LandingNav";
 import { Hero } from "@/components/landing/Hero";
 import { Features } from "@/components/landing/Features";
 import { HowItWorks } from "@/components/landing/HowItWorks";
-import { Coverage } from "@/components/landing/Coverage";
 import { FinalCta } from "@/components/landing/FinalCta";
 
 export default function Landing() {
@@ -46,7 +45,6 @@ export default function Landing() {
       />
       <Features />
       <HowItWorks ref={howItWorksRef} />
-      <Coverage />
       <FinalCta onStart={() => goToApp()} />
     </div>
   );

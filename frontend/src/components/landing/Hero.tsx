@@ -31,24 +31,20 @@ export function Hero({ onCreateQuiz, onHowItWorksClick, onJoinRoom }: HeroProps)
 
   return (
     <section className="mx-auto max-w-6xl px-6 pb-20 pt-16 md:pt-24">
-      {/* Eyebrow */}
-      <p className="label-caps mb-4 text-muted">
-        NOTES → QUIZ → COMPETE
+      <p className="mb-4 text-sm text-muted">
+        Notes to live quiz
       </p>
 
-      {/* Headline */}
       <h1 className="mb-5 text-4xl font-extrabold leading-tight tracking-tight text-ink md:text-5xl lg:text-6xl">
         Turn your notes into a live{" "}
         <span className="text-rose">quiz.</span>
       </h1>
 
-      {/* Subtitle */}
       <p className="mb-8 max-w-lg text-lg text-muted">
         Upload any document, generate AI-powered questions, and challenge your
         friends in real-time multiplayer rounds.
       </p>
 
-      {/* CTAs */}
       <div className="mb-10 flex flex-wrap items-center gap-3">
         <Button variant="rose" size="lg" onClick={onCreateQuiz}>
           Create quiz
@@ -60,7 +56,6 @@ export function Hero({ onCreateQuiz, onHowItWorksClick, onJoinRoom }: HeroProps)
         </Button>
       </div>
 
-      {/* Inline room code join */}
       <form
         onSubmit={handleJoin}
         className="flex flex-wrap items-center gap-3"
