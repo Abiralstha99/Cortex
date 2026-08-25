@@ -14,7 +14,11 @@ after(async () => {
 });
 
 describe("createWaitingGame public index", () => {
-  it("persists and indexes a newly created public waiting room", async (t) => {
+  // ESM exports are non-configurable, so we cannot spy on queuePublicIndex.
+  // Contract: public create lands in the ZSET via MULTI (not standalone redis.zadd).
+  // Sole production caller of queuePublicIndex is enforced by call-site grep (Task 3).
+
+  it("persists and indexes a newly created public waiting room via MULTI indexer", async (t) => {
     const directZadd = t.mock.method(redis, "zadd");
     const game = await createWaitingGame({
       hostId: "host-1",
@@ -38,23 +42,20 @@ describe("createWaitingGame public index", () => {
     assert.equal(directZadd.mock.callCount(), 0);
   });
 
-  it(
-    "persists but does not index a newly created private waiting room",
-    async (t) => {
-      const game = await createWaitingGame({
-        hostId: "host-1",
-        hostUsername: "alice",
-        rounds: 5,
-        maxPlayers: 4,
-      });
-      t.after(async () => {
-        await redis.del(GAME_KEY(game.gameId));
-      });
+  it("persists but does not index a newly created private waiting room", async (t) => {
+    const game = await createWaitingGame({
+      hostId: "host-1",
+      hostUsername: "alice",
+      rounds: 5,
+      maxPlayers: 4,
+    });
+    t.after(async () => {
+      await redis.del(GAME_KEY(game.gameId));
+    });
 
-      const raw = await redis.hgetall(GAME_KEY(game.gameId));
-      assert.equal(game.isPublic, false);
-      assert.equal(raw.isPublic, "0");
-      assert.equal(await redis.zscore(PUBLIC_WAITING_ZSET, game.gameId), null);
-    },
-  );
+    const raw = await redis.hgetall(GAME_KEY(game.gameId));
+    assert.equal(game.isPublic, false);
+    assert.equal(raw.isPublic, "0");
+    assert.equal(await redis.zscore(PUBLIC_WAITING_ZSET, game.gameId), null);
+  });
 });
