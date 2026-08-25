@@ -58,20 +58,20 @@ export default function QuizGenerationPanel({
 
   return (
     <section
-      className="mb-8 rounded-xl border border-border bg-surface p-5"
+      className="mb-8 rounded-lg border border-border bg-surface p-5"
       aria-live="polite"
     >
       {quizGenStatus === "processing" && (
         <StatusRow
           icon={<Clock3 className="size-5 text-rose" />}
-          title="Generating questions…"
+          title="Generating questions..."
           detail="The quiz will be available here when it is ready."
         />
       )}
 
       {quizGenStatus === "ready" && (
         <StatusRow
-          icon={<CheckCircle2 className="size-5 text-code" />}
+          icon={<CheckCircle2 className="size-5 text-success" />}
           title="Quiz ready"
           detail={
             numberOfRounds != null
@@ -92,7 +92,7 @@ export default function QuizGenerationPanel({
       {quizGenStatus === "failed" && (
         <div className="space-y-4">
           <StatusRow
-            icon={<AlertCircle className="size-5 text-rose" />}
+            icon={<AlertCircle className="size-5 text-danger" />}
             title="Quiz generation failed"
             detail={quizGenError ?? "The questions could not be generated."}
           />
@@ -111,7 +111,7 @@ export default function QuizGenerationPanel({
                 onTitleChange={setQuizTitle}
               />
               {retryError && (
-                <p className="mt-3 text-sm text-rose">{retryError}</p>
+                <p className="mt-3 text-sm text-danger">{retryError}</p>
               )}
               <Button
                 type="button"
@@ -121,7 +121,7 @@ export default function QuizGenerationPanel({
                 onClick={handleRetry}
               >
                 <RefreshCw />
-                {isRetrying ? "Retrying…" : "Retry generation"}
+                {isRetrying ? "Retrying..." : "Retry generation"}
               </Button>
             </div>
           ) : (
@@ -148,8 +148,8 @@ function StatusRow({
     <div className="flex items-start gap-3">
       <span className="mt-0.5 shrink-0">{icon}</span>
       <div>
-        <h2 className="text-balance text-sm font-semibold text-ink">{title}</h2>
-        <p className="mt-1 text-pretty text-sm text-muted">{detail}</p>
+        <h2 className="text-sm font-semibold text-ink">{title}</h2>
+        <p className="mt-1 text-sm text-muted">{detail}</p>
       </div>
     </div>
   );

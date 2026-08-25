@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { LogOut, Play, Copy, Wifi, WifiOff, Crown, Check, X } from "lucide-react";
+import { toast } from "sonner";
 import PageShell from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import QuizGenerationPanel from "@/components/lobby/QuizGenerationPanel";
 import { useLobbySocket } from "@/hooks/useLobbySocket";
 import { useLobbyStore } from "@/stores/lobbyStore";
@@ -23,13 +25,33 @@ export default function Lobby() {
   const quizId = useLobbyStore((s) => s.quizId);
   const quizGenStatus = useLobbyStore((s) => s.quizGenStatus);
   const status = useLobbyStore((s) => s.status);
-  const toast = useLobbyStore((s) => s.toast);
+  const storeToast = useLobbyStore((s) => s.toast);
   const attemptStart = useLobbyStore((s) => s.attemptStart);
   const setToast = useLobbyStore((s) => s.setToast);
 
   const { id: myUserId } = useCurrentUser();
   const isHost = myUserId != null && hostId === myUserId;
   const quizReady = quizGenStatus === "ready" && Boolean(quizId);
+
+  // Bridge lobbyStore toast to sonner - ref guards against infinite loops
+  const lastToastRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (storeToast && storeToast !== lastToastRef.current) {
+      lastToastRef.current = storeToast;
+      toast(storeToast, {
+        onAutoClose: () => {
+          lastToastRef.current = null;
+          setToast(null);
+        },
+        onDismiss: () => {
+          lastToastRef.current = null;
+          setToast(null);
+        },
+      });
+    } else if (!storeToast) {
+      lastToastRef.current = null;
+    }
+  }, [storeToast, setToast]);
 
   // Navigate everyone to the game screen when the server confirms game_started
   useEffect(() => {
@@ -72,34 +94,30 @@ export default function Lobby() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Last-resort: show the code in a prompt for manual copy
       window.prompt("Copy the room code:", normalized);
     }
   }
 
   return (
     <PageShell maxWidth="2xl">
-      {/* Header section */}
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-ink mb-4">Lobby</h1>
-
-        {/* Room code */}
-        <div className="inline-flex items-center gap-3 rounded-lg bg-surface border border-border px-5 py-3">
-          <span className="text-xs font-medium text-muted uppercase tracking-wide">Room</span>
-          <span className="font-mono text-2xl font-bold tracking-widest text-ink">
+        <h1 className="text-lg font-medium text-muted mb-2">Lobby</h1>
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-3xl font-bold tracking-widest text-ink">
             {normalized || "------"}
           </span>
           <button
             type="button"
             onClick={copyCode}
-            className="text-muted hover:text-ink transition-colors"
+            className="rounded-md p-1.5 text-muted hover:text-ink hover:bg-track transition-colors"
             aria-label={copied ? "Copied!" : "Copy room code"}
           >
             {copied ? <Check size={16} className="text-success" /> : <Copy size={16} />}
           </button>
         </div>
 
-        {/* Meta info */}
+        {/* Meta row */}
         <div className="mt-3 flex items-center gap-4 text-xs text-muted">
           {numberOfRounds != null && (
             <span className="font-mono">{numberOfRounds} questions</span>
@@ -109,7 +127,7 @@ export default function Lobby() {
               {players.length}/{maxPlayers} players
             </span>
           )}
-          <span className={`flex items-center gap-1 ${connected ? "text-success" : "text-rose"}`}>
+          <span className={`inline-flex items-center gap-1 ${connected ? "text-success" : "text-danger"}`}>
             {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
             {connected ? "Connected" : "Disconnected"}
           </span>
@@ -161,21 +179,11 @@ export default function Lobby() {
           Leave
         </Button>
       </div>
-
-      {/* Toast */}
-      {toast && (
-        <div
-          className="mt-4 max-w-sm rounded-lg bg-surface border border-border px-4 py-2 text-sm text-ink cursor-pointer"
-          onClick={() => setToast(null)}
-        >
-          {toast}
-        </div>
-      )}
     </PageShell>
   );
 }
 
-/** Inline player row */
+/** Player row */
 function PlayerRow({
   player,
   isHost,
@@ -187,8 +195,10 @@ function PlayerRow({
 }) {
   return (
     <div
-      className={`flex items-center justify-between rounded-lg border px-4 py-3 ${
-        isSelf ? "border-rose/30 bg-rose/5" : "border-border bg-surface"
+      className={`flex items-center justify-between rounded-lg border px-4 py-3 bg-surface ${
+        isSelf
+          ? "ring-1 ring-rose/40 border-border"
+          : "border-border"
       }`}
     >
       <div className="flex items-center gap-2">
@@ -197,9 +207,10 @@ function PlayerRow({
           {isSelf && <span className="ml-1 text-xs text-muted">(you)</span>}
         </span>
         {isHost && (
-          <span className="inline-flex items-center gap-0.5 rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
-            <Crown size={10} /> Host
-          </span>
+          <Badge variant="outline" className="gap-0.5 text-[10px] uppercase tracking-wide">
+            <Crown size={10} />
+            Host
+          </Badge>
         )}
       </div>
       <span
