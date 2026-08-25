@@ -29,6 +29,19 @@ export type WaitingRoom = {
   maxPlayers: number;
 };
 
+/** Client-facing public lobby card (REST list + save_as_public payload). */
+export type PublicWaitingRoomSummary = {
+  gameId: string;
+  roomCode: string;
+  hostId: string;
+  hostUsername: string;
+  playerCount: number;
+  maxPlayers: number;
+  numberOfRounds: number;
+  quizGenStatus: QuizGenStatus;
+  createdAt: string;
+};
+
 export type ActiveGame = Omit<WaitingRoom, "status"> & {
   status: "playing";
   currentRound: number;
