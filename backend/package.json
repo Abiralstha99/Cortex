@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Backend for Capital Rush",
+  "description": "Backend for Cortex",
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",

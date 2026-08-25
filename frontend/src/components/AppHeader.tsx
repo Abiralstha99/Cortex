@@ -46,7 +46,7 @@ export default function AppHeader() {
           <span className="flex size-9 items-center justify-center rounded-xl bg-rose text-white shadow-sm ring-1 ring-rose/20">
             <Zap className="size-4 fill-white" strokeWidth={2.25} />
           </span>
-          <span className="text-base font-bold tracking-tight">QuizRush</span>
+          <span className="text-base font-bold tracking-tight">Cortex</span>
         </Link>
 
         {/* Center — primary nav */}

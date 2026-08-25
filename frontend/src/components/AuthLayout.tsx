@@ -19,7 +19,7 @@ export default function AuthLayout({
         className="mb-12 flex items-center gap-1.5 self-start text-ink no-underline"
       >
         <Zap size={18} className="text-rose" />
-        <span className="text-lg font-semibold tracking-tight">QuizRush</span>
+        <span className="text-lg font-semibold tracking-tight">Cortex</span>
       </Link>
 
       {/* Intro */}

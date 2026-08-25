@@ -86,7 +86,7 @@ export default function Game() {
       <main className="mx-auto max-w-3xl px-4 py-8">
         <div className="mb-8 text-center">
           <p className="label-caps text-muted mb-1">IN PROGRESS</p>
-          <h1 className="text-3xl font-bold text-ink">QuizRush</h1>
+          <h1 className="text-3xl font-bold text-ink">Cortex</h1>
           <div className="mt-3 flex items-center justify-center gap-3">
             <span className="label-caps rounded bg-surface px-2 py-1 border border-border text-muted">
               {quizId ? `QUIZ ${quizId.slice(0, 8)}` : "QUIZ"}

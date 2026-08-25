@@ -14,7 +14,7 @@ export function LandingNav({ onPlayNow, onHowItWorksClick }: LandingNavProps) {
         <div className="flex items-center gap-1.5">
           <Zap className="size-5 fill-rose text-rose" />
           <span className="text-lg font-bold tracking-tight text-ink">
-            QuizRush
+            Cortex
           </span>
         </div>
 
