@@ -11,7 +11,7 @@ export default function SignUp() {
   }
 
   return (
-    <AuthLayout heading="Join the race." subtitle="Create your player profile.">
+    <AuthLayout heading="Create your account." subtitle="Set up your player profile.">
       <ClerkSignUp
         routing="path"
         path="/sign-up"

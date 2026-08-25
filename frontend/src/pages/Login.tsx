@@ -13,7 +13,7 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout heading="Welcome back." subtitle="Your next match is waiting.">
+    <AuthLayout heading="Welcome back." subtitle="Sign in to continue.">
       <SignIn
         routing="path"
         path="/login"

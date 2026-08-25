@@ -47,12 +47,6 @@
 
   --radius-control: 0.5rem;
   --radius-panel: 0.75rem;
-
-  /* temporary bridge - delete after pastel call sites migrated */
-  --color-pastel-cream: #f4f4f2;
-  --color-pastel-mint: #ecfdf5;
-  --color-pastel-lavender: #f4f4f2;
-  --color-pastel-blush: #fef2f2;
 }
 
 @layer base {
