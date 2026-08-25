@@ -16,7 +16,6 @@ import type { Player, WaitingRoom } from "../types/room.types.js";
 import { RoomCodeSchema } from "../schemas/common.js";
 import { prisma } from "../lib/prisma.js";
 import { assertCanStartWithQuiz } from "./gamePlay.helpers.js";
-import { unindexPublicWaitingRoom } from "./game.service.js";
 import { waitingQuizPublicState } from "./waitingQuiz.helpers.js";
 
 const MAX_PLAYERS = 8;
@@ -136,8 +135,9 @@ const LEAVE_GAME_LUA = `
   table.remove(players, foundIndex)
 
   if #players == 0 then
+    local isPublic = redis.call("HGET", KEYS[1], "isPublic") or "0"
     redis.call("DEL", KEYS[1])
-    return { "empty", playerId }
+    return { "empty", playerId, isPublic }
   end
 
   -- Host left with others remaining — promote the first remaining player.
@@ -273,6 +273,7 @@ export async function leaveWaitingGame(
   game: WaitingRoom | null;
   leftPlayerId: string;
   gameId: string;
+  wasPublic: boolean;
 }> {
   const gameId = await redis.get(ROOM_CODE_KEY(roomCode));
   if (!gameId) {
@@ -284,9 +285,9 @@ export async function leaveWaitingGame(
     1,
     GAME_KEY(gameId),
     playerId,
-  )) as [string, string?];
+  )) as [string, string?, string?];
 
-  const [status, leftPlayerId] = result;
+  const [status, leftPlayerId, isPublicFlag] = result;
 
   switch (status) {
     case "missing":
@@ -297,18 +298,11 @@ export async function leaveWaitingGame(
       throw new Error("You are not in this room");
     case "empty":
       await redis.del(ROOM_CODE_KEY(roomCode));
-      try {
-        await unindexPublicWaitingRoom(gameId);
-      } catch (error) {
-        console.error(
-          `Failed to unindex empty waiting room ${gameId}`,
-          error,
-        );
-      }
       return {
         game: null,
         leftPlayerId: leftPlayerId ?? playerId,
         gameId,
+        wasPublic: isPublicFlag === "1",
       };
     case "ok":
       break;
@@ -323,10 +317,12 @@ export async function leaveWaitingGame(
   }
 
   const players: Player[] = JSON.parse(raw.players!);
+  const game = deserializeRoom(raw, players);
   return {
-    game: deserializeRoom(raw, players),
+    game,
     leftPlayerId: leftPlayerId ?? playerId,
     gameId,
+    wasPublic: game.isPublic,
   };
 }
 
@@ -389,10 +385,5 @@ export async function startGame(
     throw new Error("Failed to update game state; rolled back", { cause: err });
   }
 
-  try {
-    await unindexPublicWaitingRoom(gameId);
-  } catch (error) {
-    console.error(`Failed to unindex started game ${gameId}`, error);
-  }
   return { game };
 }
