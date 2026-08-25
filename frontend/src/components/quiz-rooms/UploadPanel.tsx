@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { FileText, Upload } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const ACCEPTED_TYPES = ["application/pdf", "text/plain"];
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
@@ -75,7 +77,7 @@ export default function UploadPanel({
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onClick={() => fileInputRef.current?.click()}
-        className="cursor-pointer rounded-xl border-2 border-dashed border-border p-10 text-center transition-colors hover:border-muted hover:bg-surface"
+        className="cursor-pointer rounded-[var(--radius-panel)] border-2 border-dashed border-border p-10 text-center transition-colors hover:border-muted hover:bg-surface"
       >
         <input
           ref={fileInputRef}
@@ -93,14 +95,9 @@ export default function UploadPanel({
             <Upload size={32} className="text-muted" />
             <p className="text-sm font-medium text-ink">Drop your notes here</p>
             <p className="text-xs text-muted">or click to browse</p>
-            <div className="mt-2 flex gap-2">
-              <span className="rounded-md bg-pastel-cream px-2 py-0.5 font-mono text-xs text-ink">
-                .pdf
-              </span>
-              <span className="rounded-md bg-pastel-mint px-2 py-0.5 font-mono text-xs text-ink">
-                .txt
-              </span>
-            </div>
+            <p className="mt-2 font-mono text-xs text-muted">
+              .pdf / .txt
+            </p>
           </div>
         )}
 
@@ -117,13 +114,8 @@ export default function UploadPanel({
 
       {showTitle && (
         <div className="space-y-2">
-          <label
-            htmlFor="quiz-title"
-            className="text-xs uppercase tracking-widest text-muted"
-          >
-            Quiz name
-          </label>
-          <input
+          <Label htmlFor="quiz-title">Quiz name</Label>
+          <Input
             id="quiz-title"
             type="text"
             value={title}
@@ -131,7 +123,6 @@ export default function UploadPanel({
             placeholder="e.g. Cell Biology Midterm"
             onChange={(e) => onTitleChange(e.target.value)}
             onClick={(e) => e.stopPropagation()}
-            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-rose/40"
           />
           <p className="text-xs text-muted">
             Shown in Past Quizzes. Leave blank to use the file name.
@@ -140,8 +131,8 @@ export default function UploadPanel({
       )}
 
       {showQuestionCount && (
-        <div className="flex items-center justify-between rounded-lg border border-border bg-surface p-3">
-          <span className="label-caps text-muted">Questions</span>
+        <div className="flex items-center justify-between rounded-[var(--radius-panel)] border border-border bg-surface p-3">
+          <span className="text-sm font-medium text-muted">Questions</span>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -149,7 +140,7 @@ export default function UploadPanel({
                 e.stopPropagation();
                 onCountChange(Math.max(5, count - 5));
               }}
-              className="flex h-7 w-7 items-center justify-center rounded border border-border text-sm hover:bg-background"
+              className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] border border-border text-sm hover:bg-background"
             >
               −
             </button>
@@ -160,7 +151,7 @@ export default function UploadPanel({
                 e.stopPropagation();
                 onCountChange(Math.min(50, count + 5));
               }}
-              className="flex h-7 w-7 items-center justify-center rounded border border-border text-sm hover:bg-background"
+              className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] border border-border text-sm hover:bg-background"
             >
               +
             </button>
@@ -168,7 +159,7 @@ export default function UploadPanel({
         </div>
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
     </div>
   );
 }

@@ -1,26 +1,23 @@
 const steps = [
-  { number: "01", text: "Get the room code from your host" },
-  { number: "02", text: "Enter the 6-character code above" },
-  { number: "03", text: "You'll join the lobby and wait for the game to start" },
+  "Get the room code from your host",
+  "Enter the 6-character code above",
+  "You will join the lobby and wait for the game to start",
 ];
 
 export default function HowJoiningWorks() {
   return (
-    <div className="sticky top-24 rounded-2xl bg-preview p-6 text-white">
-      <p className="text-xs uppercase tracking-wider text-white/60">
-        How Joining Works
+    <div className="sticky top-24 rounded-[var(--radius-panel)] bg-preview p-6 text-white">
+      <p className="text-xs font-medium text-white/60">
+        How joining works
       </p>
 
-      <div className="mt-6 space-y-5">
+      <ul className="mt-4 space-y-3">
         {steps.map((step) => (
-          <div key={step.number} className="flex gap-4">
-            <span className="font-mono text-sm font-bold text-data">
-              {step.number}
-            </span>
-            <p className="text-sm text-white/80">{step.text}</p>
-          </div>
+          <li key={step} className="text-sm text-white/80">
+            {step}
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

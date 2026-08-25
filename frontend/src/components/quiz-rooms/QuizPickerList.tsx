@@ -1,6 +1,14 @@
 import { useMemo, useState } from "react";
 import { ChevronRight, Search, CalendarDays } from "lucide-react";
 import type { QuizSummary } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface QuizPickerListProps {
   quizzes: QuizSummary[];
@@ -62,8 +70,8 @@ export default function QuizPickerList({
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-surface py-12 text-center">
-        <p className="text-sm text-muted">Loading quizzes…</p>
+      <div className="rounded-[var(--radius-panel)] border border-dashed border-border bg-surface py-12 text-center">
+        <p className="text-sm text-muted">Loading quizzes...</p>
       </div>
     );
   }
@@ -72,7 +80,7 @@ export default function QuizPickerList({
 
   if (playable.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-12 text-center">
+      <div className="rounded-[var(--radius-panel)] border border-dashed border-border bg-surface px-6 py-12 text-center">
         <p className="font-medium text-ink">No past quizzes available</p>
         <p className="mt-1 text-sm text-muted">
           Upload a PDF to generate your first quiz.
@@ -91,38 +99,36 @@ export default function QuizPickerList({
             size={14}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
           />
-          <input
+          <Input
             type="text"
-            placeholder="Search quizzes…"
+            placeholder="Search quizzes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-sm text-ink placeholder:text-muted/60 focus:border-rose focus:outline-none"
+            className="pl-9"
           />
         </div>
 
         {/* Date filter */}
-        <div className="relative">
-          <CalendarDays
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
-          />
-          <select
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-            className="h-9 appearance-none rounded-md border border-border bg-surface pl-9 pr-8 text-sm text-ink focus:border-rose focus:outline-none cursor-pointer"
-            aria-label="Filter by date created"
-          >
-            <option value="all">All time</option>
-            <option value="today">Today</option>
-            <option value="week">Past week</option>
-            <option value="month">Past month</option>
-          </select>
-        </div>
+        <Select
+          value={dateFilter}
+          onValueChange={(value) => setDateFilter(value as DateFilter)}
+        >
+          <SelectTrigger aria-label="Filter by date created">
+            <CalendarDays size={14} className="text-muted" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All time</SelectItem>
+            <SelectItem value="today">Today</SelectItem>
+            <SelectItem value="week">Past week</SelectItem>
+            <SelectItem value="month">Past month</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Results */}
       {filteredQuizzes.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-surface px-6 py-8 text-center">
+        <div className="rounded-[var(--radius-panel)] border border-dashed border-border bg-surface px-6 py-8 text-center">
           <p className="text-sm text-muted">
             No quizzes match your filters.
           </p>
@@ -136,8 +142,8 @@ export default function QuizPickerList({
                 key={quiz.id}
                 type="button"
                 onClick={() => onSelect(quiz)}
-                className={`flex w-full items-center justify-between rounded-lg border bg-surface p-4 text-left transition-colors hover:border-rose ${
-                  isSelected ? "border-rose ring-2 ring-rose" : "border-border"
+                className={`flex w-full items-center justify-between rounded-[var(--radius-panel)] border bg-surface p-4 text-left transition-colors hover:border-rose ${
+                  isSelected ? "border-rose ring-2 ring-rose/30" : "border-border"
                 }`}
               >
                 <div className="min-w-0 flex-1">

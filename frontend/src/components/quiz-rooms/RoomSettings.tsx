@@ -1,4 +1,5 @@
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface RoomSettingsProps {
   players: number;
@@ -31,9 +32,9 @@ export default function RoomSettings({
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <p className="text-xs uppercase tracking-widest text-muted">Questions</p>
+        <Label htmlFor="questions-stepper">Questions</Label>
 
-        <div className="flex items-center gap-3">
+        <div id="questions-stepper" className="flex items-center gap-3">
           <button
             type="button"
             onClick={() =>
@@ -43,7 +44,7 @@ export default function RoomSettings({
             }
             disabled={questions <= MIN_QUESTIONS}
             aria-label="Decrease questions"
-            className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
+            className="flex size-9 items-center justify-center rounded-[var(--radius-control)] border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
           >
             −
           </button>
@@ -59,27 +60,27 @@ export default function RoomSettings({
             }
             disabled={questions >= questionsCap}
             aria-label="Increase questions"
-            className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
+            className="flex size-9 items-center justify-center rounded-[var(--radius-control)] border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
           >
             +
           </button>
         </div>
 
         <p className="text-xs text-muted">
-          {MIN_QUESTIONS} – {questionsCap} questions
+          {MIN_QUESTIONS} - {questionsCap} questions
         </p>
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs uppercase tracking-widest text-muted">Players</p>
+        <Label htmlFor="players-stepper">Players</Label>
 
-        <div className="flex items-center gap-3">
+        <div id="players-stepper" className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => onPlayersChange(Math.max(MIN_PLAYERS, players - 1))}
             disabled={players <= MIN_PLAYERS}
             aria-label="Decrease players"
-            className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
+            className="flex size-9 items-center justify-center rounded-[var(--radius-control)] border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
           >
             −
           </button>
@@ -91,27 +92,26 @@ export default function RoomSettings({
             onClick={() => onPlayersChange(Math.min(MAX_PLAYERS, players + 1))}
             disabled={players >= MAX_PLAYERS}
             aria-label="Increase players"
-            className="flex size-9 items-center justify-center rounded-lg border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
+            className="flex size-9 items-center justify-center rounded-[var(--radius-control)] border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
           >
             +
           </button>
         </div>
 
         <p className="text-xs text-muted">
-          {MIN_PLAYERS} – {MAX_PLAYERS} players
+          {MIN_PLAYERS} - {MAX_PLAYERS} players
         </p>
       </div>
 
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-widest text-muted">
-            Public room
-          </p>
+          <Label htmlFor="public-room-switch">Public room</Label>
           <p className="mt-1 text-xs text-muted">
             Visible in the live rooms feed
           </p>
         </div>
         <Switch
+          id="public-room-switch"
           checked={isPublic}
           onCheckedChange={(value) => onIsPublicChange(value === true)}
           aria-label="Make room public"
