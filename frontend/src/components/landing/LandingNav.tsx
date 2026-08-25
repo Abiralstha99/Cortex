@@ -1,5 +1,5 @@
-import { Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BrandMark } from "@/components/brand/BrandMark";
 
 interface LandingNavProps {
   onPlayNow: () => void;
@@ -11,12 +11,7 @@ export function LandingNav({ onPlayNow, onHowItWorksClick }: LandingNavProps) {
     <header className="sticky top-0 z-10 border-b border-border bg-surface/90 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         {/* Wordmark */}
-        <div className="flex items-center gap-1.5">
-          <Zap className="size-5 fill-rose text-rose" />
-          <span className="text-lg font-bold tracking-tight text-ink">
-            Cortex
-          </span>
-        </div>
+        <BrandMark to="/" />
 
         {/* Right side */}
         <div className="flex items-center gap-4">
@@ -28,7 +23,7 @@ export function LandingNav({ onPlayNow, onHowItWorksClick }: LandingNavProps) {
             How it works
           </a>
           <Button variant="rose" size="sm" onClick={onPlayNow}>
-            Play now
+            Create quiz
           </Button>
         </div>
       </div>

@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { Zap } from "lucide-react";
+import { BrandMark } from "@/components/brand/BrandMark";
 
 export default function AuthLayout({
   heading,
@@ -14,17 +13,10 @@ export default function AuthLayout({
   return (
     <div className="flex min-h-screen flex-col items-center bg-background px-6 py-12">
       {/* Wordmark */}
-      <Link
-        to="/"
-        className="mb-12 flex items-center gap-1.5 self-start text-ink no-underline"
-      >
-        <Zap size={18} className="text-rose" />
-        <span className="text-lg font-semibold tracking-tight">Cortex</span>
-      </Link>
+      <BrandMark to="/" size="md" className="mb-12 self-start" />
 
       {/* Intro */}
       <div className="mb-6 w-full max-w-sm text-center">
-        <p className="label-caps mb-3 text-muted">NOTES → QUIZ → COMPETE</p>
         <h1 className="text-3xl font-bold text-ink">{heading}</h1>
         <p className="mt-1 text-sm text-muted">{subtitle}</p>
       </div>

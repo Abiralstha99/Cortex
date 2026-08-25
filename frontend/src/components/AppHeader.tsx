@@ -1,6 +1,6 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useUser, useClerk } from "@clerk/react";
-import { LogOut, Plus, Zap } from "lucide-react";
+import { LogOut, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,11 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { BrandMark } from "@/components/brand/BrandMark";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { to: "/dashboard", label: "Dashboard" },
-  { to: "/game/create", label: "My Quizzes" },
+  { to: "/game/create", label: "Create" },
 ] as const;
 
 export default function AppHeader() {
@@ -38,16 +39,8 @@ export default function AppHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-md">
       <div className="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-6">
-        {/* Left — logo badge */}
-        <Link
-          to="/dashboard"
-          className="flex items-center gap-2.5 justify-self-start text-ink no-underline transition-opacity hover:opacity-90"
-        >
-          <span className="flex size-9 items-center justify-center rounded-xl bg-rose text-white shadow-sm ring-1 ring-rose/20">
-            <Zap className="size-4 fill-white" strokeWidth={2.25} />
-          </span>
-          <span className="text-base font-bold tracking-tight">Cortex</span>
-        </Link>
+        {/* Left — wordmark */}
+        <BrandMark to="/dashboard" className="justify-self-start" />
 
         {/* Center — primary nav */}
         <nav
