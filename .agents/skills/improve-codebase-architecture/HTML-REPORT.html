@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Architecture review for cortex</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .leak { stroke: #dc2626; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .mass-iface { background: #cbd5e1; }
+      .mass-impl { background: #0f172a; color: #f8fafc; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+      <header class="space-y-4 border-b border-stone-200 pb-8">
+        <p class="text-xs uppercase tracking-wider text-stone-500">cortex · frontend-redesign @ 0d89923 · 2026-08-23</p>
+        <h1 class="font-serif text-4xl tracking-tight">Refinement check</h1>
+        <p class="text-stone-600 max-w-2xl text-sm leading-relaxed">
+          Hotspot from recent history: <span class="font-mono text-xs">public waiting rooms</span>
+          (~829 LOC across 23 files). Branch even with <span class="font-mono text-xs">main</span> — thermo-nuclear pass reviews that feature cluster, not an empty diff.
+          No <span class="font-mono text-xs">CONTEXT.md</span> / <span class="font-mono text-xs">docs/adr/</span> found.
+        </p>
+        <div class="flex flex-wrap gap-4 text-xs uppercase tracking-wider text-stone-500">
+          <span class="inline-flex items-center gap-2"><span class="inline-block h-3 w-3 border-2 border-slate-800 bg-white"></span> module</span>
+          <span class="inline-flex items-center gap-2"><span class="inline-block h-3 w-8 border border-dashed border-slate-500"></span> seam</span>
+          <span class="inline-flex items-center gap-2"><span class="inline-block h-0.5 w-6 bg-red-600"></span> leakage</span>
+          <span class="inline-flex items-center gap-2"><span class="inline-block h-3 w-3 bg-slate-900"></span> deep module</span>
+        </div>
+      </header>
+
+      <section id="thermo" class="rounded-xl border border-slate-900 bg-slate-900 text-stone-100 p-6 space-y-4">
+        <div class="flex items-baseline justify-between gap-4 flex-wrap">
+          <h2 class="font-serif text-2xl">Thermo-nuclear verdict</h2>
+          <span class="text-xs uppercase tracking-wider px-2 py-1 rounded bg-amber-400 text-slate-900 font-semibold">Do not rubber-stamp</span>
+        </div>
+        <p class="text-sm text-stone-300 leading-relaxed">
+          Behavior works. Structure scatters one concept across create MULTI, orphan indexer, lobby unindex, HTTP emit, lobbyHandler emit, and a 26-line shallow socket adapter.
+          The code-judo move is to <strong class="text-white">delete the scatter</strong> into one Public Waiting Feed module — not polish each emit site.
+        </p>
+        <ul class="grid sm:grid-cols-2 gap-3 text-sm">
+          <li class="border border-slate-700 rounded-lg p-3"><span class="text-amber-400 text-xs uppercase tracking-wider">Blocker-class</span><br/>Feed policy lives in HTTP + socket handlers — interface is event soup, not a testable module.</li>
+          <li class="border border-slate-700 rounded-lg p-3"><span class="text-amber-400 text-xs uppercase tracking-wider">Blocker-class</span><br/><span class="font-mono text-xs">indexPublicWaitingRoom</span> unused by create; tests seed a path production never takes.</li>
+          <li class="border border-slate-700 rounded-lg p-3"><span class="text-stone-400 text-xs uppercase tracking-wider">Spaghetti</span><br/>Copied try/catch emit blocks on join / leave / start / create / quiz-status.</li>
+          <li class="border border-slate-700 rounded-lg p-3"><span class="text-stone-400 text-xs uppercase tracking-wider">Wrong layer</span><br/>Empty leave always <span class="font-mono text-xs">public_room_removed</span> — wasPublic lost after DEL; special-case bolted on.</li>
+          <li class="border border-slate-700 rounded-lg p-3"><span class="text-stone-400 text-xs uppercase tracking-wider">Dead module</span><br/><span class="font-mono text-xs">CreateRoomPanel</span> zero imports; create logic inlined in page.</li>
+          <li class="border border-slate-700 rounded-lg p-3"><span class="text-stone-400 text-xs uppercase tracking-wider">OK</span><br/>No file crosses 1k lines. Frontend discovery reused (not duplicated). Redis list/prune has real depth.</li>
+        </ul>
+      </section>
+
+      <section id="candidates" class="space-y-10">
+        <!-- C1 -->
+        <article id="c1" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 space-y-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="font-serif text-2xl flex-1">Deepen Public Waiting Feed</h2>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 font-semibold">Strong</span>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-stone-100 text-stone-600">ports &amp; adapters</span>
+            </div>
+            <p class="font-mono text-xs text-stone-500 leading-relaxed">
+              backend/src/services/game.service.ts · lobby.service.ts · controllers/game.controller.ts · socket/lobbyHandler.ts · socket/publicWaiting.ts
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-stone-200 bg-stone-50 p-3">
+                <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">Before — shallow scatter</p>
+                <pre class="mermaid text-xs">
+flowchart TB
+  create[createWaitingGame ZADD]
+  ctrl[game.controller emit]
+  lobbyS[lobby.service ZREM]
+  lobbyH[lobbyHandler emit]
+  quiz[broadcastPublicQuizStatus]
+  pw[publicWaiting.ts]
+  zset[(ZSET)]
+  sock[socket room]
+  create --> zset
+  lobbyS --> zset
+  ctrl -->|leak| pw
+  lobbyH -->|leak| pw
+  quiz -->|leak| pw
+  pw --> sock
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class ctrl,lobbyH,quiz leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-800 deep p-3 text-stone-100">
+                <p class="text-xs uppercase tracking-wider text-stone-400 mb-2">After — one deep module</p>
+                <pre class="mermaid text-xs">
+flowchart TB
+  callers[create / join / leave / start / quiz]
+  feed[Public Waiting Feed]
+  emitAd[emit adapter]
+  redisAd[Redis index adapter]
+  callers -->|small interface| feed
+  feed --> redisAd
+  feed --> emitAd
+  classDef deep fill:#0f172a,color:#f8fafc,stroke:#334155;
+  class feed deep
+                </pre>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 text-sm">
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</p><p>Understanding “public room changed” requires bouncing HTTP, lobby socket, and Redis owners — no locality.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</p><p>One Feed module owns index/unindex, summary hydrate, and when to upsert vs remove; callers pass domain facts.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Wins</p>
+                <ul class="list-disc pl-4 space-y-1 text-stone-700">
+                  <li>locality: lifecycle in one module</li>
+                  <li>leverage: one interface, five call sites</li>
+                  <li>tests hit feed policy once</li>
+                  <li>delete shallow publicWaiting.ts</li>
+                  <li>two adapters justify the seam</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- C2 -->
+        <article id="c2" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 space-y-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="font-serif text-2xl flex-1">Collapse dual index write path</h2>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 font-semibold">Strong</span>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-stone-100 text-stone-600">in-process</span>
+            </div>
+            <p class="font-mono text-xs text-stone-500">game.service.ts · createWaitingGame · indexPublicWaitingRoom · game.service.test.ts</p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-stone-200 p-4 space-y-3">
+                <p class="text-xs uppercase tracking-wider text-stone-500">Before — mass (shallow helper)</p>
+                <div class="flex gap-3 items-end h-36">
+                  <div class="flex-1 flex flex-col justify-end gap-1">
+                    <div class="mass-iface h-16 rounded flex items-center justify-center text-[10px] uppercase tracking-wider">iface index*</div>
+                    <div class="mass-impl h-16 rounded flex items-center justify-center text-[10px] uppercase tracking-wider">impl = 1 ZADD</div>
+                    <p class="text-[10px] text-center text-stone-500">tests only</p>
+                  </div>
+                  <div class="flex-1 flex flex-col justify-end gap-1">
+                    <div class="mass-iface h-10 rounded flex items-center justify-center text-[10px] uppercase tracking-wider">iface create</div>
+                    <div class="mass-impl h-28 rounded flex items-center justify-center text-[10px] uppercase tracking-wider px-1 text-center">impl MULTI + inline zadd</div>
+                    <p class="text-[10px] text-center text-stone-500">production</p>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-lg border border-slate-800 deep p-4 space-y-3">
+                <p class="text-xs uppercase tracking-wider text-stone-400">After — one write path</p>
+                <div class="flex gap-3 items-end h-36">
+                  <div class="flex-1 flex flex-col justify-end gap-1">
+                    <div class="h-8 rounded bg-slate-600 flex items-center justify-center text-[10px] uppercase tracking-wider text-stone-200">iface: index in create</div>
+                    <div class="h-28 rounded bg-emerald-900/80 border border-emerald-500/40 flex items-center justify-center text-[10px] uppercase tracking-wider text-emerald-100 px-2 text-center">single MULTI path · tests call create or shared helper</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 text-sm">
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</p><p>False confidence: tests exercise an indexer create never calls — interface lies about the write seam.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</p><p>Delete orphan path or route create through the only indexer; one implementation.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Wins</p>
+                <ul class="list-disc pl-4 space-y-1"><li>delete dual write styles</li><li>tests match production</li><li>interface stops lying</li></ul>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- C3 -->
+        <article id="c3" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 space-y-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="font-serif text-2xl flex-1">Deepen public rooms discovery hook</h2>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-amber-100 text-amber-900 font-semibold">Worth exploring</span>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-stone-100 text-stone-600">local-substitutable</span>
+            </div>
+            <p class="font-mono text-xs text-stone-500">PublicRoomsList.tsx · LiveRoomsSection.tsx · JoinRoomPanel.tsx · lib/api.ts</p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-stone-200 bg-stone-50 p-4">
+                <p class="text-xs uppercase tracking-wider text-stone-500 mb-3">Before — fused leaf</p>
+                <div class="space-y-2 text-[10px] uppercase tracking-wider">
+                  <div class="border-l-4 border-stone-300 pl-3 h-8 flex items-center">REST listPublicWaitingGames</div>
+                  <div class="border-l-4 border-stone-300 pl-3 h-8 flex items-center">watch / unwatch / upsert</div>
+                  <div class="border-l-4 border-stone-300 pl-3 h-8 flex items-center">React Query cache patches</div>
+                  <div class="border-l-4 border-stone-300 pl-3 h-8 flex items-center">list rendering + Join links</div>
+                  <p class="text-stone-500 normal-case tracking-normal text-xs pt-1">All inside PublicRoomsList — interface ≈ page leaf</p>
+                </div>
+              </div>
+              <div class="rounded-lg border border-slate-800 deep p-4">
+                <p class="text-xs uppercase tracking-wider text-stone-400 mb-3">After — deep hook, thin UI</p>
+                <div class="space-y-2 text-[10px] uppercase tracking-wider">
+                  <div class="border-l-4 border-emerald-400 pl-3 h-16 flex items-center text-emerald-100">usePublicWaitingRooms · { rooms, status }</div>
+                  <div class="border-l-4 border-slate-500 pl-3 h-8 flex items-center text-stone-300">PublicRoomsList presentational</div>
+                  <div class="border-l-4 border-slate-500 pl-3 h-8 flex items-center text-stone-300">dashboard + join compose</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 text-sm">
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</p><p>Discovery depth inverted into the leaf; LiveRoomsSection is a heading-only shallow shell.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</p><p>Extract hook owning query key + REST + socket; list becomes presentational.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Wins</p>
+                <ul class="list-disc pl-4 space-y-1"><li>leverage across two pages</li><li>refcounted watch later</li><li>UI stops owning the seam</li></ul>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- C4 -->
+        <article id="c4" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 space-y-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="font-serif text-2xl flex-1">Delete orphan CreateRoomPanel or wire it</h2>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-amber-100 text-amber-900 font-semibold">Worth exploring</span>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-stone-100 text-stone-600">in-process</span>
+            </div>
+            <p class="font-mono text-xs text-stone-500">CreateRoomPanel.tsx (orphan) · CreateGame.tsx (~198, owns composition)</p>
+
+            <div class="grid md:grid-cols-2 gap-4 text-sm">
+              <div class="rounded-lg border border-red-200 bg-red-50 p-4">
+                <p class="text-xs uppercase tracking-wider text-red-700 mb-2">Before</p>
+                <pre class="mermaid">
+flowchart LR
+  page[CreateGame page]
+  dead[CreateRoomPanel]
+  page -.->|zero imports| dead
+  page --> tabs &amp; mutation &amp; preview
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class dead leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                <p class="text-xs uppercase tracking-wider text-emerald-800 mb-2">After</p>
+                <p class="text-stone-700">One create module. Either delete the dead file, or move page orchestration behind its interface so upload/past forks stop living only in the page.</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 text-sm">
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</p><p>Dead module + page re-did the job — deletion test says deleting CreateRoomPanel concentrates nothing today; keeping both confuses the seam.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</p><p>Pick one owner for create composition.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Wins</p>
+                <ul class="list-disc pl-4 space-y-1"><li>delete dead surface</li><li>locality for isPublic toggle</li><li>fewer forks to chase</li></ul>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- C5 -->
+        <article id="c5" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 space-y-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="font-serif text-2xl flex-1">Stop lobby knowing public index</h2>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-amber-100 text-amber-900 font-semibold">Worth exploring</span>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-stone-100 text-stone-600">ports &amp; adapters</span>
+            </div>
+            <p class="font-mono text-xs text-stone-500">lobby.service leaveWaitingGame / startGame → unindexPublicWaitingRoom</p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-stone-200 p-4 text-sm space-y-2">
+                <p class="text-xs uppercase tracking-wider text-stone-500">Before</p>
+                <p>Lobby lifecycle module reaches across the public-index seam (ZREM). Handler separately announces. Index and announce split — leak both ways.</p>
+              </div>
+              <div class="rounded-lg border border-slate-800 deep p-4 text-sm text-stone-200 space-y-2">
+                <p class="text-xs uppercase tracking-wider text-stone-400">After</p>
+                <p>Lobby returns facts <span class="font-mono text-xs">{ emptied, wasPublic }</span>. Feed module unindexes + emits. Capture wasPublic <em>before</em> DEL so empty-leave stops always-remove.</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 text-sm">
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</p><p>Public index leaks into lobby; empty leave special-cases feed because privacy died with the hash.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</p><p>Return wasPublic; Feed owns cleanup. Pairs with candidate 1.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Wins</p>
+                <ul class="list-disc pl-4 space-y-1"><li>lobby seam stays lobby</li><li>delete always-remove branch</li><li>atomic intent: unindex+announce</li></ul>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- C6 -->
+        <article id="c6" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 space-y-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="font-serif text-2xl flex-1">Rename save_as_public · home summary type</h2>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-slate-200 text-slate-700 font-semibold">Speculative</span>
+              <span class="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-stone-100 text-stone-600">in-process</span>
+            </div>
+            <p class="font-mono text-xs text-stone-500">publicWaiting.ts · PublicRoomsList · PublicWaitingRoomSummary in game.service</p>
+            <div class="grid md:grid-cols-3 gap-4 text-sm">
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</p><p>Event name means upsert; type lives in create module — naming and type seams mislead.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</p><p><span class="font-mono text-xs">public_room_updated</span>; move summary next to Feed / room.types.</p></div>
+              <div><p class="text-xs uppercase tracking-wider text-stone-500 mb-1">Wins</p>
+                <ul class="list-disc pl-4 space-y-1"><li>interface matches intent</li><li>types leave create module</li></ul>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section id="top-recommendation" class="rounded-xl border-2 border-emerald-600 bg-emerald-50 p-8 space-y-3">
+        <p class="text-xs uppercase tracking-wider text-emerald-800 font-semibold">Top recommendation</p>
+        <h2 class="font-serif text-3xl text-emerald-950"><a href="#c1" class="underline decoration-emerald-300 hover:decoration-emerald-600">Deepen Public Waiting Feed</a></h2>
+        <p class="text-emerald-950/80 max-w-2xl text-sm leading-relaxed">
+          Highest leverage: concentrates index + announce policy, deletes copy-pasted emit branches and the shallow socket adapter, and makes the dual-index bug (candidate 2) and lobby wasPublic leak (candidate 5) natural follow-ons inside one deepening — not three separate cleanups.
+        </p>
+      </section>
+
+      <footer class="text-xs text-stone-500 pt-4 border-t border-stone-200 space-y-1">
+        <p>Architecture vocabulary: module · interface · depth · seam · adapter · leverage · locality. Thermo-nuclear: structural regressions first; no approval on “it works.”</p>
+        <p>Explored via agents on public-waiting backend + frontend hotspot. No ADRs to conflict.</p>
+      </footer>
+    </main>
+  </body>
+</html>
