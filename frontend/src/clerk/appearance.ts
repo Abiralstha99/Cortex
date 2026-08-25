@@ -60,7 +60,7 @@ export const clerkAppearance: ClerkAppearance = {
     },
     formButtonPrimary: {
       backgroundColor: "var(--accent)",
-      color: "#0b0f14",
+      color: "#ffffff",
       fontWeight: 600,
       textTransform: "none",
       boxShadow: "none",
