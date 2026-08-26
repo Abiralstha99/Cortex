@@ -39,10 +39,10 @@ export default function AppHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-md">
       <div className="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-6">
-        {/* Left — wordmark */}
+        {/* Left wordmark */}
         <BrandMark to="/dashboard" className="justify-self-start" />
 
-        {/* Center — primary nav */}
+        {/* Center primary nav */}
         <nav
           className="hidden items-center gap-1 md:flex"
           aria-label="Primary"
@@ -64,7 +64,7 @@ export default function AppHeader() {
           ))}
         </nav>
 
-        {/* Right — CTA + avatar menu */}
+        {/* Right CTA + avatar menu */}
         <div className="flex items-center justify-self-end gap-3">
           <Button
             variant="outline"

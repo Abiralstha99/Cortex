@@ -19,7 +19,7 @@ export function LandingNav({ onPlayNow, onHowItWorksClick }: LandingNavProps) {
           <a
             href="#how-it-works"
             onClick={onHowItWorksClick}
-            className="label-caps hidden text-muted transition-colors hover:text-ink sm:inline"
+            className="hidden text-sm font-medium text-muted transition-colors hover:text-ink sm:inline"
           >
             How it works
           </a>
