@@ -1,7 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useUser, useClerk } from "@clerk/react";
-import { ArrowUpRight, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +15,7 @@ import { cn } from "@/lib/utils";
 const NAV_LINKS = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/game/create", label: "Create" },
+  { to: "/game/join", label: "Join" },
 ] as const;
 
 export default function AppHeader() {
@@ -37,14 +37,14 @@ export default function AppHeader() {
     "Account";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-surface/80 backdrop-blur-md">
-      <div className="mx-auto grid h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-6">
+    <header className="sticky top-0 z-50 bg-cream/90 backdrop-blur-sm">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         {/* Left wordmark */}
         <BrandMark to="/dashboard" className="justify-self-start" />
 
-        {/* Center primary nav */}
+        {/* Center nav links */}
         <nav
-          className="hidden items-center gap-1 md:flex"
+          className="hidden items-center gap-8 md:flex"
           aria-label="Primary"
         >
           {NAV_LINKS.map((link) => (
@@ -53,9 +53,9 @@ export default function AppHeader() {
               to={link.to}
               className={({ isActive }) =>
                 cn(
-                  "rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors duration-150",
-                  "hover:bg-background hover:text-ink",
-                  isActive && "bg-background text-ink",
+                  "text-sm font-medium text-ink/70 transition-colors duration-200",
+                  "hover:text-ink",
+                  isActive && "text-ink",
                 )
               }
             >
@@ -64,29 +64,27 @@ export default function AppHeader() {
           ))}
         </nav>
 
-        {/* Right CTA + avatar menu */}
-        <div className="flex items-center justify-self-end gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
+        {/* Right: CTA pill + avatar */}
+        <div className="flex items-center gap-3">
+          <button
             onClick={() => navigate("/game/create")}
+            className="inline-flex items-center gap-3 rounded-full border border-ink/10 bg-white py-2 pl-3 pr-5 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:border-ink/20 hover:shadow-md"
           >
-            Create quiz
-            <span className="flex size-5 items-center justify-center rounded-full bg-forest text-primary-foreground">
-              <ArrowUpRight className="size-3" strokeWidth={2.5} />
+            <span className="flex size-7 items-center justify-center rounded-full bg-forest text-white">
+              <ArrowRight className="size-3.5" strokeWidth={2.5} />
             </span>
-          </Button>
+            Create quiz
+          </button>
 
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label="Open account menu"
               className={cn(
                 "flex size-9 items-center justify-center overflow-hidden rounded-full",
-                "border border-border bg-background text-xs font-semibold text-ink",
-                "ring-2 ring-transparent transition-all duration-150",
-                "hover:border-muted hover:ring-border",
-                "outline-none focus-visible:ring-2 focus-visible:ring-rose/40",
+                "border border-ink/10 bg-white text-xs font-semibold text-ink",
+                "transition-all duration-200",
+                "hover:border-ink/20 hover:shadow-sm",
+                "outline-none focus-visible:ring-2 focus-visible:ring-forest/30",
               )}
             >
               {user?.imageUrl ? (
