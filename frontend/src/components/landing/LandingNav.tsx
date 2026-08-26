@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand/BrandMark";
+import { ArrowUpRight } from "lucide-react";
 
 interface LandingNavProps {
   onPlayNow: () => void;
@@ -22,8 +23,11 @@ export function LandingNav({ onPlayNow, onHowItWorksClick }: LandingNavProps) {
           >
             How it works
           </a>
-          <Button variant="rose" size="sm" onClick={onPlayNow}>
+          <Button variant="outline" size="sm" className="gap-2" onClick={onPlayNow}>
             Create quiz
+            <span className="flex size-5 items-center justify-center rounded-full bg-forest text-primary-foreground">
+              <ArrowUpRight className="size-3" strokeWidth={2.5} />
+            </span>
           </Button>
         </div>
       </div>

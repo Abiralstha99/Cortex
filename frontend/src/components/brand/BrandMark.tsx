@@ -3,23 +3,20 @@ import { cn } from "@/lib/utils";
 
 export function BrandMark({
   to = "/",
-  size = "md",
   className,
 }: {
   to?: string;
-  size?: "sm" | "md";
   className?: string;
 }) {
   return (
     <Link
       to={to}
       className={cn(
-        "inline-flex items-center text-ink no-underline tracking-tight",
-        size === "md" ? "text-lg font-semibold" : "text-base font-semibold",
+        "font-display text-xl font-extrabold tracking-tight text-forest no-underline",
         className,
       )}
     >
-      Cortex
+      Cortex.
     </Link>
   );
 }

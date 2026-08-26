@@ -11,9 +11,9 @@ export default function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col items-center bg-background px-6 py-12">
+    <div className="flex min-h-[100dvh] flex-col items-center bg-background px-6 py-12">
       {/* Wordmark */}
-      <BrandMark to="/" size="md" className="mb-12 self-start" />
+      <BrandMark to="/" className="mb-12 self-start" />
 
       {/* Intro */}
       <div className="mb-6 w-full max-w-sm text-center">

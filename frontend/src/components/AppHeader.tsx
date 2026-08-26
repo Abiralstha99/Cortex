@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useUser, useClerk } from "@clerk/react";
-import { LogOut, Plus } from "lucide-react";
+import { ArrowUpRight, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -67,13 +67,15 @@ export default function AppHeader() {
         {/* Right — CTA + avatar menu */}
         <div className="flex items-center justify-self-end gap-3">
           <Button
-            variant="rose"
+            variant="outline"
             size="sm"
-            className="gap-1.5 shadow-sm"
+            className="gap-2"
             onClick={() => navigate("/game/create")}
           >
-            <Plus className="size-4" strokeWidth={2.5} />
             Create quiz
+            <span className="flex size-5 items-center justify-center rounded-full bg-forest text-primary-foreground">
+              <ArrowUpRight className="size-3" strokeWidth={2.5} />
+            </span>
           </Button>
 
           <DropdownMenu>
