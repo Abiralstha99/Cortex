@@ -6,7 +6,5 @@ plan.md
 docs/
 
 .cursor/
-
-interview.md
-.claude/
-.kiro/.worktrees/
+.kiro/
+.agents/
