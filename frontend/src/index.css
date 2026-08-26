@@ -12,45 +12,45 @@
   --font-display: "Nunito", "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --color-background: #f6f1e8;
-  --color-cream: #f6f1e8;
-  --color-surface: #fffcf7;
-  --color-border: #e7dfd2;
-  --color-track: #efe7da;
+  --color-background: #f0ebe0;
+  --color-cream: #f0ebe0;
+  --color-surface: #faf7f2;
+  --color-border: #e2d9ca;
+  --color-track: #e8e0d3;
 
   --color-ink: #1a1a1a;
   --color-foreground: #1a1a1a;
   --color-muted: #6b645a;
   --color-muted-foreground: #6b645a;
 
-  --color-forest: #1f6b4a;
-  --color-primary: #1f6b4a;
-  --color-primary-foreground: #fffcf7;
+  --color-forest: #1b4332;
+  --color-primary: #1b4332;
+  --color-primary-foreground: #faf7f2;
 
   --color-candy-pink: #ff8fb8;
-  --color-candy-yellow: #f5d76e;
-  --color-candy-sky: #7ec8f5;
-  --color-gloss: #121212;
+  --color-candy-yellow: #f0de82;
+  --color-candy-sky: #bce0f5;
+  --color-gloss: #111111;
 
   --color-rose: #ff8fb8;
-  --color-success: #1f6b4a;
+  --color-success: #1b4332;
   --color-danger: #e11d48;
   --color-success-soft: #e5f5ec;
   --color-danger-soft: #ffe4ec;
-  --color-code: #1f6b4a;
+  --color-code: #1b4332;
   --color-data: #3b82c4;
-  --color-preview: #121212;
+  --color-preview: #111111;
 
-  --color-card: #fffcf7;
+  --color-card: #faf7f2;
   --color-card-foreground: #1a1a1a;
-  --color-popover: #fffcf7;
+  --color-popover: #faf7f2;
   --color-popover-foreground: #1a1a1a;
-  --color-secondary: #efe7da;
+  --color-secondary: #e8e0d3;
   --color-secondary-foreground: #1a1a1a;
-  --color-accent: #efe7da;
+  --color-accent: #e8e0d3;
   --color-accent-foreground: #1a1a1a;
-  --color-input: #e7dfd2;
-  --color-ring: #1f6b4a;
+  --color-input: #e2d9ca;
+  --color-ring: #1b4332;
   --color-destructive: #e11d48;
 
   --radius-control: 999px;
@@ -60,13 +60,13 @@
 
 @layer base {
   :root {
-    --accent: #1f6b4a;
-    --bg: #f6f1e8;
-    --bg-raised: #fffcf7;
+    --accent: #1b4332;
+    --bg: #f0ebe0;
+    --bg-raised: #faf7f2;
     --text: #1a1a1a;
     --text-muted: #6b645a;
     --text-dim: #9a9288;
-    --border: #e7dfd2;
+    --border: #e2d9ca;
     --border-strong: #d4cbbd;
     --danger: #e11d48;
     --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
