@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -30,13 +31,23 @@ export default function RoomSettings({
   const questionsCap = Math.max(MIN_QUESTIONS, maxQuestions);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="questions-stepper">Questions</Label>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <div className="rounded-(--radius-panel) border border-border bg-cream p-4">
+        <Label
+          htmlFor="questions-stepper"
+          className="font-display text-base font-extrabold text-ink"
+        >
+          How many questions?
+        </Label>
 
-        <div id="questions-stepper" className="flex items-center gap-3">
-          <button
+        <div
+          id="questions-stepper"
+          className="mt-4 flex items-center justify-between gap-3"
+        >
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={() =>
               onQuestionsChange(
                 Math.max(MIN_QUESTIONS, questions - QUESTION_STEP),
@@ -44,15 +55,18 @@ export default function RoomSettings({
             }
             disabled={questions <= MIN_QUESTIONS}
             aria-label="Decrease questions"
-            className="flex size-9 items-center justify-center rounded-[var(--radius-control)] border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
           >
-            −
-          </button>
-          <span className="w-10 text-center font-mono text-xl font-semibold text-ink">
+            <span className="text-lg" aria-hidden="true">
+              −
+            </span>
+          </Button>
+          <span className="min-w-12 text-center font-mono text-2xl font-semibold text-ink">
             {questions}
           </span>
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={() =>
               onQuestionsChange(
                 Math.min(questionsCap, questions + QUESTION_STEP),
@@ -60,54 +74,74 @@ export default function RoomSettings({
             }
             disabled={questions >= questionsCap}
             aria-label="Increase questions"
-            className="flex size-9 items-center justify-center rounded-[var(--radius-control)] border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
           >
-            +
-          </button>
+            <span className="text-lg" aria-hidden="true">
+              +
+            </span>
+          </Button>
         </div>
 
-        <p className="text-xs text-muted">
+        <p className="mt-3 text-center text-xs text-muted">
           {MIN_QUESTIONS} - {questionsCap} questions
         </p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="players-stepper">Players</Label>
+      <div className="rounded-(--radius-panel) border border-border bg-cream p-4">
+        <Label
+          htmlFor="players-stepper"
+          className="font-display text-base font-extrabold text-ink"
+        >
+          How many players?
+        </Label>
 
-        <div id="players-stepper" className="flex items-center gap-3">
-          <button
+        <div
+          id="players-stepper"
+          className="mt-4 flex items-center justify-between gap-3"
+        >
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={() => onPlayersChange(Math.max(MIN_PLAYERS, players - 1))}
             disabled={players <= MIN_PLAYERS}
             aria-label="Decrease players"
-            className="flex size-9 items-center justify-center rounded-[var(--radius-control)] border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
           >
-            −
-          </button>
-          <span className="w-10 text-center font-mono text-xl font-semibold text-ink">
+            <span className="text-lg" aria-hidden="true">
+              −
+            </span>
+          </Button>
+          <span className="min-w-12 text-center font-mono text-2xl font-semibold text-ink">
             {players}
           </span>
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={() => onPlayersChange(Math.min(MAX_PLAYERS, players + 1))}
             disabled={players >= MAX_PLAYERS}
             aria-label="Increase players"
-            className="flex size-9 items-center justify-center rounded-[var(--radius-control)] border border-border text-lg font-medium text-ink transition-colors hover:bg-surface disabled:opacity-40"
           >
-            +
-          </button>
+            <span className="text-lg" aria-hidden="true">
+              +
+            </span>
+          </Button>
         </div>
 
-        <p className="text-xs text-muted">
+        <p className="mt-3 text-center text-xs text-muted">
           {MIN_PLAYERS} - {MAX_PLAYERS} players
         </p>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 rounded-(--radius-panel) border border-border bg-cream p-4 sm:col-span-2">
         <div>
-          <Label htmlFor="public-room-switch">Public room</Label>
+          <Label
+            htmlFor="public-room-switch"
+            className="font-display text-base font-extrabold text-ink"
+          >
+            Let anyone join?
+          </Label>
           <p className="mt-1 text-xs text-muted">
-            Visible in the live rooms feed
+            Show this room in the live rooms feed.
           </p>
         </div>
         <Switch
@@ -115,6 +149,7 @@ export default function RoomSettings({
           checked={isPublic}
           onCheckedChange={(value) => onIsPublicChange(value === true)}
           aria-label="Make room public"
+          className="h-7 w-12 data-[state=checked]:bg-forest **:data-[slot=switch-thumb]:size-6"
         />
       </div>
     </div>

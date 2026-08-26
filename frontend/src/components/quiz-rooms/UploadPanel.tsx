@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { FileText, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -13,10 +14,10 @@ function titleFromFilename(name: string): string {
 type UploadPanelProps = {
   file: File | null;
   onFileChange: (file: File) => void;
-  /** Quiz display name — shown when provided. */
+  /** Quiz display name shown when provided. */
   title?: string;
   onTitleChange?: (title: string) => void;
-  /** Optional question count — shown when provided (e.g. lobby retry). */
+  /** Optional question count shown when provided (e.g. lobby retry). */
   count?: number;
   onCountChange?: (count: number) => void;
 };
@@ -77,7 +78,7 @@ export default function UploadPanel({
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onClick={() => fileInputRef.current?.click()}
-        className="cursor-pointer rounded-[var(--radius-panel)] border-2 border-dashed border-border p-10 text-center transition-colors hover:border-muted hover:bg-surface"
+        className="cursor-pointer rounded-(--radius-panel) border-2 border-dashed border-border bg-cream p-8 text-center transition-[border-color,background-color,transform] hover:border-forest hover:bg-surface active:scale-[0.99] sm:p-10"
       >
         <input
           ref={fileInputRef}
@@ -91,22 +92,33 @@ export default function UploadPanel({
         />
 
         {!file && (
-          <div className="flex flex-col items-center gap-3">
-            <Upload size={32} className="text-muted" />
-            <p className="text-sm font-medium text-ink">Drop your notes here</p>
-            <p className="text-xs text-muted">or click to browse</p>
-            <p className="mt-2 font-mono text-xs text-muted">
-              .pdf / .txt
+          <div className="flex flex-col items-center gap-2">
+            <span className="mb-2 flex size-12 items-center justify-center rounded-full bg-forest text-white shadow-[0_3px_0_0_#164f37]">
+              <Upload size={22} aria-hidden="true" />
+            </span>
+            <p className="font-display text-lg font-extrabold text-ink">
+              Drop your notes here
+            </p>
+            <p className="text-sm text-muted">or click to choose a file</p>
+            <p className="mt-2 font-mono text-xs font-semibold text-forest">
+              .pdf / .txt, up to 10 MB
             </p>
           </div>
         )}
 
         {file && (
           <div className="flex flex-col items-center gap-2">
-            <FileText size={28} className="text-ink" />
-            <p className="text-sm font-medium text-ink">{file.name}</p>
-            <p className="text-xs text-muted">
+            <span className="mb-1 flex size-12 items-center justify-center rounded-full bg-forest text-white shadow-[0_3px_0_0_#164f37]">
+              <FileText size={22} aria-hidden="true" />
+            </span>
+            <p className="max-w-full truncate font-display text-lg font-extrabold text-ink">
+              {file.name}
+            </p>
+            <p className="font-mono text-xs text-muted">
               {(file.size / 1024).toFixed(1)} KB
+            </p>
+            <p className="text-xs font-semibold text-forest">
+              Click to choose a different file
             </p>
           </div>
         )}
@@ -114,47 +126,53 @@ export default function UploadPanel({
 
       {showTitle && (
         <div className="space-y-2">
-          <Label htmlFor="quiz-title">Quiz name</Label>
+          <Label htmlFor="quiz-title" className="font-semibold text-ink">
+            Give your quiz a name
+          </Label>
           <Input
             id="quiz-title"
             type="text"
             value={title}
             maxLength={255}
-            placeholder="e.g. Cell Biology Midterm"
+            placeholder="Cell Biology Midterm"
             onChange={(e) => onTitleChange(e.target.value)}
             onClick={(e) => e.stopPropagation()}
           />
           <p className="text-xs text-muted">
-            Shown in Past Quizzes. Leave blank to use the file name.
+            Leave it blank and we will use the file name.
           </p>
         </div>
       )}
 
       {showQuestionCount && (
-        <div className="flex items-center justify-between rounded-[var(--radius-panel)] border border-border bg-surface p-3">
-          <span className="text-sm font-medium text-muted">Questions</span>
+        <div className="flex items-center justify-between rounded-(--radius-panel) border border-border bg-surface p-4">
+          <span className="text-sm font-semibold text-ink">Questions</span>
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="icon-sm"
+              aria-label="Decrease questions"
               onClick={(e) => {
                 e.stopPropagation();
                 onCountChange(Math.max(5, count - 5));
               }}
-              className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] border border-border text-sm hover:bg-background"
             >
-              −
-            </button>
+              <span aria-hidden="true">−</span>
+            </Button>
             <span className="w-8 text-center font-mono text-sm">{count}</span>
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="icon-sm"
+              aria-label="Increase questions"
               onClick={(e) => {
                 e.stopPropagation();
                 onCountChange(Math.min(50, count + 5));
               }}
-              className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-control)] border border-border text-sm hover:bg-background"
             >
-              +
-            </button>
+              <span aria-hidden="true">+</span>
+            </Button>
           </div>
         </div>
       )}

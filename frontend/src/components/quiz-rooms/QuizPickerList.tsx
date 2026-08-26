@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ChevronRight, Search, CalendarDays } from "lucide-react";
 import type { QuizSummary } from "@/lib/api";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -70,8 +71,8 @@ export default function QuizPickerList({
 
   if (isLoading) {
     return (
-      <div className="rounded-[var(--radius-panel)] border border-dashed border-border bg-surface py-12 text-center">
-        <p className="text-sm text-muted">Loading quizzes...</p>
+      <div className="rounded-(--radius-panel) border border-dashed border-border bg-cream py-12 text-center">
+        <p className="font-display font-bold text-muted">Loading quizzes...</p>
       </div>
     );
   }
@@ -80,40 +81,46 @@ export default function QuizPickerList({
 
   if (playable.length === 0) {
     return (
-      <div className="rounded-[var(--radius-panel)] border border-dashed border-border bg-surface px-6 py-12 text-center">
-        <p className="font-medium text-ink">No past quizzes available</p>
+      <div className="rounded-(--radius-panel) border border-dashed border-border bg-cream px-6 py-12 text-center">
+        <p className="font-display text-lg font-extrabold text-ink">
+          No past quizzes yet
+        </p>
         <p className="mt-1 text-sm text-muted">
-          Upload a PDF to generate your first quiz.
+          Upload a PDF or text file to make your first one.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4 pt-4">
-      {/* Filters */}
+    <div className="space-y-4 pt-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* Search input */}
         <div className="relative flex-1">
+          <Label htmlFor="quiz-search" className="sr-only">
+            Search quizzes
+          </Label>
           <Search
             size={14}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
           />
           <Input
+            id="quiz-search"
             type="text"
-            placeholder="Search quizzes..."
+            placeholder="Search your quizzes"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
           />
         </div>
 
-        {/* Date filter */}
         <Select
           value={dateFilter}
           onValueChange={(value) => setDateFilter(value as DateFilter)}
         >
-          <SelectTrigger aria-label="Filter by date created">
+          <SelectTrigger
+            aria-label="Filter by date created"
+            className="h-11 w-full px-4 sm:w-44"
+          >
             <CalendarDays size={14} className="text-muted" />
             <SelectValue />
           </SelectTrigger>
@@ -126,9 +133,8 @@ export default function QuizPickerList({
         </Select>
       </div>
 
-      {/* Results */}
       {filteredQuizzes.length === 0 ? (
-        <div className="rounded-[var(--radius-panel)] border border-dashed border-border bg-surface px-6 py-8 text-center">
+        <div className="rounded-(--radius-panel) border border-dashed border-border bg-cream px-6 py-8 text-center">
           <p className="text-sm text-muted">
             No quizzes match your filters.
           </p>
@@ -142,12 +148,17 @@ export default function QuizPickerList({
                 key={quiz.id}
                 type="button"
                 onClick={() => onSelect(quiz)}
-                className={`flex w-full items-center justify-between rounded-[var(--radius-panel)] border bg-surface p-4 text-left transition-colors hover:border-rose ${
-                  isSelected ? "border-rose ring-2 ring-rose/30" : "border-border"
+                aria-pressed={isSelected}
+                className={`flex w-full items-center justify-between rounded-(--radius-panel) border bg-surface p-4 text-left transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-forest ${
+                  isSelected
+                    ? "border-forest ring-[3px] ring-forest/20"
+                    : "border-border"
                 }`}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-ink">{quiz.title}</p>
+                  <p className="truncate font-display font-extrabold text-ink">
+                    {quiz.title}
+                  </p>
                   <div className="mt-0.5 flex flex-wrap items-center gap-3 text-sm text-muted">
                     <span className="font-mono">
                       {quiz.questionCount} questions
