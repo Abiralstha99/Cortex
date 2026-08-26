@@ -6,6 +6,7 @@ import { LandingNav } from "@/components/landing/LandingNav";
 import { Hero } from "@/components/landing/Hero";
 import { Features } from "@/components/landing/Features";
 import { HowItWorks } from "@/components/landing/HowItWorks";
+import { Coverage } from "@/components/landing/Coverage";
 import { FinalCta } from "@/components/landing/FinalCta";
 
 export default function Landing() {
@@ -33,7 +34,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-cream">
       <LandingNav
         onPlayNow={() => goToApp()}
         onHowItWorksClick={scrollToHowItWorks}
@@ -45,6 +46,7 @@ export default function Landing() {
       />
       <Features />
       <HowItWorks ref={howItWorksRef} />
+      <Coverage />
       <FinalCta onStart={() => goToApp()} />
     </div>
   );

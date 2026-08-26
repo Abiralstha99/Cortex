@@ -1,48 +1,66 @@
+import { Sparkles, Trophy, UsersRound } from "lucide-react";
+
+import { StickerCard } from "@/components/brand/StickerCard";
+
 const features = [
   {
-    heading: "Upload. Generate. Play.",
+    heading: "Notes become questions",
     description:
-      "Drop in your notes - PDF or plain text - and the AI pipeline extracts structured quiz questions in seconds.",
+      "Upload your material and let AI shape it into a quiz worth playing.",
+    tone: "sky",
+    rotate: -4,
+    icon: Sparkles,
   },
   {
-    heading: "Real-time multiplayer",
+    heading: "Everyone plays live",
     description:
-      "Create a room, share the code, and race through questions together. Socket-powered, zero lag.",
+      "Share one room code, bring your friends in, and answer together in real time.",
+    tone: "yellow",
+    rotate: 3,
+    icon: UsersRound,
   },
   {
-    heading: "Placement-based scoring",
+    heading: "Fast answers win",
     description:
-      "First correct answer earns 100 pts, second 75, third 50. Speed matters as much as knowledge.",
-  },
-  {
-    heading: "Persistent ratings",
-    description:
-      "ELO-style ratings update after every match. Climb the leaderboard over time.",
+      "Correct answers earn points by placement, so knowing it first matters.",
+    tone: "pink",
+    rotate: -2,
+    icon: Trophy,
   },
 ] as const;
 
 export function Features() {
   return (
-    <section id="features" className="mx-auto max-w-6xl px-6 py-20">
-      <p className="label-caps mb-3 text-muted">Features</p>
-      <h2 className="mb-10 text-3xl font-bold tracking-tight text-ink md:text-4xl">
-        Everything you need to compete
+    <section id="features" className="mx-auto max-w-6xl px-6 py-20 md:py-28">
+      <h2 className="font-display max-w-xl text-3xl font-extrabold tracking-tight text-ink md:text-5xl">
+        Study sessions that feel like game night
       </h2>
+      <p className="mt-4 max-w-lg text-base leading-relaxed text-muted">
+        Bring the notes. Cortex handles the questions, room, and race.
+      </p>
 
-      <div className="grid gap-px border-t border-border md:grid-cols-2">
-        {features.map((f, i) => (
-          <div
-            key={f.heading}
-            className={`border-b border-border px-0 py-6 md:py-8 ${
-              i % 2 === 0 ? "md:pr-8" : "md:pl-8 md:border-l"
-            }`}
-          >
-            <h3 className="mb-2 text-lg font-semibold text-ink">{f.heading}</h3>
-            <p className="text-sm leading-relaxed text-muted">
-              {f.description}
-            </p>
-          </div>
-        ))}
+      <div className="mt-12 grid gap-8 md:grid-cols-3 md:gap-4 lg:px-10">
+        {features.map((feature, index) => {
+          const Icon = feature.icon;
+
+          return (
+            <StickerCard
+              key={feature.heading}
+              title={feature.heading}
+              subtitle={feature.description}
+              tone={feature.tone}
+              rotate={feature.rotate}
+              icon={<Icon className="size-14" strokeWidth={2.25} />}
+              className={`w-full min-h-72 justify-self-center px-6 py-7 md:max-w-72 ${
+                index === 1
+                  ? "md:translate-y-10"
+                  : index === 2
+                    ? "md:-translate-y-3"
+                    : ""
+              }`}
+            />
+          );
+        })}
       </div>
     </section>
   );
