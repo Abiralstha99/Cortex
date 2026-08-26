@@ -50,7 +50,7 @@ export default function JoinRoomPanel() {
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-5 rounded-(--radius-panel) border border-border bg-surface p-6"
+        className="space-y-5 rounded-[var(--radius-panel)] border border-border bg-surface p-6"
         noValidate
       >
         <RoomCodeInput

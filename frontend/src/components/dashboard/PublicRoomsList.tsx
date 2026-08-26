@@ -72,14 +72,17 @@ export default function PublicRoomsList() {
 
   if (query.isLoading) {
     return (
-      <div className="divide-y divide-border">
+      <div className="space-y-3" aria-label="Loading public rooms">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="flex items-center justify-between py-3">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-3 w-40" />
+          <div
+            key={i}
+            className="flex items-center justify-between gap-4 rounded-[var(--radius-panel)] border border-border bg-cream px-5 py-4"
+          >
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-4 w-full max-w-72" />
             </div>
-            <Skeleton className="h-8 w-14 rounded-md" />
+            <Skeleton className="h-8 w-16 rounded-[var(--radius-control)]" />
           </div>
         ))}
       </div>
@@ -88,10 +91,17 @@ export default function PublicRoomsList() {
 
   if (query.isError) {
     return (
-      <EmptyState
-        title="Could not load public rooms"
-        description="Something went wrong. Try refreshing the page."
-      />
+      <div className="rounded-[var(--radius-panel)] border border-border bg-surface">
+        <EmptyState
+          title="Could not load public rooms"
+          description="Something went wrong while finding open rooms."
+          action={
+            <Button variant="outline" onClick={() => void query.refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      </div>
     );
   }
 
@@ -99,38 +109,42 @@ export default function PublicRoomsList() {
 
   if (rooms.length === 0) {
     return (
-      <EmptyState
-        title="No public rooms yet"
-        description="Create one to get started."
-        action={
-          <Button variant="outline" onClick={() => navigate("/game/create")}>
-            Create quiz
-          </Button>
-        }
-      />
+      <div className="rounded-[var(--radius-panel)] border border-border bg-surface">
+        <EmptyState
+          title="No public rooms yet"
+          description="Start a public quiz and invite the first players."
+          action={
+            <Button onClick={() => navigate("/game/create")}>
+              Create a quiz
+            </Button>
+          }
+        />
+      </div>
     );
   }
 
   return (
-    <ul className="divide-y divide-border">
+    <ul className="space-y-3">
       {rooms.map((room) => (
         <li
           key={room.gameId}
-          className="flex items-center justify-between gap-4 py-3"
+          className="flex flex-col gap-4 rounded-[var(--radius-panel)] border border-border bg-cream px-5 py-4 shadow-[0_3px_0_0_#d4cbbd] sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="min-w-0">
-            <p className="font-mono text-sm font-semibold tracking-widest text-ink">
+            <p className="font-mono text-base font-semibold tracking-widest text-ink">
               {room.roomCode}
             </p>
-            <p className="mt-0.5 truncate text-xs text-muted">
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
               <span>Host: {room.hostUsername}</span>
-              <span className="mx-2 text-border">|</span>
-              <span>{room.playerCount}/{room.maxPlayers} players</span>
-              <span className="mx-2 text-border">|</span>
+              <span aria-hidden="true">|</span>
+              <span className="tabular-nums">
+                {room.playerCount}/{room.maxPlayers} players
+              </span>
+              <span aria-hidden="true">|</span>
               <span>{room.numberOfRounds} questions</span>
               {room.quizGenStatus !== "ready" && (
                 <>
-                  <span className="mx-2 text-border">|</span>
+                  <span aria-hidden="true">|</span>
                   <span className="text-muted">generating...</span>
                 </>
               )}
@@ -138,11 +152,11 @@ export default function PublicRoomsList() {
           </div>
           <Button
             size="sm"
-            variant="outline"
+            className="w-full sm:w-auto"
             disabled={room.playerCount >= room.maxPlayers}
             onClick={() => navigate(`/game/lobby/${room.roomCode}`)}
           >
-            Join
+            {room.playerCount >= room.maxPlayers ? "Full" : "Join"}
           </Button>
         </li>
       ))}
