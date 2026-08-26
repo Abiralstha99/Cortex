@@ -63,7 +63,7 @@ export default function QuizGenerationPanel({
     >
       {quizGenStatus === "processing" && (
         <StatusRow
-          icon={<Clock3 className="size-5 text-rose" />}
+          icon={<Clock3 className="size-5 text-candy-pink" />}
           title="Generating questions..."
           detail="The quiz will be available here when it is ready."
         />
