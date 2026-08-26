@@ -11,7 +11,7 @@ const subjects = [
 
 export function Coverage() {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-16 md:py-24">
+    <section id="coverage" className="mx-auto max-w-6xl px-6 py-16 md:py-24">
       <h2 className="font-display max-w-2xl text-3xl font-extrabold tracking-tight text-ink md:text-5xl">
         If you can study it, you can play it
       </h2>
