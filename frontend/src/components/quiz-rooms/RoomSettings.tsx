@@ -149,7 +149,7 @@ export default function RoomSettings({
           checked={isPublic}
           onCheckedChange={(value) => onIsPublicChange(value === true)}
           aria-label="Make room public"
-          className="h-7 w-12 data-[state=checked]:bg-forest **:data-[slot=switch-thumb]:size-6"
+          className="h-7 w-12 data-[state=checked]:bg-forest data-[slot=switch-thumb]:size-6"
         />
       </div>
     </div>
