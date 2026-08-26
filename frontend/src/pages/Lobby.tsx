@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { LogOut, Play, Copy, Wifi, WifiOff, Crown, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { EmphasisPill } from "@/components/brand/EmphasisPill";
 import PageShell from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,24 +34,11 @@ export default function Lobby() {
   const isHost = myUserId != null && hostId === myUserId;
   const quizReady = quizGenStatus === "ready" && Boolean(quizId);
 
-  // Bridge lobbyStore toast to sonner - ref guards against infinite loops
-  const lastToastRef = useRef<string | null>(null);
   useEffect(() => {
-    if (storeToast && storeToast !== lastToastRef.current) {
-      lastToastRef.current = storeToast;
-      toast(storeToast, {
-        onAutoClose: () => {
-          lastToastRef.current = null;
-          setToast(null);
-        },
-        onDismiss: () => {
-          lastToastRef.current = null;
-          setToast(null);
-        },
-      });
-    } else if (!storeToast) {
-      lastToastRef.current = null;
-    }
+    if (!storeToast) return;
+
+    toast(storeToast);
+    setToast(null);
   }, [storeToast, setToast]);
 
   // Navigate everyone to the game screen when the server confirms game_started
@@ -102,15 +90,20 @@ export default function Lobby() {
     <PageShell maxWidth="2xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-lg font-medium text-muted mb-2">Lobby</h1>
+        <h1 className="mb-3 font-display text-2xl font-extrabold text-ink">
+          Game lobby
+        </h1>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-3xl font-bold tracking-widest text-ink">
+          <EmphasisPill
+            tone="gloss"
+            className="px-5 py-2.5 font-mono text-2xl tracking-[0.16em] sm:text-3xl"
+          >
             {normalized || "------"}
-          </span>
+          </EmphasisPill>
           <button
             type="button"
             onClick={copyCode}
-            className="rounded-md p-1.5 text-muted hover:text-ink hover:bg-track transition-colors"
+            className="rounded-full p-2 text-muted transition-colors hover:bg-track hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
             aria-label={copied ? "Copied!" : "Copy room code"}
           >
             {copied ? <Check size={16} className="text-success" /> : <Copy size={16} />}
@@ -164,7 +157,7 @@ export default function Lobby() {
 
         {isHost && (
           <Button
-            variant="rose"
+            variant="default"
             onClick={handleStart}
             disabled={status === "starting" || !quizReady}
             title={!quizReady ? "Wait for the quiz to finish generating" : undefined}
@@ -195,9 +188,9 @@ function PlayerRow({
 }) {
   return (
     <div
-      className={`flex items-center justify-between rounded-lg border px-4 py-3 bg-surface ${
+      className={`flex items-center justify-between rounded-(--radius-panel) border bg-cream px-4 py-3 shadow-[0_3px_0_0_#d4cbbd] ${
         isSelf
-          ? "ring-1 ring-rose/40 border-border"
+          ? "border-candy-pink ring-4 ring-candy-pink/25"
           : "border-border"
       }`}
     >
@@ -207,7 +200,7 @@ function PlayerRow({
           {isSelf && <span className="ml-1 text-xs text-muted">(you)</span>}
         </span>
         {isHost && (
-          <Badge variant="outline" className="gap-0.5 text-[10px] uppercase tracking-wide">
+          <Badge variant="yellow" className="gap-0.5 text-forest">
             <Crown size={10} />
             Host
           </Badge>

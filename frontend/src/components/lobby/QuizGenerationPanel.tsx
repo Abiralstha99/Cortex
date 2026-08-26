@@ -58,7 +58,7 @@ export default function QuizGenerationPanel({
 
   return (
     <section
-      className="mb-8 rounded-lg border border-border bg-surface p-5"
+      className="mb-8 rounded-(--radius-panel) border border-border bg-surface p-5 shadow-[0_4px_0_0_#d4cbbd]"
       aria-live="polite"
     >
       {quizGenStatus === "processing" && (
@@ -146,9 +146,13 @@ function StatusRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="mt-0.5 shrink-0">{icon}</span>
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-cream">
+        {icon}
+      </span>
       <div>
-        <h2 className="text-sm font-semibold text-ink">{title}</h2>
+        <h2 className="font-display text-base font-extrabold text-ink">
+          {title}
+        </h2>
         <p className="mt-1 text-sm text-muted">{detail}</p>
       </div>
     </div>
