@@ -18,22 +18,26 @@ export default function Countdown({ countdownMs }: CountdownProps) {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center py-16">
-      <h2 className="text-2xl font-semibold text-ink mb-4">Get ready</h2>
+    <section className="flex flex-col items-center justify-center rounded-[var(--radius-panel)] border-4 border-white bg-candy-sky/35 px-6 py-14 text-center shadow-[0_10px_0_0_rgb(0_0_0/0.12)] ring-1 ring-candy-sky">
+      <h2 className="mb-6 text-balance font-display text-3xl font-extrabold text-ink">
+        Get ready
+      </h2>
       {reduce ? (
-        <div className="font-mono text-7xl font-bold text-ink">{remaining}</div>
+        <div className="flex size-28 items-center justify-center rounded-full bg-surface font-mono text-6xl font-semibold tabular-nums text-forest shadow-sm">
+          {remaining}
+        </div>
       ) : (
         <motion.div
           key={remaining}
           initial={{ opacity: 0.4, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", stiffness: 380, damping: 28 }}
-          className="font-mono text-7xl font-bold text-ink"
+          className="flex size-28 items-center justify-center rounded-full bg-surface font-mono text-6xl font-semibold tabular-nums text-forest shadow-sm"
         >
           {remaining}
         </motion.div>
       )}
-      <p className="mt-4 text-muted">Game starting...</p>
-    </div>
+      <p className="mt-6 text-pretty font-medium text-muted">Game starting...</p>
+    </section>
   );
 }

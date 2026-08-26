@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from "motion/react";
 import type { RoundFinishedPayload } from "@/lib/api";
 import Leaderboard from "@/components/game/Leaderboard";
+import { cn } from "@/lib/utils";
 
 type RoundResultsProps = {
   roundResults: RoundFinishedPayload;
@@ -26,18 +27,23 @@ export default function RoundResults({ roundResults, myPlayerId }: RoundResultsP
     return (
       <div
         key={sub.playerId}
-        className={`flex items-center justify-between rounded-[var(--radius-control)] px-4 py-2 ${
-          sub.playerId === myPlayerId ? "bg-rose/5 border border-rose/20" : "bg-background"
-        }`}
+        className={cn(
+          "flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-[var(--radius-control)] border px-4 py-2",
+          sub.playerId === myPlayerId
+            ? "border-forest bg-candy-yellow/35"
+            : "border-transparent bg-background",
+        )}
       >
-        <span className="text-ink font-medium">{player?.username ?? "Unknown"}</span>
-        <div className="flex items-center gap-3">
-          <span className={sub.correct ? "text-success" : "text-danger"}>
+        <span className="font-display font-bold text-ink">{player?.username ?? "Unknown"}</span>
+        <div className="flex items-center gap-2">
+          <span className={cn("text-sm font-semibold", sub.correct ? "text-success" : "text-danger")}>
             {sub.correct ? "Correct" : "Wrong"}
           </span>
-          <span className="font-mono text-sm text-muted">+{sub.pointsEarned}</span>
+          <span className="font-mono text-sm font-semibold tabular-nums text-ink">
+            +{sub.pointsEarned}
+          </span>
           {sub.placement && (
-            <span className="font-mono text-xs text-muted">
+            <span className="rounded-full bg-track px-2 py-1 font-mono text-xs font-semibold text-muted">
               {sub.placement === 1 ? "1st" : sub.placement === 2 ? "2nd" : sub.placement === 3 ? "3rd" : `${sub.placement}th`}
             </span>
           )}
@@ -48,17 +54,20 @@ export default function RoundResults({ roundResults, myPlayerId }: RoundResultsP
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[var(--radius-panel)] border border-border bg-surface p-6">
-        <h2 className="text-xl font-semibold text-ink mb-1">
+      <section className="rounded-[var(--radius-panel)] border-4 border-white bg-candy-sky/35 p-6 shadow-[0_8px_0_0_rgb(0_0_0/0.10)] ring-1 ring-candy-sky">
+        <h2 className="mb-2 text-balance font-display text-2xl font-extrabold text-ink">
           Round {roundNumber} Complete
         </h2>
-        <p className="text-muted">
-          Correct Answer: <strong className="text-ink">{correctAnswer}</strong>
+        <p className="text-pretty text-muted">
+          Correct answer:{" "}
+          <strong className="rounded-full bg-surface px-3 py-1 font-display font-extrabold text-forest">
+            {correctAnswer}
+          </strong>
         </p>
-      </div>
+      </section>
 
-      <div className="rounded-[var(--radius-panel)] border border-border bg-surface p-6">
-        <h3 className="label-caps text-muted mb-4">Submissions</h3>
+      <section className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+        <h3 className="mb-4 font-display text-lg font-extrabold text-ink">Submissions</h3>
         {reduce ? (
           <div className="space-y-1">{submissionRows}</div>
         ) : (
@@ -74,18 +83,25 @@ export default function RoundResults({ roundResults, myPlayerId }: RoundResultsP
                 <motion.div
                   key={sub.playerId}
                   variants={itemVariants}
-                  className={`flex items-center justify-between rounded-[var(--radius-control)] px-4 py-2 ${
-                    sub.playerId === myPlayerId ? "bg-rose/5 border border-rose/20" : "bg-background"
-                  }`}
+                  className={cn(
+                    "flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-[var(--radius-control)] border px-4 py-2",
+                    sub.playerId === myPlayerId
+                      ? "border-forest bg-candy-yellow/35"
+                      : "border-transparent bg-background",
+                  )}
                 >
-                  <span className="text-ink font-medium">{player?.username ?? "Unknown"}</span>
-                  <div className="flex items-center gap-3">
-                    <span className={sub.correct ? "text-success" : "text-danger"}>
+                  <span className="font-display font-bold text-ink">
+                    {player?.username ?? "Unknown"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("text-sm font-semibold", sub.correct ? "text-success" : "text-danger")}>
                       {sub.correct ? "Correct" : "Wrong"}
                     </span>
-                    <span className="font-mono text-sm text-muted">+{sub.pointsEarned}</span>
+                    <span className="font-mono text-sm font-semibold tabular-nums text-ink">
+                      +{sub.pointsEarned}
+                    </span>
                     {sub.placement && (
-                      <span className="font-mono text-xs text-muted">
+                      <span className="rounded-full bg-track px-2 py-1 font-mono text-xs font-semibold text-muted">
                         {sub.placement === 1 ? "1st" : sub.placement === 2 ? "2nd" : sub.placement === 3 ? "3rd" : `${sub.placement}th`}
                       </span>
                     )}
@@ -95,12 +111,12 @@ export default function RoundResults({ roundResults, myPlayerId }: RoundResultsP
             })}
           </motion.div>
         )}
-      </div>
+      </section>
 
       <Leaderboard entries={leaderboard} highlightPlayerId={myPlayerId} />
 
       {!isLastRound && (
-        <p className="text-center text-sm text-muted">
+        <p className="text-center font-mono text-sm font-semibold tabular-nums text-muted">
           Next round in {Math.ceil(nextRoundIn / 1000)}s...
         </p>
       )}

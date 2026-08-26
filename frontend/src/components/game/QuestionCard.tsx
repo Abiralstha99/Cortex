@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from "motion/react";
+import { cn } from "@/lib/utils";
 
 type QuestionCardProps = {
   question: string;
@@ -20,9 +21,11 @@ export default function QuestionCard({
   const reduce = useReducedMotion();
 
   return (
-    <div className="rounded-[var(--radius-panel)] border border-border bg-surface p-6">
-      <h2 className="text-xl font-semibold text-ink mb-6">{question}</h2>
-      <div className="space-y-3">
+    <section className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-[0_8px_0_0_rgb(31_107_74/0.10)] sm:p-7">
+      <h1 className="mb-7 max-w-2xl text-balance font-display text-2xl font-extrabold leading-tight text-ink sm:text-3xl">
+        {question}
+      </h1>
+      <div className="grid gap-3">
         {options.map((option, index) => {
           const isSelected = selectedIndex === index;
           const ButtonTag = reduce ? "button" : motion.button;
@@ -35,23 +38,35 @@ export default function QuestionCard({
               key={index}
               type="button"
               aria-pressed={isSelected}
-              className={`flex w-full items-center rounded-[var(--radius-control)] border p-4 text-left transition-colors ${
+              className={cn(
+                "flex min-h-16 w-full items-center rounded-full border-2 px-4 py-3 text-left transition-[background-color,border-color,box-shadow,transform] duration-150",
+                "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-forest/30",
                 isSelected
-                  ? "border-rose bg-rose/5"
-                  : "border-border bg-surface hover:border-muted"
-              } ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                  ? "border-candy-pink bg-candy-pink/35 ring-4 ring-forest"
+                  : "border-border bg-background hover:border-candy-pink hover:bg-candy-pink/10",
+                disabled
+                  ? "cursor-not-allowed opacity-60"
+                  : "cursor-pointer active:scale-[0.98]",
+              )}
               onClick={() => onSubmit(index)}
               disabled={disabled}
               {...motionProps}
             >
-              <span className="font-mono font-bold mr-3 text-muted">
+              <span
+                className={cn(
+                  "mr-3 flex size-9 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold",
+                  isSelected ? "bg-forest text-primary-foreground" : "bg-track text-muted",
+                )}
+              >
                 {LETTERS[index]}
               </span>
-              <span className="text-ink">{option}</span>
+              <span className="text-pretty font-display text-base font-bold text-ink sm:text-lg">
+                {option}
+              </span>
             </ButtonTag>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }

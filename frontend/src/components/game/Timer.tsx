@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 type TimerProps = {
   startedAt: Date;
@@ -26,17 +27,23 @@ export default function Timer({ startedAt, timeLimit }: TimerProps) {
   const isUrgent = remaining <= 5;
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative h-24 w-24">
-        <svg className="h-full w-full" viewBox="0 0 100 100">
+    <div
+      role="timer"
+      aria-label={`${remaining} seconds remaining`}
+      className={cn(
+        "relative size-16 shrink-0 rounded-full bg-surface shadow-sm",
+        isUrgent && "bg-danger-soft",
+      )}
+    >
+        <svg className="size-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
           <circle
             cx="50"
             cy="50"
             r="45"
             fill="none"
             stroke="currentColor"
-            strokeWidth="8"
-            className="text-border"
+            strokeWidth="10"
+            className={isUrgent ? "text-danger/20" : "text-candy-sky/30"}
           />
           <circle
             cx="50"
@@ -44,20 +51,23 @@ export default function Timer({ startedAt, timeLimit }: TimerProps) {
             r="45"
             fill="none"
             stroke="currentColor"
-            strokeWidth="8"
+            strokeWidth="10"
             strokeLinecap="round"
             strokeDasharray={`${circumference}`}
             strokeDashoffset={`${circumference * (1 - progress / 100)}`}
-            transform="rotate(-90 50 50)"
-            className={isUrgent ? "text-danger" : "text-data"}
+            className={isUrgent ? "text-danger" : "text-candy-sky"}
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`font-mono text-2xl font-bold ${isUrgent ? "text-danger" : "text-ink"}`}>
-            {remaining}s
+          <span
+            className={cn(
+              "font-mono text-base font-semibold tabular-nums",
+              isUrgent ? "text-danger" : "text-ink",
+            )}
+          >
+            {remaining}
           </span>
         </div>
-      </div>
     </div>
   );
 }

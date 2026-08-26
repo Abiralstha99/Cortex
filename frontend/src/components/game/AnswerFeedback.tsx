@@ -1,5 +1,7 @@
 import { motion, useReducedMotion } from "motion/react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import type { AnswerResult } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 type AnswerFeedbackProps = {
   result: AnswerResult;
@@ -20,27 +22,35 @@ export default function AnswerFeedback({ result }: AnswerFeedbackProps) {
 
   const content = (
     <>
-      <div className="text-lg font-semibold text-ink mb-2">
-        {result.correct ? "Correct" : "Wrong"}
+      <div className="mb-3 flex justify-center">
+        {result.correct ? (
+          <CheckCircle2 className="size-10 text-success" strokeWidth={2.5} aria-hidden="true" />
+        ) : (
+          <XCircle className="size-10 text-danger" strokeWidth={2.5} aria-hidden="true" />
+        )}
       </div>
-      <div className="font-mono text-2xl font-bold text-ink mb-2">
+      <h2 className="mb-2 text-balance font-display text-2xl font-extrabold text-ink">
+        {result.correct ? "Correct" : "Not this time"}
+      </h2>
+      <div className="mb-2 font-mono text-2xl font-semibold tabular-nums text-ink">
         +{result.pointsEarned} points
       </div>
       {placementText && (
-        <div className="font-mono text-muted mb-2">{placementText}</div>
+        <div className="mb-3 font-mono text-sm font-semibold text-muted">{placementText} place</div>
       )}
-      <div className="text-ink">
+      <div className="text-pretty text-ink">
         Correct answer: <strong>{result.correctAnswer}</strong>
       </div>
-      <p className="mt-4 text-sm text-muted">Waiting for other players...</p>
+      <p className="mt-5 text-pretty text-sm font-medium text-muted">
+        Waiting for other players...
+      </p>
     </>
   );
 
-  const baseClasses = `rounded-[var(--radius-panel)] border p-6 text-center ${
-    result.correct
-      ? "bg-success-soft border-success"
-      : "bg-danger-soft border-danger"
-  }`;
+  const baseClasses = cn(
+    "rounded-[var(--radius-sticker)] border-4 border-white p-7 text-center shadow-[0_10px_0_0_rgb(0_0_0/0.12)] ring-2 sm:p-9",
+    result.correct ? "bg-success-soft ring-success" : "bg-danger-soft ring-danger",
+  );
 
   if (reduce) {
     return <div className={baseClasses}>{content}</div>;

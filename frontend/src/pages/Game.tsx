@@ -11,6 +11,7 @@ import { useLobbyStore } from "@/stores/lobbyStore";
 import { useGameStore } from "@/stores/gameStore";
 import { useGameSocket } from "@/hooks/useGameSocket";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { cn } from "@/lib/utils";
 
 export default function Game() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -80,35 +81,42 @@ export default function Game() {
 
   return (
     <PageShell maxWidth="3xl">
-      {/* Compact game meta */}
-      <div className="mb-6 flex items-center gap-3 text-xs text-muted">
-        {numberOfRounds != null && (
-          <span className="font-mono">
-            Round {roundNumber ?? "-"} / {numberOfRounds}
-          </span>
+      <header
+        className={cn(
+          "mb-5 flex min-h-16 items-center",
+          phase === "question" ? "justify-between" : "justify-start",
         )}
-      </div>
+      >
+        {numberOfRounds != null && (
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 shadow-sm">
+            <span className="font-display text-sm font-extrabold text-ink">Round</span>
+            <span className="font-mono text-sm font-semibold tabular-nums text-forest">
+              {roundNumber ?? "-"} / {numberOfRounds}
+            </span>
+          </div>
+        )}
+        {phase === "question" && startedAt && (
+          <Timer startedAt={startedAt} timeLimit={timeLimit} />
+        )}
+      </header>
 
       <div className="space-y-6">
         {phase === "idle" && (
-          <div className="py-12 text-muted">
-            <p>Starting game...</p>
+          <div className="rounded-(--radius-panel) border border-border bg-surface px-6 py-12 text-center shadow-sm">
+            <p className="font-display text-lg font-bold text-muted">Starting game...</p>
           </div>
         )}
 
         {phase === "countdown" && <Countdown countdownMs={countdownMs} />}
 
         {phase === "question" && question && startedAt && (
-          <div className="space-y-6">
-            <Timer startedAt={startedAt} timeLimit={timeLimit} />
-            <QuestionCard
-              question={question}
-              options={options}
-              onSubmit={handleSubmitAnswer}
-              disabled={myAnswer !== null}
-              selectedIndex={myAnswer}
-            />
-          </div>
+          <QuestionCard
+            question={question}
+            options={options}
+            onSubmit={handleSubmitAnswer}
+            disabled={myAnswer !== null}
+            selectedIndex={myAnswer}
+          />
         )}
 
         {phase === "answered" && answerResult && (
@@ -124,8 +132,11 @@ export default function Game() {
         )}
 
         {!connected && phase !== "game_finished" && (
-          <div className="rounded-lg border border-danger bg-danger-soft p-4 text-center text-danger">
-            <p>Disconnected from server. Reconnecting...</p>
+          <div
+            role="status"
+            className="rounded-(--radius-panel) border-2 border-danger bg-danger-soft p-4 text-center text-danger shadow-sm"
+          >
+            <p className="font-semibold">Disconnected from server. Reconnecting...</p>
           </div>
         )}
       </div>
