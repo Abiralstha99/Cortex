@@ -5,19 +5,20 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&>svg]:pointer-events-none [&>svg]:size-3",
+  "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 [&>svg]:pointer-events-none [&>svg]:size-3",
   {
     variants: {
       variant: {
-        default: "bg-rose text-white [a&]:hover:bg-rose/90",
-        secondary:
-          "bg-track text-ink [a&]:hover:bg-track/80",
-        destructive:
-          "bg-destructive text-white focus-visible:ring-destructive/20 [a&]:hover:bg-destructive/90",
+        default:
+          "bg-success-soft text-forest [a&]:hover:bg-success-soft/80",
+        pink:
+          "bg-candy-pink/30 text-ink [a&]:hover:bg-candy-pink/40",
+        yellow:
+          "bg-candy-yellow/40 text-ink [a&]:hover:bg-candy-yellow/50",
+        sky:
+          "bg-candy-sky/30 text-ink [a&]:hover:bg-candy-sky/40",
         outline:
-          "border-border text-ink [a&]:hover:bg-background",
-        ghost: "[a&]:hover:bg-background [a&]:hover:text-ink",
-        link: "text-rose underline-offset-4 [a&]:hover:underline",
+          "border-border bg-transparent text-ink [a&]:hover:bg-surface",
       },
     },
     defaultVariants: {

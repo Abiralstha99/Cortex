@@ -26,8 +26,9 @@ export const clerkAppearance: ClerkAppearance = {
   elements: {
     card: {
       border: "1px solid var(--border)",
+      backgroundColor: "var(--bg-raised)",
       boxShadow: "none",
-      borderRadius: "10px",
+      borderRadius: "24px",
     },
     headerTitle: hiddenElement,
     headerSubtitle: hiddenElement,
@@ -60,10 +61,11 @@ export const clerkAppearance: ClerkAppearance = {
     },
     formButtonPrimary: {
       backgroundColor: "var(--accent)",
-      color: "#ffffff",
+      color: "#fffcf7",
       fontWeight: 600,
       textTransform: "none",
       boxShadow: "none",
+      borderRadius: "999px",
     },
     footer: {
       backgroundColor: "transparent",
