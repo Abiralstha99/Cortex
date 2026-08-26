@@ -14,7 +14,11 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 6 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.15, ease: "easeOut" as const } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring" as const, stiffness: 340, damping: 28 },
+  },
 };
 
 export default function Leaderboard({ entries, highlightPlayerId }: LeaderboardProps) {

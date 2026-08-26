@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 const tones = {
@@ -27,11 +28,11 @@ export function StickerCard({
   return (
     <div
       className={cn(
-        "gloss-sheen relative w-44 rounded-[var(--radius-sticker)] border-[6px] border-white p-4 shadow-[0_10px_0_0_rgb(0_0_0/0.12)]",
+        "sticker-card gloss-sheen relative w-44 rounded-[var(--radius-sticker)] border-[6px] border-white p-4 shadow-[0_10px_0_0_rgb(0_0_0/0.12)]",
         tones[tone],
         className,
       )}
-      style={{ transform: `rotate(${rotate}deg)` }}
+      style={{ "--sticker-rotation": `${rotate}deg` } as CSSProperties}
     >
       <div className="relative z-[1] flex flex-col items-center gap-2 text-center">
         {imageSrc ? (

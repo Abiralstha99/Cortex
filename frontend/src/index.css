@@ -125,6 +125,20 @@
     );
     opacity: 0.9;
   }
+
+  .sticker-card {
+    transform: rotate(var(--sticker-rotation, 0deg));
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sticker-card {
+    transition: transform 180ms ease-out;
+  }
+
+  .sticker-card:hover {
+    transform: translateY(-2px) rotate(var(--sticker-rotation, 0deg));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

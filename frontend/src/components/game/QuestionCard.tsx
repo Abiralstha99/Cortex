@@ -31,7 +31,10 @@ export default function QuestionCard({
           const ButtonTag = reduce ? "button" : motion.button;
           const motionProps = reduce
             ? {}
-            : { whileTap: { scale: 0.98 }, transition: { duration: 0.1 } };
+            : {
+                whileTap: { scale: 0.97 },
+                transition: { type: "spring" as const, stiffness: 500, damping: 32 },
+              };
 
           return (
             <ButtonTag
@@ -39,14 +42,14 @@ export default function QuestionCard({
               type="button"
               aria-pressed={isSelected}
               className={cn(
-                "flex min-h-16 w-full items-center rounded-full border-2 px-4 py-3 text-left transition-[background-color,border-color,box-shadow,transform] duration-150",
+                "flex min-h-16 w-full items-center rounded-full border-2 px-4 py-3 text-left transition-[background-color,border-color,box-shadow] duration-150",
                 "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-forest/30",
                 isSelected
                   ? "border-candy-pink bg-candy-pink/35 ring-4 ring-forest"
                   : "border-border bg-background hover:border-candy-pink hover:bg-candy-pink/10",
                 disabled
                   ? "cursor-not-allowed opacity-60"
-                  : "cursor-pointer active:scale-[0.98]",
+                  : "cursor-pointer",
               )}
               onClick={() => onSubmit(index)}
               disabled={disabled}

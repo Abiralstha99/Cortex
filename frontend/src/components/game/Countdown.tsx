@@ -29,9 +29,9 @@ export default function Countdown({ countdownMs }: CountdownProps) {
       ) : (
         <motion.div
           key={remaining}
-          initial={{ opacity: 0.4, scale: 0.92 }}
+          initial={{ opacity: 0.35, scale: 0.86 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "spring", stiffness: 380, damping: 28 }}
+          transition={{ type: "spring", stiffness: 420, damping: 24 }}
           className="flex size-28 items-center justify-center rounded-full bg-surface font-mono text-6xl font-semibold tabular-nums text-forest shadow-sm"
         >
           {remaining}
