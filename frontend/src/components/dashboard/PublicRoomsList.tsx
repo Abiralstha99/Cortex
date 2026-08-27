@@ -3,6 +3,7 @@ import { useAuth } from "@clerk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/feedback/EmptyState";
 import {
@@ -125,41 +126,56 @@ export default function PublicRoomsList() {
 
   return (
     <ul className="space-y-3">
-      {rooms.map((room) => (
-        <li
-          key={room.gameId}
-          className="flex flex-col gap-4 rounded-[var(--radius-panel)] border border-border bg-cream px-5 py-4 shadow-[0_3px_0_0_#d4cbbd] sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div className="min-w-0">
-            <p className="font-mono text-base font-semibold tracking-widest text-ink">
-              {room.roomCode}
-            </p>
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
-              <span>Host: {room.hostUsername}</span>
-              <span aria-hidden="true">|</span>
-              <span className="tabular-nums">
-                {room.playerCount}/{room.maxPlayers} players
-              </span>
-              <span aria-hidden="true">|</span>
-              <span>{room.numberOfRounds} questions</span>
-              {room.quizGenStatus !== "ready" && (
-                <>
-                  <span aria-hidden="true">|</span>
-                  <span className="text-muted">generating...</span>
-                </>
-              )}
-            </p>
-          </div>
-          <Button
-            size="sm"
-            className="w-full sm:w-auto"
-            disabled={room.playerCount >= room.maxPlayers}
-            onClick={() => navigate(`/game/lobby/${room.roomCode}`)}
+      {rooms.map((room) => {
+        const isFull = room.playerCount >= room.maxPlayers;
+
+        return (
+          <li
+            key={room.gameId}
+            className={`flex flex-col gap-4 rounded-[var(--radius-panel)] border px-5 py-4 sm:flex-row sm:items-center sm:justify-between ${
+              isFull
+                ? "border-border/60 bg-cream/60 opacity-75"
+                : "border-border bg-cream shadow-[0_3px_0_0_#d4cbbd]"
+            }`}
           >
-            {room.playerCount >= room.maxPlayers ? "Full" : "Join"}
-          </Button>
-        </li>
-      ))}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="font-mono text-base font-semibold tracking-widest text-ink">
+                  {room.roomCode}
+                </p>
+                {isFull && (
+                  <Badge variant="pink" className="text-[10px]">
+                    Full
+                  </Badge>
+                )}
+              </div>
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
+                <span>Host: {room.hostUsername}</span>
+                <span aria-hidden="true">|</span>
+                <span className="tabular-nums">
+                  {room.playerCount}/{room.maxPlayers} players
+                </span>
+                <span aria-hidden="true">|</span>
+                <span>{room.numberOfRounds} questions</span>
+                {room.quizGenStatus !== "ready" && (
+                  <>
+                    <span aria-hidden="true">|</span>
+                    <span className="text-muted">generating...</span>
+                  </>
+                )}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="w-full sm:w-auto"
+              disabled={isFull}
+              onClick={() => navigate(`/game/lobby/${room.roomCode}`)}
+            >
+              {isFull ? "Full" : "Join"}
+            </Button>
+          </li>
+        );
+      })}
     </ul>
   );
 }
