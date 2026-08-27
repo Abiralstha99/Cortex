@@ -97,21 +97,21 @@ export function Hero({ onCreateQuiz, onHowItWorksClick, onJoinRoom }: HeroProps)
           title="Host"
           tone="sky"
           rotate={-8}
-          className="absolute left-2 top-4"
+          className="absolute left-2 top-6"
           icon={<Crown className="size-14" strokeWidth={2.25} />}
         />
         <StickerCard
           title="Join"
           tone="yellow"
           rotate={6}
-          className="absolute right-2 top-16"
+          className="absolute left-[33%] top-[38%] -translate-x-1/2 -translate-y-1/2"
           icon={<LogIn className="size-14" strokeWidth={2.25} />}
         />
         <StickerCard
           title="Compete"
           tone="pink"
           rotate={-3}
-          className="absolute bottom-2 left-12 sm:left-20 md:left-12 lg:left-20"
+          className="absolute right-6 top-4 sm:right-10"
           icon={<Trophy className="size-14" strokeWidth={2.25} />}
         />
       </div>
