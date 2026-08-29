@@ -1,5 +1,7 @@
 FROM node:20-alpine
 
+ARG DIRECT_URL
+
 # Create a non-root user and group
 RUN addgroup app && adduser -S app -G app
 
