@@ -5,6 +5,7 @@ import { SocketAuth } from "./auth.js";
 import { registerLobbyHandlers } from "./lobbyHandler.js";
 import { registerGameHandlers } from "./gameHandler.js";
 import { registerPublicWaitingHandlers } from "./publicWaiting.js";
+import { socketCorsOptions } from "../lib/cors.js";
 
 let ioInstance: Server | undefined;
 
@@ -16,13 +17,8 @@ export function getIO(): Server {
 }
 
 export function attachSocket(httpServer: HTTPServer): Server {
-  const clientOrigin = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
-
   const io = new Server(httpServer, {
-    cors: {
-      origin: clientOrigin,
-      credentials: true,
-    },
+    cors: socketCorsOptions,
   });
   ioInstance = io;
 

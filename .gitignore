@@ -6,3 +6,8 @@ docs/
 .claude/
 .kiro/
 .agents/
+
+# Dependencies and build output (never commit)
+node_modules/
+dist/
+dist-ssr/
