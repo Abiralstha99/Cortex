@@ -47,7 +47,7 @@ app.use("/api/quizzes", quizzesRouter);
 
 const port = Number(process.env.PORT) || 3000;
 
-httpServer.listen(port, () => {
+httpServer.listen(port, "0.0.0.0", () => {
   console.log(`Server is running on port ${port}`);
   console.log(`CORS allowed origins: ${allowedOrigins.join(", ")}`);
 });
