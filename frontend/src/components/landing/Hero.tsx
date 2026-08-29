@@ -90,29 +90,29 @@ export function Hero({ onCreateQuiz, onHowItWorksClick, onJoinRoom }: HeroProps)
       </div>
 
       <div
-        className="relative flex min-h-72 items-center justify-center md:min-h-80"
+        className="flex min-h-72 items-center justify-evenly gap-2 md:min-h-80 md:gap-3"
         aria-label="Host, join, and compete"
       >
         <StickerCard
           title="Host"
           tone="sky"
-          rotate={-8}
-          className="absolute left-2 top-6"
-          icon={<Crown className="size-14" strokeWidth={2.25} />}
+          rotate={-6}
+          className="w-32 shrink-0 sm:w-36 md:w-40"
+          icon={<Crown className="size-12 sm:size-14" strokeWidth={2.25} />}
         />
         <StickerCard
           title="Join"
           tone="yellow"
-          rotate={6}
-          className="absolute left-[33%] top-[38%] -translate-x-1/2 -translate-y-1/2"
-          icon={<LogIn className="size-14" strokeWidth={2.25} />}
+          rotate={5}
+          className="w-32 shrink-0 sm:w-36 md:w-40"
+          icon={<LogIn className="size-12 sm:size-14" strokeWidth={2.25} />}
         />
         <StickerCard
           title="Compete"
           tone="pink"
-          rotate={-3}
-          className="absolute right-6 top-4 sm:right-10"
-          icon={<Trophy className="size-14" strokeWidth={2.25} />}
+          rotate={-4}
+          className="w-32 shrink-0 sm:w-36 md:w-40"
+          icon={<Trophy className="size-12 sm:size-14" strokeWidth={2.25} />}
         />
       </div>
     </section>
