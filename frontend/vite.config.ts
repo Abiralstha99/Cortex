@@ -10,14 +10,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  server: {
-    // Mirrors production proxyUrl="/__clerk" for local dev (middleware only runs on Vercel).
-    proxy: {
-      "/__clerk": {
-        target: "https://frontend-api.clerk.dev",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/__clerk/, ""),
-      },
-    },
-  },
 });
