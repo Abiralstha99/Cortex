@@ -20,7 +20,7 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
-const clientOrigin = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
+const clientOrigin = process.env.CLIENT_ORIGIN;
 
 app.use(
   cors({
