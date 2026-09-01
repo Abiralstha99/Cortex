@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import { cn } from "@/lib/utils";
 import AppSidebar from "./AppSidebar";
@@ -11,6 +12,17 @@ const widths = {
   "6xl": "max-w-6xl",
 } as const;
 
+function isLiveGamePath(pathname: string) {
+  const segments = pathname.split("/").filter(Boolean);
+
+  return (
+    segments.length === 2 &&
+    segments[0] === "game" &&
+    segments[1] !== "create" &&
+    segments[1] !== "join"
+  );
+}
+
 export default function PageShell({
   children,
   maxWidth = "5xl",
@@ -22,14 +34,18 @@ export default function PageShell({
   className?: string;
   aside?: ReactNode;
 }) {
+  const { pathname } = useLocation();
+  const hasDashboardChrome = !isLiveGamePath(pathname);
+
   return (
     <div className="min-h-[100dvh] bg-background">
-      <AppSidebar />
-      <div className="min-h-[100dvh] md:pl-[88px]">
-        <AppHeader />
+      {hasDashboardChrome && <AppSidebar />}
+      <div className={cn("min-h-[100dvh]", hasDashboardChrome && "md:pl-[88px]")}>
+        {hasDashboardChrome && <AppHeader />}
         <main
           className={cn(
-            "mx-auto px-4 py-8 pb-28 sm:px-6 md:px-8 md:py-10 md:pb-10",
+            "mx-auto px-4 py-8 sm:px-6 md:px-8 md:py-10",
+            hasDashboardChrome && "pb-28 md:pb-10",
             widths[maxWidth],
             className,
           )}
@@ -44,7 +60,7 @@ export default function PageShell({
           )}
         </main>
       </div>
-      <MobileBottomNav />
+      {hasDashboardChrome && <MobileBottomNav />}
     </div>
   );
 }

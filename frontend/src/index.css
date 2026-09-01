@@ -41,6 +41,9 @@
   --radius-hero: 1.5rem;
   --radius-pill: 999px;
 
+  --shadow-card: 0 8px 24px rgb(32 43 72 / 0.06);
+  --shadow-floating: 0 12px 32px rgb(32 43 72 / 0.10);
+
   /* Temporary aliases removed in Task 8 after every consumer migrates. */
   --color-cream: #f4f6fb;
   --color-track: #eef2fb;
