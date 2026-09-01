@@ -18,4 +18,22 @@ describe("Button", () => {
       "bg-surface",
     );
   });
+
+  it("keeps compact button sizes at the minimum touch target", () => {
+    render(
+      <>
+        <Button size="xs">Compact</Button>
+        <Button size="sm">Small</Button>
+        <Button size="icon" aria-label="Add game" />
+        <Button size="icon-sm" aria-label="Remove game" />
+      </>,
+    );
+
+    for (const name of ["Compact", "Small", "Add game", "Remove game"]) {
+      expect(screen.getByRole("button", { name })).toHaveClass(
+        "min-h-11",
+        "min-w-11",
+      );
+    }
+  });
 });
