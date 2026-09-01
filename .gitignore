@@ -6,6 +6,7 @@ docs/
 .claude/
 .kiro/
 .agents/
+.worktrees/
 
 # Dependencies and build output (never commit)
 node_modules/
