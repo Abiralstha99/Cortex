@@ -121,6 +121,14 @@ Routes live in `frontend/src/App.tsx`: public landing/auth routes and Clerk-prot
 
 Keep UI state synchronized through the existing socket hooks and stores rather than duplicating game state in individual components. Use the existing `api.ts` base URL handling and Clerk token flow for new backend calls.
 
+### Frontend redesign contract
+
+Before frontend work, read `design.md` and every file under `docs/design/`. The design specification is the approved visual target; the existing frontend remains authoritative for routes, supported behavior, accessibility semantics, Clerk authentication, API contracts, socket events, and Zustand state ownership.
+
+Apply the new theme only to capabilities the product already supports. The redesign may reorganize existing actions and introduce reusable presentation components, but it must not add inert search or notification controls, unsupported quiz metadata, topic/manual authoring, solo practice, result sharing, editing, or analytics. Keep direct routes working even if the dashboard gains quicker entry points.
+
+Implement the redesign incrementally: foundations first, then the shared responsive shell, then complete route-level slices. Every slice must build, remain usable on mobile and desktop, and preserve reduced-motion and keyboard behavior.
+
 ## Before handing off a change
 
 - Run the narrowest relevant backend tests for service/schema changes, then `npm test` when practical.

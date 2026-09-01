@@ -27,6 +27,12 @@ Cortex turns study material into a live competition: upload a PDF, let an LLM ge
 | **Data** | PostgreSQL + Prisma 7, Redis (ioredis) |
 | **Infra** | Docker Compose |
 
+## Frontend design direction
+
+The frontend is migrating the existing product flows to a playful, polished game-dashboard theme. [`design.md`](design.md) is the visual north star; [`docs/design/`](docs/design/) translates it into repository-specific tokens, component contracts, UX rules, copy guidance, and a decision log.
+
+The redesign does not imply new product capabilities. Search, notifications, topic/manual quiz creation, solo practice, result sharing, quiz editing, and analytics remain outside the frontend redesign until their data and behavior are specified separately.
+
 ---
 
 ## How it works
