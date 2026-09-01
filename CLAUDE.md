@@ -1,73 +1,129 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for working in the Cortex repository.
 
 ## Project
 
-Capital Rush — a real-time multiplayer trivia game (guess the capital city). Players join a room by code, answer rounds against a timer, get placement-based points, and ratings update ELO-style after each game. See `docs/CAPITAL_RUSH_PRD.md` for full product spec, `docs/plan.md` for the phased implementation plan, `architecture.md` (repo root) for known architectural risks/open questions, `docs/design-decisions.md` and `docs/system.md` for deeper design/system notes, and `docs/db_diagram.md` for the schema ER diagram.
+Cortex is a real-time, multiplayer quiz app built around a user’s study notes. A host can select an existing quiz or upload a PDF/text source to generate one with Gemini, then invite players to a timed Socket.io game.
 
-**Current state:** the backend server now runs (`backend/src/index.ts`) — Express + Socket.io are both wired up, so the earlier `dev`-script/entrypoint mismatch is resolved. Built so far:
-- Express app with CORS, Clerk middleware, and a Svix-verified Clerk webhook mounted on the raw body *before* `express.json()`.
-- `requireAuth` middleware (attaches `req.userId` = Clerk user id) protecting `/api/users`.
-- Socket.io attached to the same HTTP server, authenticated on the handshake via `SocketAuth` (verifies the Clerk token, sets `socket.data.username = session.sub`). Currently only emits a hello on connect — no lobby events yet.
-- `POST /api/games/waiting/` → creates a **waiting room in Redis only** (reserves a unique room code, writes a `game:<gameId>` hash with a 1-hour TTL). This is lifecycle step 1 below; nothing further is implemented.
+The repository contains two independent Node projects; there is no root workspace configuration:
 
-Not yet built: lobby join/ready/leave socket events, game start (Postgres `games` row), round/scoring logic, the finish transaction, and ELO. Redis is not yet wired as a Socket.io adapter.
+- `frontend/` — React 19, TypeScript, Vite, React Router, Tailwind CSS, Zustand, Clerk, and Socket.io client.
+- `backend/` — Express 5, Socket.io, Prisma 7/Postgres, Redis/ioredis, BullMQ, Clerk, Zod, Multer, and the Vercel AI SDK with Gemini.
 
 ## Commands
 
-Two independent Node projects, no shared workspace config — run commands from within each directory.
+Run commands from the relevant project directory.
 
-### Frontend (`frontend/`)
-```
-npm run dev       # Vite dev server
-npm run build     # tsc -b && vite build
-npm run lint      # eslint .
-npm run preview   # preview production build
-```
+### Frontend
 
-### Backend (`backend/`)
-```
-npm run dev       # tsx watch src/index.ts — starts the server on port 3000
-npm run build     # prisma generate
-npm run start     # node dist/index.js (expects a prior tsc/build step; no bundler wired yet)
-npm run seed      # tsx scripts/seedCountries.ts — loads seed/countries.json into the countries table
+```bash
+cd frontend
+npm run dev       # Vite on port 5173; binds to all interfaces
+npm run build     # Type-check and build production assets
+npm run lint      # ESLint
+npm run preview   # Preview the production build
 ```
 
-Requires `REDIS_URL`, `CLERK_SECRET_KEY`, and the Postgres connection env used by the Prisma pg adapter; `CLIENT_ORIGIN` defaults to `http://localhost:5173`. A `Dockerfile` and a compose setup (backend/frontend/Redis) exist.
+### Backend
 
-Prisma (run from `backend/`):
+```bash
+cd backend
+npm run dev                 # tsx watch src/index.ts; port 3000 by default
+npm run start               # Run src/index.ts with tsx
+npm run build               # Generate the Prisma client
+npm test                    # Node test runner over src/**/*.test.ts
+npm run seed                # Seed legacy country data
+npm run seed:quiz           # Seed a sample quiz
+npm run smoke:quiz-pipeline # Exercise the generation pipeline
+npx prisma migrate dev      # Create/apply local migrations
+npx prisma studio           # Inspect Postgres data
 ```
-npx prisma migrate dev     # create/apply a migration from schema.prisma
-npx prisma studio          # inspect DB contents directly
-```
 
-## Architecture
+`docker compose up --build` starts the backend, frontend, and Redis. Postgres is deliberately external to the compose stack and must be supplied via `backend/.env`.
 
-### Two services, three datastores
-- **Frontend** (`frontend/`): React 19 + Vite + TypeScript, React Router v7, Clerk (`@clerk/react`) for auth UI/session, `socket.io-client` (see `src/lib/socket.ts` + `useSocket` hook), `lucide-react` for icons.
-- **Backend** (`backend/`): Express 5 + Socket.io (wired) + Prisma 7 (`@prisma/adapter-pg` driver adapter, client generated to `backend/app/generated/prisma`, not `node_modules/.prisma`). Redis via `ioredis` (single shared client in `src/lib/redis.ts`); Clerk via `@clerk/express`; Svix for webhook verification.
-- **Postgres**: durable source of truth (`users`, `countries`, `games`, `game_players`, `answers` — see `docs/db_diagram.md`).
-- **Redis**: live in-progress game state only (per-game hash/keys, TTL'd), never the durable record of a finished game.
+## Configuration
 
-Backend is ESM (`"type": "module"`, NodeNext): **relative imports must carry the `.js` extension** (e.g. `import ... from "./services/game.service.js"`) even though the source is `.ts`. Files follow a role-suffixed naming convention: `*.routes.ts`, `*.controller.ts`, `*.service.ts`, `*.middleware.ts`; domain logic lives under `src/services/`.
+Backend environment variables:
 
-### Auth flow
-Clerk owns identity. The backend does not have its own signup/login — a `users` row is created via a Clerk webhook (`user.created`) rather than at request time, which means there's a real race between "user signed up in Clerk" and "backend has a matching row" (see `architecture.md` #3 and `docs/plan.md`'s Risk #3 for the open question on how this is handled). REST routes are protected by `requireAuth` (`getAuth` from `@clerk/express`), which attaches the **Clerk user id** as `req.userId`. The Socket.io handshake is authenticated separately in `SocketAuth` — it reads `socket.handshake.auth.token`, calls `verifyToken`, and stores the Clerk user id as `socket.data.username` (naming quirk: it holds a Clerk id, not a username).
+- Required: `DATABASE_URL`, `REDIS_URL`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET`, and `GEMINI_API_KEY` for generation.
+- Common: `PORT` (defaults to `3000`), `CLIENT_ORIGIN`, and `NODE_ENV`.
+- Generation tuning: `GEMINI_MODEL`, `QUIZ_BATCH_TOKEN_BUDGET`, `MAX_GEN_RETRIES`, `QUIZ_GEN_CONCURRENCY`, `MAX_QUESTIONS`, and `MAX_SYNC_LLM_CALLS`.
 
-Note the id boundary: Clerk ids only live at these auth edges. Inside the game/Redis layer, `hostId` and `players` hold **Postgres `users.id`** — the create-game route resolves `req.userId` (Clerk) → `users.id` (Postgres) before calling the service. Don't mix the two.
+Frontend environment variables:
 
-### Game lifecycle (Redis during play, Postgres after)
-1. **(implemented)** Room created (`POST /api/games/waiting/`) → a unique room code is reserved in Redis (`room-code:<code>` set with `NX`+TTL, retried on collision, see `src/lib/roomCode.ts`), then a `game:<gameId>` hash is written via a `MULTI` with a 1-hour TTL (`waiting` status, `players: [hostId]`, difficulty, `numberOfRounds`, `hostId`, `roomCode`). No Postgres row yet. Redis key builders live in `src/lib/redisKeys.ts`.
-2. Lobby: join/ready/leave events mutate the Redis player list and broadcast over Socket.io. Host is tracked in Redis (first-joined or explicit `hostId`).
-3. Host starts → a `games` Postgres row is created (`status: playing`) and Redis flips to `playing`. From here, round state (current round, country, `startedAt`, per-round correct-answer counts) lives in Redis only.
-4. Each round: server picks a country from the difficulty pool, starts a **BullMQ delayed job** (scheduled off `startedAt`, not Redis TTL-expiry — this distinction matters, see `architecture.md` #5), scores submissions atomically (placement = result of a Redis Lua script that atomically increments a per-round correct-count key and returns the placement — 1st/2nd/3rd/late-but-correct map to fixed point values), and broadcasts round results.
-5. Game finish: final ranks computed, then **one Postgres transaction** writes `games` (finished + winner), `game_players` (score/rank/rating_change), and `answers` for every round — this is meant to be a single durable boundary, not sequential best-effort writes (see `architecture.md` #3 on why partial-write failure here is a real risk to design around, not an edge case to skip).
-6. ELO-style rating updates apply inside that same transaction. The multi-player (2-8 player) ELO extension formula is a documented open design decision, not yet settled — check `docs/plan.md`'s Open Questions before implementing Phase 4's rating logic.
+- Required: `VITE_CLERK_PUBLISHABLE_KEY`.
+- Optional: `VITE_API_URL`, which defaults to `http://localhost:3000`.
 
-### Key invariants to preserve when touching this code
-- Don't let Redis become a second source of truth for anything that also has a Postgres column — Redis holds *live* state; Postgres holds *finished* state. If they can drift, that's a bug, not a feature.
-- Round-end is driven by a **BullMQ delayed job** (not `setTimeout`, not Redis key-expiry). The job is scheduled off `startedAt + timeLimit`. A `SET NX` guard key (`round_ended:<gameId>:<roundNumber>`) ensures only one path (job or last-submission handler) actually executes round-end — the other bails out silently.
-- Per-round placement scoring must stay atomic — use a **Lua script (`EVAL`)**, not a plain `INCR` followed by a separate write. The Lua script atomically increments the correct-answer counter and writes the submission (including the returned placement) in one Redis operation. A read-then-write across two round-trips reintroduces the race described in `architecture.md` #2.
-- Socket.io broadcasts currently assume single-instance deployment (no Redis adapter wired up) — don't add a second server instance assumption without also adding the adapter.
+The backend’s CORS allow-list comes from `CLIENT_ORIGIN`; keep it aligned with the deployed frontend URL. Never commit `.env` files, credentials, Clerk tokens, or Gemini keys.
 
+## Application shape
+
+### HTTP API
+
+All application routes require Clerk authentication except `POST /api/webhooks/clerk`, which uses the raw request body for Svix verification and must remain mounted before `express.json()`.
+
+- `POST /api/games/waiting/` creates a Redis-backed waiting room.
+- `GET /api/games/waiting/public` lists public waiting rooms.
+- `POST /api/games/waiting/:gameId/generate` uploads a source and starts background generation for that room.
+- `POST /api/games/waiting/:gameId/quiz/fail` marks a waiting-room generation as failed.
+- `POST /api/quiz/generate` creates a standalone generated quiz; small jobs can complete synchronously and larger jobs return a job ID.
+- `GET /api/quiz/jobs/:jobId` polls a generation job.
+- `GET /api/quizzes` and `GET /api/quizzes/:quizId` expose the caller’s ready quizzes.
+- `/api/users` is authenticated and mounted in `src/index.ts`.
+
+Multer keeps uploaded files in memory and limits them to 10 MB. Preserve both constraints unless the upload pipeline is deliberately redesigned.
+
+### Authentication and identity boundary
+
+Clerk is the identity provider. The Clerk `user.created` webhook provisions the corresponding Postgres `users` row. REST authentication attaches the Clerk ID as `req.userId`; Socket.io authentication verifies the handshake token, then resolves and stores both `socket.data.clerkUserId` and the internal `socket.data.userId`.
+
+Use the Postgres `users.id` in games, Redis room state, and Prisma relations. Do not write Clerk IDs into those fields. The webhook means a just-created Clerk user can briefly lack a local row; preserve clear 404/auth handling around that race.
+
+### Data ownership
+
+Postgres is the durable source of truth for users, generated quizzes/questions, and game records. The Prisma client is generated into `backend/app/generated/prisma`.
+
+Redis holds ephemeral waiting-room and active-game state, public-room indexes, round/submission keys, and BullMQ data. Waiting rooms have a one-hour TTL. Treat Redis as live state, never as a replacement for durable history.
+
+BullMQ uses the same Redis connection for quiz-generation workers and delayed round-end jobs. Workers are started from `src/index.ts`; do not introduce a separate worker process without preventing duplicate consumers.
+
+### Quiz generation
+
+The pipeline under `backend/src/services/quiz/` extracts readable PDF/text content, chunks it, plans batches, asks Gemini to generate questions, validates/cleans them with Zod, and persists valid quizzes and questions. It can run synchronously or queue async work based on the planned LLM-call count.
+
+When changing this path, keep owner scoping, job-status transitions, bounded concurrency/retries, and validation intact. Never expose correct answers or explanations in a live `new_question` socket payload; use `publicNewQuestionFromRound`.
+
+### Multiplayer lifecycle
+
+1. A host creates a Redis waiting room, optionally with an existing ready quiz. If no quiz is selected, the room begins in `quizGenStatus: processing` and can receive an uploaded source.
+2. Players authenticate with Socket.io and use `join_game`, `player_ready`, and `leave_game`. Lobby mutations use Lua scripts to make joins/readiness/leaves atomic. A departing host is promoted to the first remaining player.
+3. `start_game` requires at least two ready players and a ready quiz. It creates a Postgres `Game` row using the Redis game UUID, then flips the Redis state to `playing`; it rolls back the database row if that flip fails.
+4. A three-second countdown precedes the first question. Rounds run for 30 seconds and are ended by a BullMQ delayed job, or early when every player submits.
+5. Answer submission is guarded by Lua: one answer per player/round, server-side correctness, and atomic correct-placement counting. Scores are applied to Redis and the server broadcasts round and final leaderboards.
+
+Current limitation: `endGame` broadcasts the final result and marks Redis state finished, but does **not** yet persist completion data (`GamePlayer`, `Answer`, final game status/winner, or ratings) to Postgres. Do not claim finished-game persistence or ELO behavior exists until it is implemented transactionally.
+
+## Code conventions and invariants
+
+- Backend is ESM with NodeNext-style imports. Every relative TypeScript import must use a `.js` extension.
+- Backend files use role suffixes such as `*.routes.ts`, `*.controller.ts`, `*.service.ts`, `*.middleware.ts`; keep domain logic in `src/services/` and request/socket validation in schemas and handlers.
+- Validate HTTP bodies/params through the existing Zod middleware and validate Socket.io payloads with `parseSocketPayload` before using them.
+- Keep question selection and correctness server-side. Browser clients receive only the public question fields during a round.
+- Preserve Redis atomicity for concurrent paths. In particular, do not replace lobby Lua scripts or `SUBMIT_ANSWER_LUA` with read-modify-write code.
+- Round-end has two contenders (BullMQ timeout and last answer). `ROUND_ENDED_KEY` uses `SET ... NX` to ensure exactly one wins; preserve this guard when changing the flow.
+- Socket.io is currently single-instance only. Add the Socket.io Redis adapter before treating multi-instance deployment as supported.
+- Be careful with the Redis/Postgres boundary: a game’s ID is shared between both systems after start, but live score and round state remain Redis-owned until durable completion is implemented.
+
+## Frontend organization
+
+Routes live in `frontend/src/App.tsx`: public landing/auth routes and Clerk-protected dashboard, create/join, lobby, and game routes. Feature UI lives under `components/`; server interactions under `lib/` and hooks; Zustand state under `stores/`.
+
+Keep UI state synchronized through the existing socket hooks and stores rather than duplicating game state in individual components. Use the existing `api.ts` base URL handling and Clerk token flow for new backend calls.
+
+## Before handing off a change
+
+- Run the narrowest relevant backend tests for service/schema changes, then `npm test` when practical.
+- Run `npm run build` for frontend TypeScript/UI changes and `npm run lint` for frontend code changes.
+- Run `npm run build` in `backend/` after changing Prisma schema or generated-client usage; apply migrations intentionally, never by editing generated Prisma output.
+- Do not alter unrelated working-tree changes. This repository may contain locally removed visual assets and other in-progress work.
