@@ -8,7 +8,7 @@ This inventory maps the current component tree to the approved design. Preserve 
 | --- | --- | --- |
 | `PageShell` | Responsive authenticated shell and content frame | Evolve it to own desktop sidebar and mobile bottom navigation; do not wrap gameplay |
 | `AppHeader` | Compact top bar and account actions | Keep only supported actions; no inert search or notifications |
-| `AuthLayout` | Branded but quiet frame for Clerk flows | Preserve all custom password, Google SSO, MFA, and verification branches |
+| `AuthLayout` | Branded but quiet frame for Clerk flows | Preserve Clerk password, Google SSO, MFA, and verification branches |
 | `BrandMark` | Cortex wordmark | Keep one recognizable treatment across public and authenticated surfaces |
 | `EmptyState` | Explanation plus one next action | Add optional illustration only when a coherent asset system exists |
 | `ConnectionBanner` | Reconnecting, restored, and terminal connection feedback | Extract from game-page markup only if reuse produces a clearer boundary |
