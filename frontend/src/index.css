@@ -1,75 +1,80 @@
 @import "tailwindcss";
-@import "@fontsource/nunito/700.css";
-@import "@fontsource/nunito/800.css";
-@import "@fontsource/dm-sans/400.css";
-@import "@fontsource/dm-sans/500.css";
-@import "@fontsource/dm-sans/600.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
 @import "@fontsource/ibm-plex-mono/500.css";
 @import "@fontsource/ibm-plex-mono/600.css";
 
 @theme {
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Nunito", "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --color-background: #f0ebe0;
-  --color-cream: #f0ebe0;
-  --color-surface: #faf7f2;
-  --color-border: #e2d9ca;
-  --color-track: #e8e0d3;
+  --color-background: #f4f6fb;
+  --color-surface: #ffffff;
+  --color-subtle: #f8f9fc;
+  --color-border: #e6e9f0;
+  --color-ink: #111936;
+  --color-foreground: #111936;
+  --color-muted: #697188;
+  --color-muted-foreground: #697188;
+  --color-text-muted: #9aa2b3;
+  --color-primary: #405a9b;
+  --color-primary-hover: #506db2;
+  --color-primary-soft: #eef2fb;
+  --color-primary-foreground: #ffffff;
+  --color-accent-pink: #f06c9b;
+  --color-accent-yellow: #ffbd3d;
+  --color-accent-cyan: #55b8c6;
+  --color-accent-purple: #9b79d1;
+  --color-success: #32b57a;
+  --color-success-soft: #eaf8f2;
+  --color-danger: #ef5a67;
+  --color-danger-soft: #fff0f2;
+  --color-warning: #f5a623;
+  --color-info: #4d8deb;
+  --color-ring: #405a9b;
 
-  --color-ink: #1a1a1a;
-  --color-foreground: #1a1a1a;
-  --color-muted: #6b645a;
-  --color-muted-foreground: #6b645a;
+  --radius-control: 0.75rem;
+  --radius-card: 1rem;
+  --radius-panel: 1.25rem;
+  --radius-hero: 1.5rem;
+  --radius-pill: 999px;
 
-  --color-forest: #1b4332;
-  --color-primary: #1b4332;
-  --color-primary-foreground: #faf7f2;
+  /* Temporary aliases removed in Task 8 after every consumer migrates. */
+  --color-cream: #f4f6fb;
+  --color-track: #eef2fb;
+  --color-forest: #405a9b;
+  --color-candy-pink: #f06c9b;
+  --color-candy-yellow: #ffbd3d;
+  --color-candy-sky: #55b8c6;
+  --color-gloss: #111936;
+  --radius-sticker: 1.5rem;
 
-  --color-candy-pink: #ff8fb8;
-  --color-candy-yellow: #f0de82;
-  --color-candy-sky: #bce0f5;
-  --color-gloss: #111111;
-
-  --color-rose: #ff8fb8;
-  --color-success: #1b4332;
-  --color-danger: #e11d48;
-  --color-success-soft: #e5f5ec;
-  --color-danger-soft: #ffe4ec;
-  --color-code: #1b4332;
-  --color-data: #3b82c4;
-  --color-preview: #111111;
-
-  --color-card: #faf7f2;
-  --color-card-foreground: #1a1a1a;
-  --color-popover: #faf7f2;
-  --color-popover-foreground: #1a1a1a;
-  --color-secondary: #e8e0d3;
-  --color-secondary-foreground: #1a1a1a;
-  --color-accent: #e8e0d3;
-  --color-accent-foreground: #1a1a1a;
-  --color-input: #e2d9ca;
-  --color-ring: #1b4332;
-  --color-destructive: #e11d48;
-
-  --radius-control: 999px;
-  --radius-panel: 1.5rem;
-  --radius-sticker: 1.75rem;
+  --color-card: #ffffff;
+  --color-card-foreground: #111936;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #111936;
+  --color-secondary: #eef2fb;
+  --color-secondary-foreground: #111936;
+  --color-accent: #eef2fb;
+  --color-accent-foreground: #111936;
+  --color-input: #e6e9f0;
+  --color-destructive: #ef5a67;
 }
 
 @layer base {
   :root {
-    --accent: #1b4332;
-    --bg: #f0ebe0;
-    --bg-raised: #faf7f2;
-    --text: #1a1a1a;
-    --text-muted: #6b645a;
-    --text-dim: #9a9288;
-    --border: #e2d9ca;
-    --border-strong: #d4cbbd;
-    --danger: #e11d48;
-    --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+    --accent: #405a9b;
+    --bg: #f4f6fb;
+    --bg-raised: #ffffff;
+    --text: #111936;
+    --text-muted: #697188;
+    --text-dim: #9aa2b3;
+    --border: #e6e9f0;
+    --border-strong: #d5dae5;
+    --danger: #ef5a67;
+    --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   }
 
@@ -95,44 +100,29 @@
     text-decoration: underline;
     text-decoration-thickness: 0.18em;
     text-underline-offset: 0.12em;
-    text-decoration-color: var(--color-forest);
+    text-decoration-color: var(--color-primary);
   }
 }
 
 @layer utilities {
-  /* Clint-like glossy sticker sheen (CSS approximation, not Apple Liquid Glass) */
-  .gloss-sheen {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-  }
-  .gloss-sheen::after {
-    content: "";
-    pointer-events: none;
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(
-      135deg,
-      rgb(255 255 255 / 0.55) 0%,
-      rgb(255 255 255 / 0.08) 34%,
-      transparent 52%
-    );
-    opacity: 0.9;
-  }
-
-  .sticker-card {
-    transform: rotate(var(--sticker-rotation, 0deg));
+  .hero-orbit {
+    transform-origin: center;
+    animation: hero-orbit 18s linear infinite;
   }
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .sticker-card {
-    transition: transform 180ms ease-out;
-  }
+  @keyframes hero-orbit {
+    0%,
+    100% {
+      transform: rotate(0deg);
+      opacity: 1;
+    }
 
-  .sticker-card:hover {
-    transform: translateY(-2px) rotate(var(--sticker-rotation, 0deg));
+    50% {
+      transform: rotate(180deg);
+      opacity: 0.82;
+    }
   }
 }
 
@@ -144,5 +134,11 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .hero-orbit {
+    animation: none;
+    transform: none;
+    opacity: 1;
   }
 }
