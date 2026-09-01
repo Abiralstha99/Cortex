@@ -34,7 +34,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-dvh bg-cream">
+    <div className="min-h-dvh bg-background text-ink">
       <LandingNav
         onPlayNow={() => goToApp()}
         onHowItWorksClick={scrollToHowItWorks}

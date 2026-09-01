@@ -13,7 +13,10 @@ export default function Login() {
   }
 
   return (
-    <AuthLayout heading="Welcome back." subtitle="Sign in to continue.">
+    <AuthLayout
+      heading="Welcome back."
+      subtitle="Sign in and get back in the game."
+    >
       <SignIn
         routing="path"
         path="/login"

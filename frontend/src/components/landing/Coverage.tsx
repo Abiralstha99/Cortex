@@ -11,21 +11,18 @@ const subjects = [
 
 export function Coverage() {
   return (
-    <section id="coverage" className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-      <h2 className="font-display max-w-2xl text-3xl font-extrabold tracking-tight text-ink md:text-5xl">
+    <section id="coverage" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-16 sm:px-6 md:py-24 lg:px-8">
+      <h2 className="font-display max-w-2xl text-3xl font-bold tracking-tight text-ink md:text-5xl">
         If you can study it, you can play it
       </h2>
+      <p className="mt-4 max-w-lg leading-relaxed text-muted">
+        Bring the material you already use and turn it into a shared game.
+      </p>
       <div className="mt-9 flex max-w-4xl flex-wrap gap-3" aria-label="Quiz subjects">
-        {subjects.map((subject, index) => (
+        {subjects.map((subject) => (
           <span
             key={subject}
-            className={`rounded-control border-2 border-ink px-5 py-2.5 font-display text-sm font-extrabold text-ink shadow-[0_3px_0_0_#1a1a1a] ${
-              index % 3 === 0
-                ? "bg-candy-yellow"
-                : index % 3 === 1
-                  ? "bg-surface"
-                  : "bg-candy-sky"
-            }`}
+            className="rounded-control border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-ink"
           >
             {subject}
           </span>

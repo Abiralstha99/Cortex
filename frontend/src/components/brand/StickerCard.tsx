@@ -1,22 +1,13 @@
-import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 const tones = {
-  pink: "bg-candy-pink",
-  yellow: "bg-candy-yellow",
-  sky: "bg-candy-sky",
-  forest: "bg-forest text-primary-foreground",
+  pink: "bg-surface",
+  yellow: "bg-primary-soft",
+  sky: "bg-subtle",
+  forest: "border-primary bg-primary text-primary-foreground",
 } as const;
 
-export function StickerCard({
-  title,
-  subtitle,
-  tone,
-  icon,
-  imageSrc,
-  rotate = 0,
-  className,
-}: {
+interface StickerCardProps {
   title: string;
   subtitle?: string;
   tone: keyof typeof tones;
@@ -24,29 +15,37 @@ export function StickerCard({
   imageSrc?: string;
   rotate?: number;
   className?: string;
-}) {
+}
+
+export function StickerCard({
+  title,
+  subtitle,
+  tone,
+  icon,
+  imageSrc,
+  className,
+}: StickerCardProps) {
   return (
     <div
       className={cn(
-        "sticker-card gloss-sheen relative w-44 rounded-[var(--radius-sticker)] border-[6px] border-white p-4 shadow-[0_10px_0_0_rgb(0_0_0/0.12)]",
+        "relative w-44 rounded-panel border border-border p-4 shadow-card",
         tones[tone],
         className,
       )}
-      style={{ "--sticker-rotation": `${rotate}deg` } as CSSProperties}
     >
-      <div className="relative z-[1] flex flex-col items-center gap-2 text-center">
+      <div className="flex flex-col items-start gap-3 text-left">
         {imageSrc ? (
           <img src={imageSrc} alt="" className="h-20 w-20 object-contain" />
         ) : (
-          <div className="flex h-20 w-20 items-center justify-center text-ink">
+          <div className="flex size-12 items-center justify-center rounded-control border border-current/10 bg-surface/70 text-current">
             {icon}
           </div>
         )}
-        <p className="font-display text-sm font-extrabold uppercase tracking-wide">
+        <p className="font-display text-base font-bold">
           {title}
         </p>
         {subtitle ? (
-          <p className="text-xs font-medium opacity-80">{subtitle}</p>
+          <p className="text-sm leading-relaxed opacity-75">{subtitle}</p>
         ) : null}
       </div>
     </div>

@@ -14,17 +14,18 @@ function smoothScrollTo(e: React.MouseEvent, selector: string) {
 
 export function LandingNav({ onPlayNow, onHowItWorksClick }: LandingNavProps) {
   return (
-    <header className="sticky top-0 z-10 bg-cream/90 backdrop-blur-sm transition-shadow duration-300">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        {/* Wordmark */}
-        <BrandMark to="/" />
+    <header className="sticky top-0 z-10 border-b border-border bg-surface/95 transition-shadow duration-300 supports-[backdrop-filter]:backdrop-blur-md">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <BrandMark
+          to="/"
+          className="inline-flex min-h-11 items-center rounded-control outline-none focus-visible:ring-[3px] focus-visible:ring-primary/30"
+        />
 
-        {/* Center nav links */}
         <nav className="hidden items-center gap-8 md:flex">
           <a
             href="#features"
             onClick={(e) => smoothScrollTo(e, "#features")}
-            className="text-sm font-medium text-ink/70 transition-colors duration-200 hover:text-ink"
+            className="flex min-h-11 items-center text-sm font-semibold text-muted outline-none transition-colors duration-150 hover:text-ink focus-visible:rounded-control focus-visible:ring-[3px] focus-visible:ring-primary/30"
           >
             Features
           </a>
@@ -33,28 +34,26 @@ export function LandingNav({ onPlayNow, onHowItWorksClick }: LandingNavProps) {
             onClick={(e) => {
               onHowItWorksClick(e);
             }}
-            className="text-sm font-medium text-ink/70 transition-colors duration-200 hover:text-ink"
+            className="flex min-h-11 items-center text-sm font-semibold text-muted outline-none transition-colors duration-150 hover:text-ink focus-visible:rounded-control focus-visible:ring-[3px] focus-visible:ring-primary/30"
           >
             How it works
           </a>
           <a
             href="#coverage"
             onClick={(e) => smoothScrollTo(e, "#coverage")}
-            className="text-sm font-medium text-ink/70 transition-colors duration-200 hover:text-ink"
+            className="flex min-h-11 items-center text-sm font-semibold text-muted outline-none transition-colors duration-150 hover:text-ink focus-visible:rounded-control focus-visible:ring-[3px] focus-visible:ring-primary/30"
           >
             Coverage
           </a>
         </nav>
 
-        {/* CTA pill button */}
         <button
+          type="button"
           onClick={onPlayNow}
-          className="inline-flex items-center gap-3 rounded-full border border-ink/10 bg-white py-2 pl-3 pr-5 text-sm font-semibold text-ink shadow-sm transition-all duration-200 hover:border-ink/20 hover:shadow-md"
+          className="inline-flex h-12 min-w-11 items-center gap-2 rounded-control bg-primary px-4 text-sm font-semibold whitespace-nowrap text-white outline-none transition-colors duration-150 hover:bg-primary-hover focus-visible:ring-[3px] focus-visible:ring-primary/30 sm:px-5"
         >
-          <span className="flex size-8 items-center justify-center rounded-full bg-forest text-white">
-            <ArrowRight className="size-4" strokeWidth={2.5} />
-          </span>
           Start a quiz
+          <ArrowRight aria-hidden="true" className="size-4" strokeWidth={2.25} />
         </button>
       </div>
     </header>

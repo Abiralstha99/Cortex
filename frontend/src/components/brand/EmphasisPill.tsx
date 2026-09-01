@@ -1,11 +1,11 @@
 import { cn } from "@/lib/utils";
 
 const tones = {
-  gloss: "bg-gloss text-candy-pink",
-  forest: "bg-forest text-primary-foreground",
-  pink: "bg-candy-pink text-ink",
-  yellow: "bg-candy-yellow text-ink",
-  sky: "bg-candy-sky text-ink",
+  gloss: "border-primary/30 bg-primary-soft text-primary",
+  forest: "border-primary bg-primary text-primary-foreground",
+  pink: "border-danger/20 bg-danger-soft text-ink",
+  yellow: "border-warning/25 bg-primary-soft text-ink",
+  sky: "border-border bg-subtle text-ink",
 } as const;
 
 export function EmphasisPill({
@@ -20,7 +20,7 @@ export function EmphasisPill({
   return (
     <span
       className={cn(
-        "gloss-sheen inline-flex items-center rounded-full px-3 py-1 font-display text-[0.95em] font-extrabold leading-none shadow-[0_4px_0_0_rgb(0_0_0/0.18)]",
+        "inline-flex items-center rounded-control border px-3 py-1 font-display text-[0.95em] font-bold leading-none",
         tones[tone],
         className,
       )}

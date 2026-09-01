@@ -11,7 +11,10 @@ export default function SignUp() {
   }
 
   return (
-    <AuthLayout heading="Create your account." subtitle="Set up your player profile.">
+    <AuthLayout
+      heading="Create your account."
+      subtitle="Set up your player profile and start a quiz."
+    >
       <ClerkSignUp
         routing="path"
         path="/sign-up"

@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { ArrowUpRight, Crown, LogIn, Trophy } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 
-import { EmphasisPill } from "@/components/brand/EmphasisPill";
-import { StickerCard } from "@/components/brand/StickerCard";
 import { Button } from "@/components/ui/button";
 import RoomCodeInput from "@/components/forms/RoomCodeInput";
 import {
@@ -19,6 +18,7 @@ interface HeroProps {
 export function Hero({ onCreateQuiz, onHowItWorksClick, onJoinRoom }: HeroProps) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,83 +37,90 @@ export function Hero({ onCreateQuiz, onHowItWorksClick, onJoinRoom }: HeroProps)
   };
 
   return (
-    <section className="mx-auto grid max-w-6xl gap-10 px-6 pb-16 pt-10 md:grid-cols-[1.1fr_0.9fr] md:pt-16">
-      <div>
-        <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-ink md:text-6xl">
-          Turn notes into a{" "}
-          <EmphasisPill tone="gloss">live quiz</EmphasisPill>{" "}
-          <span className="text-underline-thick">with friends</span>
-        </h1>
-
-        <p className="mt-5 max-w-md text-base text-muted">
-          Upload your notes, generate questions, and race through rounds
-          together.
-        </p>
-
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          <Button
-            type="button"
-            variant="candy"
-            size="lg"
-            onClick={onCreateQuiz}
-            className="pl-6 pr-2"
-          >
-            Create quiz
-            <span className="flex size-8 items-center justify-center rounded-full bg-ink text-white">
-              <ArrowUpRight aria-hidden="true" />
-            </span>
-          </Button>
-          <Button variant="outline" size="lg" asChild>
-            <a href="#how-it-works" onClick={onHowItWorksClick}>
-              How it works
-            </a>
-          </Button>
-        </div>
-
-        <form
-          onSubmit={handleJoin}
-          className="mt-8 flex flex-wrap items-end gap-3"
-          noValidate
+    <section className="mx-auto max-w-7xl px-4 pb-10 pt-4 sm:px-6 sm:pb-16 sm:pt-6 lg:px-8">
+      <div className="grid overflow-hidden rounded-hero bg-ink text-white shadow-floating md:grid-cols-[0.46fr_0.54fr] md:items-center">
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="px-6 pb-8 pt-9 sm:px-10 sm:pb-10 sm:pt-12 lg:px-12 lg:py-14"
         >
-          <RoomCodeInput
-            id="hero-room-code"
-            value={code}
-            onChange={handleChange}
-            error={error}
-            label="Have a code?"
-            className="w-40 bg-surface text-lg"
-          />
-          <Button type="submit" size="lg">
-            Join room
-          </Button>
-        </form>
-      </div>
+          <h1 className="max-w-xl font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+            Turn notes into a live quiz with friends
+          </h1>
 
-      <div
-        className="flex min-h-72 items-center justify-evenly gap-2 md:min-h-80 md:gap-3"
-        aria-label="Host, join, and compete"
-      >
-        <StickerCard
-          title="Host"
-          tone="sky"
-          rotate={-6}
-          className="w-32 shrink-0 sm:w-36 md:w-40"
-          icon={<Crown className="size-12 sm:size-14" strokeWidth={2.25} />}
-        />
-        <StickerCard
-          title="Join"
-          tone="yellow"
-          rotate={5}
-          className="w-32 shrink-0 sm:w-36 md:w-40"
-          icon={<LogIn className="size-12 sm:size-14" strokeWidth={2.25} />}
-        />
-        <StickerCard
-          title="Compete"
-          tone="pink"
-          rotate={-4}
-          className="w-32 shrink-0 sm:w-36 md:w-40"
-          icon={<Trophy className="size-12 sm:size-14" strokeWidth={2.25} />}
-        />
+          <p className="mt-5 max-w-md text-base leading-relaxed text-white/70">
+            Build quiz rounds from your notes, invite the group, and race for
+            the top spot.
+          </p>
+
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              size="lg"
+              onClick={onCreateQuiz}
+              className="bg-white text-ink hover:bg-primary-soft"
+            >
+              Create quiz
+              <ArrowUpRight aria-hidden="true" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="lg"
+              asChild
+              className="text-white hover:bg-white/10 hover:text-white"
+            >
+              <a href="#how-it-works" onClick={onHowItWorksClick}>
+                How it works
+              </a>
+            </Button>
+          </div>
+
+          <form
+            onSubmit={handleJoin}
+            className="mt-8 flex flex-wrap items-end gap-3 border-t border-white/15 pt-6 [&_label]:text-white/75 [&_p[role=alert]]:!text-danger-soft"
+            noValidate
+          >
+            <RoomCodeInput
+              id="hero-room-code"
+              value={code}
+              onChange={handleChange}
+              error={error}
+              label="Have a code?"
+              className="w-40 border-white/15 bg-white text-lg text-ink placeholder:text-muted"
+            />
+            <Button
+              type="submit"
+              size="lg"
+              className="border border-white/20 bg-primary-hover text-white hover:bg-primary"
+            >
+              Join room
+              <ArrowRight aria-hidden="true" />
+            </Button>
+          </form>
+        </motion.div>
+
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, x: 22 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{
+            duration: 0.5,
+            delay: reduceMotion ? 0 : 0.08,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+          className="relative self-stretch md:min-h-[35rem]"
+        >
+          <img
+            src="/assets/landing/cortex-quiz-arena-navy.png"
+            alt="A Cortex trophy surrounded by colorful quiz controls"
+            width="960"
+            height="640"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            className="h-auto w-full object-cover object-[62%_center] md:absolute md:inset-0 md:h-full"
+          />
+        </motion.div>
       </div>
     </section>
   );
