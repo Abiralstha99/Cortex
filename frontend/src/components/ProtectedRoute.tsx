@@ -12,7 +12,14 @@ export default function ProtectedRoute({
   // Location is used to store the location of the user before they were redirected to the login page
   const location = useLocation();
   if (!isLoaded) {
-    return <div>Loading...</div>;
+    return (
+      <div
+        role="status"
+        className="flex min-h-[100dvh] items-center justify-center bg-background px-6 text-sm font-semibold text-muted"
+      >
+        Loading Cortex...
+      </div>
+    );
   }
 
   if (!isSignedIn) {

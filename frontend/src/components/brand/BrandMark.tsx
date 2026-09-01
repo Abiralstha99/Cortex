@@ -12,7 +12,7 @@ export function BrandMark({
     <Link
       to={to}
       className={cn(
-        "font-display text-xl font-extrabold tracking-tight text-forest no-underline",
+        "font-sans text-xl font-bold tracking-tight text-primary no-underline",
         className,
       )}
     >
