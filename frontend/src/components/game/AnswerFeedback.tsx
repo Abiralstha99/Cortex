@@ -29,41 +29,49 @@ export default function AnswerFeedback({ result }: AnswerFeedbackProps) {
           <XCircle className="size-10 text-danger" strokeWidth={2.5} aria-hidden="true" />
         )}
       </div>
-      <h2 className="mb-2 text-balance font-display text-2xl font-extrabold text-ink">
-        {result.correct ? "Correct" : "Not this time"}
-      </h2>
+      <h1 className="mb-2 text-balance font-display text-3xl font-bold text-ink">
+        {result.correct ? "Correct!" : "Not quite"}
+      </h1>
       <div className="mb-2 font-mono text-2xl font-semibold tabular-nums text-ink">
-        +{result.pointsEarned} points
+        +{result.pointsEarned} pts
       </div>
       {placementText && (
-        <div className="mb-3 font-mono text-sm font-semibold text-muted">{placementText} place</div>
+        <div className="mb-3 font-mono text-sm font-semibold text-muted-foreground">{placementText} place</div>
       )}
       <div className="text-pretty text-ink">
         Correct answer: <strong>{result.correctAnswer}</strong>
       </div>
-      <p className="mt-5 text-pretty text-sm font-medium text-muted">
+      <p className="mt-5 text-pretty text-sm font-medium text-muted-foreground">
         Waiting for other players...
       </p>
     </>
   );
 
   const baseClasses = cn(
-    "rounded-[var(--radius-sticker)] border-4 border-white p-7 text-center shadow-[0_10px_0_0_rgb(0_0_0/0.12)] ring-2 sm:p-9",
-    result.correct ? "bg-success-soft ring-success" : "bg-danger-soft ring-danger",
+    "rounded-[var(--radius-panel)] border p-7 text-center shadow-card sm:p-9",
+    result.correct
+      ? "border-success/30 bg-success-soft"
+      : "border-danger/30 bg-danger-soft",
   );
 
   if (reduce) {
-    return <div className={baseClasses}>{content}</div>;
+    return (
+      <section role="status" aria-live="polite" className={baseClasses}>
+        {content}
+      </section>
+    );
   }
 
   return (
-    <motion.div
+    <motion.section
+      role="status"
+      aria-live="polite"
       initial={{ opacity: 0, y: 10, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ type: "spring", stiffness: 360, damping: 28 }}
       className={baseClasses}
     >
       {content}
-    </motion.div>
+    </motion.section>
   );
 }

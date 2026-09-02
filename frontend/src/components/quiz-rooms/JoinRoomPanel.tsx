@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import PublicRoomsList from "@/components/dashboard/PublicRoomsList";
 import { Button } from "@/components/ui/button";
 import RoomCodeInput from "@/components/forms/RoomCodeInput";
@@ -22,45 +22,32 @@ export default function JoinRoomPanel() {
     e.preventDefault();
     const normalized = normalizeRoomCode(code);
     if (!isValidRoomCode(normalized)) {
-      setError("Room code must be 6 letters or digits");
+      setError("Room code must be 6 letters or digits.");
       return;
     }
     navigate(`/game/lobby/${normalized}`);
   }
 
   return (
-    <div className="space-y-8">
-      <nav
-        aria-label="Quiz room actions"
-        className="flex w-fit gap-1 rounded-full border border-border bg-track p-1"
-      >
-        <Link
-          to="/game/create"
-          className="rounded-full px-4 py-2 text-sm font-semibold text-muted transition-colors hover:bg-surface hover:text-ink"
-        >
-          Create
-        </Link>
-        <span
-          aria-current="page"
-          className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white"
-        >
-          Join
-        </span>
-      </nav>
-
+    <div className="space-y-10">
       <form
         onSubmit={handleSubmit}
-        className="space-y-5 rounded-[var(--radius-panel)] border border-border bg-surface p-6"
+        className="space-y-6 rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-card sm:p-8"
         noValidate
       >
+        <div>
+          <h2 className="text-xl font-bold text-ink">Enter your code</h2>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+            Room codes contain six letters or digits.
+          </p>
+        </div>
         <RoomCodeInput
           id="room-code"
           value={code}
           onChange={handleChange}
           error={error}
           autoFocus
-          label="Enter Room Code"
-          className="bg-cream"
+          label="Room code"
         />
 
         <Button
@@ -68,14 +55,24 @@ export default function JoinRoomPanel() {
           className="w-full"
           disabled={code.length === 0}
         >
-          Join room
+          Join game
         </Button>
       </form>
 
-      <div className="space-y-3">
-        <p className="label-caps text-muted">Live public rooms</p>
+      <section aria-labelledby="public-rooms-heading" className="space-y-4">
+        <div>
+          <h2
+            id="public-rooms-heading"
+            className="text-xl font-bold text-ink"
+          >
+            Live public rooms
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Join a room that is open to everyone.
+          </p>
+        </div>
         <PublicRoomsList />
-      </div>
+      </section>
     </div>
   );
 }

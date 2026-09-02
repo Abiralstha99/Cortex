@@ -1,24 +1,13 @@
-import { useMemo, useState } from "react";
-import { ChevronRight, Search, CalendarDays } from "lucide-react";
+import { CalendarDays, CheckCircle2 } from "lucide-react";
 import type { QuizSummary } from "@/lib/api";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface QuizPickerListProps {
   quizzes: QuizSummary[];
   isLoading: boolean;
+  error?: unknown;
   selectedId: string | null;
   onSelect: (quiz: QuizSummary) => void;
 }
-
-type DateFilter = "all" | "today" | "week" | "month";
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
@@ -29,50 +18,36 @@ function formatDate(dateStr: string): string {
   });
 }
 
-function isWithinDateRange(dateStr: string, filter: DateFilter): boolean {
-  if (filter === "all") return true;
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
-
-  switch (filter) {
-    case "today":
-      return diffDays < 1;
-    case "week":
-      return diffDays < 7;
-    case "month":
-      return diffDays < 30;
-    default:
-      return true;
-  }
-}
-
 export default function QuizPickerList({
   quizzes,
   isLoading,
+  error,
   selectedId,
   onSelect,
 }: QuizPickerListProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
-
-  const filteredQuizzes = useMemo(() => {
-    const playable = quizzes.filter((q) => q.questionCount > 0);
-    const query = searchQuery.trim().toLowerCase();
-
-    return playable.filter((quiz) => {
-      const matchesSearch =
-        query === "" || quiz.title.toLowerCase().includes(query);
-      const matchesDate = isWithinDateRange(quiz.createdAt, dateFilter);
-      return matchesSearch && matchesDate;
-    });
-  }, [quizzes, searchQuery, dateFilter]);
-
   if (isLoading) {
     return (
-      <div className="rounded-(--radius-panel) border border-dashed border-border bg-cream py-12 text-center">
-        <p className="font-display font-bold text-muted">Loading quizzes...</p>
+      <div className="space-y-3 pt-5" aria-label="Loading quizzes">
+        {[0, 1, 2].map((item) => (
+          <div
+            key={item}
+            className="h-20 animate-pulse rounded-[var(--radius-card)] bg-subtle motion-reduce:animate-none"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        role="alert"
+        className="mt-5 rounded-[var(--radius-card)] bg-danger-soft px-5 py-6"
+      >
+        <p className="font-semibold text-ink">We couldn't load your quizzes.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Refresh the page and try again.
+        </p>
       </div>
     );
   }
@@ -81,11 +56,9 @@ export default function QuizPickerList({
 
   if (playable.length === 0) {
     return (
-      <div className="rounded-(--radius-panel) border border-dashed border-border bg-cream px-6 py-12 text-center">
-        <p className="font-display text-lg font-extrabold text-ink">
-          No past quizzes yet
-        </p>
-        <p className="mt-1 text-sm text-muted">
+      <div className="mt-5 rounded-[var(--radius-card)] bg-subtle px-6 py-10 text-center">
+        <p className="text-lg font-bold text-ink">No past quizzes yet</p>
+        <p className="mt-1 text-sm text-muted-foreground">
           Upload a PDF or text file to make your first one.
         </p>
       </div>
@@ -93,88 +66,42 @@ export default function QuizPickerList({
   }
 
   return (
-    <div className="space-y-4 pt-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Label htmlFor="quiz-search" className="sr-only">
-            Search quizzes
-          </Label>
-          <Search
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
-          />
-          <Input
-            id="quiz-search"
-            type="text"
-            placeholder="Search your quizzes"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        <Select
-          value={dateFilter}
-          onValueChange={(value) => setDateFilter(value as DateFilter)}
-        >
-          <SelectTrigger
-            aria-label="Filter by date created"
-            className="h-11 w-full px-4 sm:w-44"
+    <div className="space-y-3 pt-5">
+      {playable.map((quiz) => {
+        const isSelected = quiz.id === selectedId;
+        return (
+          <button
+            key={quiz.id}
+            type="button"
+            onClick={() => onSelect(quiz)}
+            aria-pressed={isSelected}
+            className={`group flex min-h-20 w-full items-center justify-between gap-4 rounded-[var(--radius-card)] border bg-surface p-4 text-left outline-none transition-[border-color,box-shadow,transform] duration-150 hover:-translate-y-0.5 hover:border-primary focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/25 motion-reduce:transform-none ${
+              isSelected
+                ? "border-primary ring-3 ring-primary/20"
+                : "border-border"
+            }`}
           >
-            <CalendarDays size={14} className="text-muted" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All time</SelectItem>
-            <SelectItem value="today">Today</SelectItem>
-            <SelectItem value="week">Past week</SelectItem>
-            <SelectItem value="month">Past month</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {filteredQuizzes.length === 0 ? (
-        <div className="rounded-(--radius-panel) border border-dashed border-border bg-cream px-6 py-8 text-center">
-          <p className="text-sm text-muted">
-            No quizzes match your filters.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {filteredQuizzes.map((quiz) => {
-            const isSelected = quiz.id === selectedId;
-            return (
-              <button
-                key={quiz.id}
-                type="button"
-                onClick={() => onSelect(quiz)}
-                aria-pressed={isSelected}
-                className={`flex w-full items-center justify-between rounded-(--radius-panel) border bg-surface p-4 text-left transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-forest ${
-                  isSelected
-                    ? "border-forest ring-[3px] ring-forest/20"
-                    : "border-border"
-                }`}
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-display font-extrabold text-ink">
-                    {quiz.title}
-                  </p>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-3 text-sm text-muted">
-                    <span className="font-mono">
-                      {quiz.questionCount} questions
-                    </span>
-                    <span className="flex items-center gap-1 text-xs">
-                      <CalendarDays size={12} />
-                      {formatDate(quiz.createdAt)}
-                    </span>
-                  </div>
-                </div>
-                <ChevronRight className="size-4 shrink-0 text-muted" />
-              </button>
-            );
-          })}
-        </div>
-      )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold text-ink">{quiz.title}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                <span>{quiz.questionCount} questions</span>
+                <span className="flex items-center gap-1.5 text-xs">
+                  <CalendarDays size={14} aria-hidden="true" />
+                  {formatDate(quiz.createdAt)}
+                </span>
+              </div>
+            </div>
+            <CheckCircle2
+              aria-hidden="true"
+              className={`size-5 shrink-0 transition-colors ${
+                isSelected
+                  ? "text-primary"
+                  : "text-text-muted group-hover:text-muted"
+              }`}
+            />
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
 import PageShell from "@/components/layout/PageShell";
@@ -115,49 +115,45 @@ export default function CreateGame() {
 
   return (
     <PageShell maxWidth="6xl">
-      <div className="mb-9 max-w-2xl">
-        <nav
-          aria-label="Quiz room actions"
-          className="mb-7 flex w-fit gap-1 rounded-full border border-border bg-track p-1"
-        >
-          <span
-            aria-current="page"
-            className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white"
-          >
-            Create
-          </span>
-          <Link
-            to="/game/join"
-            className="rounded-full px-4 py-2 text-sm font-semibold text-muted transition-colors hover:bg-surface hover:text-ink"
-          >
-            Join
-          </Link>
-        </nav>
-
-        <h1 className="text-balance font-display text-4xl font-extrabold text-ink sm:text-5xl">
-          Build the quiz. Bring the room.
+      <header className="mb-8 max-w-2xl sm:mb-10">
+        <h1 className="text-balance text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+          Create a game
         </h1>
-        <p className="mt-3 text-pretty text-base text-muted">
-          Start from your notes or bring back a quiz your group already loves.
+        <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
+          Upload your notes or choose a past quiz, then set up the room.
         </p>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-        <div className="space-y-6 lg:col-span-3">
-          <div className="rounded-(--radius-panel) border border-border bg-surface p-5 sm:p-6">
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+        <div className="min-w-0 space-y-6">
+          <section
+            aria-labelledby="quiz-source-heading"
+            className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 sm:p-6"
+          >
+            <div className="mb-5">
+              <h2
+                id="quiz-source-heading"
+                className="text-xl font-bold text-ink"
+              >
+                Choose your quiz
+              </h2>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                Start from a file or reuse one of your ready quizzes.
+              </p>
+            </div>
             <Tabs
               value={activeTab}
               onValueChange={(value) => setActiveTab(value as CreationSource)}
             >
-              <TabsList className="w-full sm:w-fit">
-                <TabsTrigger value="upload" className="px-4">
+              <TabsList className="h-12 w-full sm:w-fit">
+                <TabsTrigger value="upload" className="min-h-11 px-5">
                   Upload notes
                 </TabsTrigger>
-                <TabsTrigger value="past" className="px-4">
+                <TabsTrigger value="past" className="min-h-11 px-5">
                   Past quizzes
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="upload" className="pt-4">
+              <TabsContent value="upload" className="pt-5">
                 <UploadPanel
                   file={uploadFile}
                   onFileChange={setUploadFile}
@@ -169,6 +165,7 @@ export default function CreateGame() {
                 <QuizPickerList
                   quizzes={quizzesQuery.data ?? []}
                   isLoading={quizzesQuery.isLoading}
+                  error={quizzesQuery.error}
                   selectedId={selectedQuiz?.id ?? null}
                   onSelect={(quiz) => {
                     setSelectedQuiz(quiz);
@@ -179,14 +176,20 @@ export default function CreateGame() {
                 />
               </TabsContent>
             </Tabs>
-          </div>
+          </section>
 
-          <div className="rounded-(--radius-panel) border border-border bg-surface p-5 sm:p-6">
+          <section
+            aria-labelledby="room-settings-heading"
+            className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 sm:p-6"
+          >
             <div className="mb-5">
-              <h2 className="font-display text-xl font-extrabold text-ink">
+              <h2
+                id="room-settings-heading"
+                className="text-xl font-bold text-ink"
+              >
                 Set up the room
               </h2>
-              <p className="mt-1 text-sm text-muted">
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                 Pick the pace and decide who can find it.
               </p>
             </div>
@@ -203,10 +206,13 @@ export default function CreateGame() {
                   : undefined
               }
             />
-          </div>
+          </section>
 
           {mutation.error && (
-            <p role="alert" className="text-sm font-medium text-danger">
+            <p
+              role="alert"
+              className="rounded-[var(--radius-control)] bg-danger-soft px-4 py-3 text-sm font-medium text-danger-foreground"
+            >
               {mutation.error instanceof Error
                 ? mutation.error.message
                 : "Failed to create game"}
@@ -223,7 +229,7 @@ export default function CreateGame() {
           </Button>
         </div>
 
-        <div className="lg:col-span-2">
+        <div className="min-w-0">
           <RoomPreviewCard
             quizTitle={previewTitle}
             questionCount={previewQuestionCount}

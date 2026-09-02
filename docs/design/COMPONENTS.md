@@ -1,53 +1,45 @@
-# Cortex component contracts — redesign target
+# Cortex component contracts
 
-This inventory maps the current component tree to the approved design. Preserve each component's behavior and data ownership while changing its presentation. A target component is not considered implemented until source evidence is added to [`DESIGN_DECISIONS.md`](DESIGN_DECISIONS.md).
+This inventory records the redesigned components that exist in source. The approved design documentation remains visual truth, while these interfaces preserve current routes, Clerk orchestration, API payloads, socket events, Zustand ownership, validation, and accessibility behavior.
 
 ## Shared foundation
 
-| Component | Target responsibility | Migration rule |
+| Component | Actual interface | Implemented responsibility |
 | --- | --- | --- |
-| `PageShell` | Responsive authenticated shell and content frame | Evolve it to own desktop sidebar and mobile bottom navigation; do not wrap gameplay |
-| `AppHeader` | Compact top bar and account actions | Keep only supported actions; no inert search or notifications |
-| `AuthLayout` | Branded but quiet frame for Clerk flows | Preserve Clerk password, Google SSO, MFA, and verification branches |
-| `BrandMark` | Cortex wordmark | Keep one recognizable treatment across public and authenticated surfaces |
-| `EmptyState` | Explanation plus one next action | Add optional illustration only when a coherent asset system exists |
-| `ConnectionBanner` | Reconnecting, restored, and terminal connection feedback | Extract from game-page markup only if reuse produces a clearer boundary |
+| `PageShell` | `children`, optional `maxWidth`, `className`, and `aside` | Owns the authenticated content frame, desktop sidebar, compact header, mobile bottom navigation, and optional context rail. It omits all app chrome for live `/game/:gameId` routes while retaining it for create and join. |
+| `AppSidebar` | No props | Renders the shared Home, Create, and Join route inventory from `app-navigation.ts`, accessible icon names and tooltips, plus the account menu. |
+| `MobileBottomNav` | No props | Renders the same working destinations and account action in the mobile content order. |
+| `AppHeader` | No props | Provides the mobile brand link and authenticated account action without search or notification controls. |
+| `AuthLayout` | `heading`, `subtitle`, `children` | Frames Clerk-owned sign-in, sign-up, SSO, MFA, and verification content without replacing Clerk state or callbacks. |
+| `BrandMark` | Optional `to` and `className` | Renders the shared Cortex wordmark as a route link. |
+| `EmptyState` | `title`, optional `description`, `action`, and `className` | Renders an explanation and at most one supplied working action. |
+| `ConnectionBanner` | `state`, `onRetry`, `onExit` | Presents reconnecting and restored live regions, plus the terminal offline action surface. It does not own socket state. |
 
 ## UI primitives
 
-Keep the existing `components/ui/` primitives and migrate their tokens and variants in place.
+The primitives under `frontend/src/components/ui/` preserve native or Radix behavior while consuming the semantic tokens in `frontend/src/index.css`.
 
-- `Button`: primary, secondary/outline, tertiary/ghost, and destructive semantic variants; remove color-named variants after consumers migrate.
-- `Input` and `Label`: 48–52px controls, target focus ring, inline invalid state, and explicit labeling.
-- `Badge`: compact semantic or category metadata only; never use it for major game feedback.
-- `Card`: neutral structured surfaces with standard card or large-panel radius.
-- `Tabs`, `Toggle`, and `ToggleGroup`: selection among views or settings with primary-soft active state.
-- `Switch` and `Select`: preserve Radix keyboard behavior while adopting target tokens.
-- `DropdownMenu`: account and compact overflow actions only.
-- `Skeleton`: match the final layout rather than rendering a generic spinner.
-- `Toaster`: brief confirmations and recoverable notices, not persistent connection state.
+- `Button` accepts native button props, `asChild`, semantic variants `default`, `destructive`, `outline`, `secondary`, `ghost`, and `link`, plus the existing size variants. Deprecated color-named variants are not supported.
+- `Input` and `Label` retain native labeling, invalid state, disabled state, and a visible 3px focus treatment.
+- `Badge` is limited to compact semantic metadata. `Card` provides a neutral structured surface. `Skeleton` mirrors its caller's supplied geometry.
+- `Tabs`, `Toggle`, and `ToggleGroup` preserve Radix selection and keyboard behavior. Their variants use semantic active-state tokens; shared toggle styles live in `toggle-variants.ts` so component modules remain Fast Refresh compatible.
+- `Switch`, `Select`, and `DropdownMenu` preserve Radix focus management and keyboard interaction while using the approved targets, surfaces, borders, focus rings, and floating shadow.
+- `Toaster` remains available for brief notices, not persistent connection state.
 
-Do not introduce a general modal or drawer solely to satisfy an illustration in `design.md`. In this redesign, the dashboard's Join action routes to the complete `/game/join` page and reuses the existing room-code form contract.
+## Existing flow components
 
-## Existing feature components
+| Area | Actual interfaces and responsibilities |
+| --- | --- |
+| Landing | `LandingNav` receives `onPlayNow` and `onHowItWorksClick`. `Hero` receives `onCreateQuiz`, `onJoinRoom`, and `onHowItWorksClick`. `FinalCta` receives `onStart`; `Features`, `HowItWorks`, and `Coverage` are presentational. They keep the existing product story and working route actions. |
+| Dashboard | `DashboardHero` accepts an optional `firstName` and routes to the existing Join and Create pages. `LiveRoomCard` accepts a `PublicWaitingRoomSummary` and `onJoin(roomCode)`. `PublicRoomsList` owns the existing query/socket synchronization and passes real payloads to cards; `LiveRoomsSection` supplies section structure. |
+| Room code | `RoomCodeInput` accepts `id`, `value`, `onChange`, optional `error`, `autoFocus`, `className`, and `label`. It is the shared six-character uppercase-alphanumeric normalization, labeling, and inline-error contract. |
+| Create and join | `CreateRoomPanel` receives controlled quiz selection, player limit, question count, and visibility values. `QuizPickerList` receives `quizzes`, `isLoading`, optional `error`, `selectedId`, and `onSelect`. `RoomSettings` receives controlled players, questions, visibility, and optional `maxQuestions`. `UploadPanel` receives controlled file and optional title/count values with handlers. `RoomPreviewCard` receives quiz title, question count, player limit, and visibility. `QuizGenerationPanel` receives `isHost` and reads existing generation state from the lobby store. `HowJoiningWorks` and `JoinRoomPanel` present the existing direct join flow. No component adds an authoring mode. |
+| Lobby | `PlayerCard` receives `player`, `isHost`, and `isSelf`; it presents socket-owned identity and readiness with a reduced-motion arrival fallback. Lobby page markup retains host start, self readiness, room-code copy, generation state, and leave behavior. |
+| Game | `Countdown` receives `countdownMs`. `Timer` receives `startedAt` and `timeLimit`. `QuestionCard` receives `question`, `options`, `onSubmit`, `disabled`, and `selectedIndex`. `AnswerFeedback`, `RoundResults`, `Leaderboard`, and `GameResults` receive server/store payloads and player identifiers. They present the current phase without calculating correctness, round timing, or missing rankings in the browser. |
 
-- Landing components (`LandingNav`, `Hero`, `Features`, `HowItWorks`, `Coverage`, `FinalCta`) keep the current product story and working actions while adopting the game-dashboard visual language. Do not claim unsupported quiz modes or analytics.
-- Dashboard components (`HostJoinCards`, `LiveRoomsSection`, `PublicRoomsList`) become the functional hero and live-game context. Public rooms remain driven by the existing live feed.
-- `RoomCodeInput` remains the single normalization and accessibility contract for six-character room codes.
-- Quiz-room components (`QuizPickerList`, `RoomSettings`, `UploadPanel`, `RoomPreviewCard`, `HowJoiningWorks`, `QuizGenerationPanel`) keep existing quiz selection, file upload, settings, retry, and status behavior. Do not add topic or manual creation choices.
-- Lobby components and page markup keep room membership, readiness, host controls, room-code sharing, and generation status socket-driven.
-- Game components (`Countdown`, `QuestionCard`, `Timer`, `AnswerFeedback`, `RoundResults`, `Leaderboard`, `GameResults`) remain phase-driven from the game store. Restyle them without moving correctness, timing, or score decisions into the browser.
+## Supported additions
 
-## Target additions for existing flows
-
-New files are justified only where a responsibility repeats or the shell becomes clearer:
-
-- `Sidebar` and `MobileBottomNav`: render only working destinations and never appear during active play.
-- `DashboardHero`: exposes Join and Host/Create using existing routes.
-- `LiveRoomCard`: reusable presentation for the existing public-room payload; do not fabricate category, difficulty, or popularity.
-- `PlayerCard`: consistent lobby identity/readiness surface driven by existing player data.
-
-Prefer these focused additions over a large page component, but do not split a component merely to rename its markup.
+The redesign added only focused presentation boundaries for existing behavior: `AppSidebar`, `MobileBottomNav`, `DashboardHero`, `LiveRoomCard`, `PlayerCard`, and `ConnectionBanner`. None introduces a route, payload, socket event, store owner, or unsupported product action.
 
 ## Unsupported inventory
 

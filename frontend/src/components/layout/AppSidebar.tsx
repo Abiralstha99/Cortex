@@ -6,7 +6,7 @@ import { APP_NAV_ITEMS } from "./app-navigation";
 
 export default function AppSidebar() {
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-[88px] flex-col border-r border-border bg-surface md:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-22 flex-col border-r border-border bg-surface md:flex">
       <div className="flex h-16 items-center justify-center border-b border-border px-2">
         <BrandMark to="/dashboard" className="text-base" />
       </div>
@@ -18,12 +18,12 @@ export default function AppSidebar() {
             aria-label={label}
             className={({ isActive }) =>
               cn(
-                "group relative inline-flex size-11 items-center justify-center rounded-[var(--radius-control)] text-muted outline-none transition-[color,box-shadow] duration-150 hover:bg-primary-soft hover:text-primary focus-visible:ring-[3px] focus-visible:ring-primary/30",
+                "group relative inline-flex size-11 items-center justify-center rounded-[var(--radius-control)] text-muted outline-none transition-[color,box-shadow] duration-150 hover:bg-primary-soft hover:text-primary focus-visible:ring-3 focus-visible:ring-primary/30",
                 isActive && "bg-primary-soft text-primary",
               )
             }
           >
-            <Icon aria-hidden="true" className="size-[22px]" strokeWidth={2} />
+            <Icon aria-hidden="true" className="size-5.5" strokeWidth={2} />
             <span className="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded-[var(--radius-control)] border border-border bg-surface px-3 py-2 text-xs font-semibold text-ink shadow-floating group-hover:block group-focus-visible:block">
               {label}
             </span>

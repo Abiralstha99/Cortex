@@ -19,7 +19,7 @@ export const HowItWorks = forwardRef<HTMLElement>(function HowItWorks(_, ref) {
         <h2 className="font-display max-w-2xl text-3xl font-bold tracking-tight text-ink md:text-5xl">
           From notes to friendly rivalry
         </h2>
-        <p className="mt-4 max-w-lg text-base leading-relaxed text-muted">
+        <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
           One quick path from study material to a room full of players.
         </p>
 
@@ -35,7 +35,7 @@ export const HowItWorks = forwardRef<HTMLElement>(function HowItWorks(_, ref) {
               <h3 className="mt-5 font-display text-lg font-bold text-ink">
                 {step.action}
               </h3>
-              <p className="mt-1 text-sm leading-snug text-muted">{step.detail}</p>
+              <p className="mt-1 text-sm leading-snug text-muted-foreground">{step.detail}</p>
             </li>
           ))}
         </ol>

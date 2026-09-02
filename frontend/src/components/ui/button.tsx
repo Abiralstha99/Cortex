@@ -5,23 +5,21 @@ import { Slot } from "radix-ui"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-control)] text-sm font-semibold whitespace-nowrap transition-[color,box-shadow] duration-150 outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-danger aria-invalid:ring-danger/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-control)] text-sm font-semibold whitespace-nowrap transition-[color,box-shadow] duration-150 outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-danger aria-invalid:ring-danger/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default:
           "bg-primary text-primary-foreground hover:bg-primary-hover",
         destructive:
-          "bg-danger text-white hover:bg-danger/90 focus-visible:ring-danger/25",
+          "bg-danger-foreground text-white hover:bg-danger-foreground/90 focus-visible:ring-danger/25",
         outline:
           "border border-border bg-surface text-ink hover:bg-primary-soft",
         secondary:
           "bg-primary-soft text-primary hover:bg-primary-soft/75",
         ghost:
-          "bg-transparent text-muted hover:bg-primary-soft hover:text-ink",
+          "bg-transparent text-muted-foreground hover:bg-primary-soft hover:text-ink",
         link: "text-primary underline-offset-4 hover:underline",
-        candy: "bg-primary text-white hover:bg-primary-hover",
-        rose: "bg-primary text-white hover:bg-primary-hover",
       },
       size: {
         default: "h-12 px-5 has-[>svg]:px-4",

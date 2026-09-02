@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 
 const tones = {
-  gloss: "border-primary/30 bg-primary-soft text-primary",
-  forest: "border-primary bg-primary text-primary-foreground",
+  primarySoft: "border-primary/30 bg-primary-soft text-primary",
+  primary: "border-primary bg-primary text-primary-foreground",
   pink: "border-danger/20 bg-danger-soft text-ink",
   yellow: "border-warning/25 bg-primary-soft text-ink",
   sky: "border-border bg-subtle text-ink",
@@ -10,7 +10,7 @@ const tones = {
 
 export function EmphasisPill({
   children,
-  tone = "gloss",
+  tone = "primarySoft",
   className,
 }: {
   children: React.ReactNode;
@@ -25,7 +25,7 @@ export function EmphasisPill({
         className,
       )}
     >
-      <span className="relative z-[1]">{children}</span>
+      <span className="relative z-1">{children}</span>
     </span>
   );
 }

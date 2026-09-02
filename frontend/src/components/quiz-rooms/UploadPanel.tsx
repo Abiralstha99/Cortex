@@ -78,7 +78,17 @@ export default function UploadPanel({
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onClick={() => fileInputRef.current?.click()}
-        className="cursor-pointer rounded-(--radius-panel) border-2 border-dashed border-border bg-cream p-8 text-center transition-[border-color,background-color,transform] hover:border-forest hover:bg-surface active:scale-[0.99] sm:p-10"
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            fileInputRef.current?.click();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={file ? "Choose a different quiz file" : "Choose a quiz file"}
+        aria-describedby={error ? "quiz-file-error" : "quiz-file-help"}
+        className="cursor-pointer rounded-[var(--radius-card)] border-2 border-dashed border-border bg-subtle p-8 text-center outline-none transition-[border-color,background-color,box-shadow,transform] duration-150 hover:border-primary hover:bg-primary-soft focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/25 active:scale-99 motion-reduce:transform-none sm:p-10"
       >
         <input
           ref={fileInputRef}
@@ -93,31 +103,35 @@ export default function UploadPanel({
 
         {!file && (
           <div className="flex flex-col items-center gap-2">
-            <span className="mb-2 flex size-12 items-center justify-center rounded-full bg-forest text-white shadow-[0_3px_0_0_#164f37]">
+            <span className="mb-2 flex size-12 items-center justify-center rounded-[var(--radius-control)] bg-primary text-white">
               <Upload size={22} aria-hidden="true" />
             </span>
-            <p className="font-display text-lg font-extrabold text-ink">
-              Drop your notes here
-            </p>
-            <p className="text-sm text-muted">or click to choose a file</p>
-            <p className="mt-2 font-mono text-xs font-semibold text-forest">
-              .pdf / .txt, up to 10 MB
+            <p className="text-lg font-bold text-ink">Drop your notes here</p>
+            <p className="text-sm text-muted-foreground">or click to choose a file</p>
+            <p
+              id="quiz-file-help"
+              className="mt-2 text-xs font-medium text-primary"
+            >
+              PDF or TXT, up to 10 MB
             </p>
           </div>
         )}
 
         {file && (
           <div className="flex flex-col items-center gap-2">
-            <span className="mb-1 flex size-12 items-center justify-center rounded-full bg-forest text-white shadow-[0_3px_0_0_#164f37]">
+            <span className="mb-1 flex size-12 items-center justify-center rounded-[var(--radius-control)] bg-primary text-white">
               <FileText size={22} aria-hidden="true" />
             </span>
-            <p className="max-w-full truncate font-display text-lg font-extrabold text-ink">
+            <p className="max-w-full truncate text-lg font-bold text-ink">
               {file.name}
             </p>
-            <p className="font-mono text-xs text-muted">
+            <p className="font-mono text-xs tabular-nums text-muted-foreground">
               {(file.size / 1024).toFixed(1)} KB
             </p>
-            <p className="text-xs font-semibold text-forest">
+            <p
+              id="quiz-file-help"
+              className="text-xs font-semibold text-primary"
+            >
               Click to choose a different file
             </p>
           </div>
@@ -138,14 +152,14 @@ export default function UploadPanel({
             onChange={(e) => onTitleChange(e.target.value)}
             onClick={(e) => e.stopPropagation()}
           />
-          <p className="text-xs text-muted">
+          <p className="text-xs text-muted-foreground">
             Leave it blank and we will use the file name.
           </p>
         </div>
       )}
 
       {showQuestionCount && (
-        <div className="flex items-center justify-between rounded-(--radius-panel) border border-border bg-surface p-4">
+        <div className="flex items-center justify-between rounded-[var(--radius-card)] bg-subtle p-4">
           <span className="text-sm font-semibold text-ink">Questions</span>
           <div className="flex items-center gap-2">
             <Button
@@ -177,7 +191,15 @@ export default function UploadPanel({
         </div>
       )}
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && (
+        <p
+          id="quiz-file-error"
+          className="text-sm font-medium text-danger-foreground"
+          role="alert"
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }

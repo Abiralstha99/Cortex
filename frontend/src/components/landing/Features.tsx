@@ -32,7 +32,7 @@ export function Features() {
       <h2 className="font-display max-w-xl text-3xl font-bold tracking-tight text-ink md:text-5xl">
         Study sessions that feel like game night
       </h2>
-      <p className="mt-4 max-w-lg text-base leading-relaxed text-muted">
+      <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
         Bring the notes. Cortex handles the questions, room, and race.
       </p>
 

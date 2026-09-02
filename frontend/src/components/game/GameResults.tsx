@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "motion/react";
+import { Trophy } from "lucide-react";
 import type { GameFinishedPayload } from "@/lib/api";
 import Leaderboard from "@/components/game/Leaderboard";
 import { Button } from "@/components/ui/button";
-import { EmphasisPill } from "@/components/brand/EmphasisPill";
 
 type GameResultsProps = {
   gameResults: GameFinishedPayload;
@@ -16,6 +16,9 @@ export default function GameResults({ gameResults, myPlayerId }: GameResultsProp
   const { finalLeaderboard, winner } = gameResults;
 
   const isWinner = winner.playerId === myPlayerId;
+  const currentPlayer = finalLeaderboard.find(
+    (entry) => entry.playerId === myPlayerId,
+  );
 
   function handleExit() {
     navigate("/dashboard");
@@ -23,28 +26,44 @@ export default function GameResults({ gameResults, myPlayerId }: GameResultsProp
 
   const content = (
     <>
-      <section className="rounded-[var(--radius-panel)] border-4 border-white bg-candy-yellow/45 p-8 shadow-[0_10px_0_0_rgb(0_0_0/0.12)] ring-1 ring-candy-yellow sm:p-10">
-        <h2 className="mb-4 text-balance font-display text-3xl font-extrabold text-ink">
-          Game finished
-        </h2>
-        {isWinner ? (
-          <EmphasisPill tone="forest" className="px-5 py-2 text-xl">
-            You won
-          </EmphasisPill>
-        ) : (
-          <p className="text-pretty text-lg text-muted">
-            Winner: <strong className="font-display text-ink">{winner.username}</strong>{" "}
-            <span className="font-mono font-semibold tabular-nums text-ink">
-              ({winner.score} pts)
-            </span>
-          </p>
+      <section className="rounded-[var(--radius-panel)] border border-warning/40 bg-accent-yellow/20 p-8 shadow-card sm:p-10">
+        <Trophy
+          className="mx-auto mb-4 size-9 text-warning"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
+        <h1 className="text-balance font-display text-3xl font-bold text-ink">
+          {isWinner ? "You won" : "Game finished"}
+        </h1>
+        <p className="mt-3 text-pretty text-muted-foreground">
+          Winner: <strong className="font-display text-ink">{winner.username}</strong>,{" "}
+          <span className="font-mono font-semibold tabular-nums text-ink">
+            {winner.score} pts
+          </span>
+        </p>
+        {currentPlayer && (
+          <div className="mx-auto mt-7 grid max-w-sm grid-cols-2 gap-6 border-t border-warning/30 pt-6">
+            <div>
+              <p className="text-sm font-semibold text-muted-foreground">Your rank</p>
+              <p className="mt-1 font-mono text-3xl font-semibold tabular-nums text-ink">
+                #{currentPlayer.rank}
+              </p>
+            </div>
+            <div className="border-l border-warning/30 pl-6">
+              <p className="text-sm font-semibold text-muted-foreground">Your score</p>
+              <p className="mt-1 font-mono text-3xl font-semibold tabular-nums text-ink">
+                {currentPlayer.score}
+              </p>
+              <p className="text-xs font-semibold text-muted-foreground">pts</p>
+            </div>
+          </div>
         )}
       </section>
 
       <Leaderboard entries={finalLeaderboard} highlightPlayerId={myPlayerId} />
 
-      <Button variant="rose" onClick={handleExit} className="min-h-12 w-full">
-        Back to Dashboard
+      <Button onClick={handleExit} className="min-h-12 w-full">
+        Return home
       </Button>
     </>
   );

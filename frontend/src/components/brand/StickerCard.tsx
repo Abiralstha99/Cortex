@@ -4,7 +4,7 @@ const tones = {
   pink: "bg-surface",
   yellow: "bg-primary-soft",
   sky: "bg-subtle",
-  forest: "border-primary bg-primary text-primary-foreground",
+  primary: "border-primary bg-primary text-primary-foreground",
 } as const;
 
 interface StickerCardProps {

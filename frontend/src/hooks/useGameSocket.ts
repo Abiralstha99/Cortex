@@ -9,8 +9,16 @@ import type {
   GameFinishedPayload,
 } from "../lib/api";
 
+export type ConnectionState = "connected" | "reconnecting" | "offline";
+
 export function useGameSocket(gameId: string) {
-  const { socket, connected } = useSocket();
+  const { socket, connected, active, ready, connect } = useSocket();
+
+  const connectionState: ConnectionState = connected
+    ? "connected"
+    : socket && !active
+      ? "offline"
+      : "reconnecting";
 
   const applyCountdown = useGameStore((s) => s.applyCountdown);
   const applyNewQuestion = useGameStore((s) => s.applyNewQuestion);
@@ -82,5 +90,15 @@ export function useGameSocket(gameId: string) {
     useGameStore.getState().submitAnswer(answerIndex);
   }
 
-  return { connected, submitAnswer };
+  function retryConnection() {
+    connect();
+  }
+
+  return {
+    connected,
+    connectionReady: ready,
+    connectionState,
+    submitAnswer,
+    retryConnection,
+  };
 }

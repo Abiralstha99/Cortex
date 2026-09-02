@@ -1,12 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import PageShell from "@/components/layout/PageShell";
+import { useEffect, useRef, useState } from "react";
 import Countdown from "@/components/game/Countdown";
 import QuestionCard from "@/components/game/QuestionCard";
 import Timer from "@/components/game/Timer";
 import AnswerFeedback from "@/components/game/AnswerFeedback";
 import RoundResults from "@/components/game/RoundResults";
 import GameResults from "@/components/game/GameResults";
+import ConnectionBanner from "@/components/game/ConnectionBanner";
 import { useLobbyStore } from "@/stores/lobbyStore";
 import { useGameStore } from "@/stores/gameStore";
 import { useGameSocket } from "@/hooks/useGameSocket";
@@ -35,9 +35,17 @@ export default function Game() {
   const gameResults = useGameStore((s) => s.gameResults);
   const reset = useGameStore((s) => s.reset);
 
-  const { connected, submitAnswer } = useGameSocket(gameId ?? "");
+  const {
+    connectionReady,
+    connectionState,
+    submitAnswer,
+    retryConnection,
+  } = useGameSocket(gameId ?? "");
 
-  const [responseStartTime, setResponseStartTime] = useState<number | null>(null);
+  const responseStartTime = useRef<number | null>(null);
+  const previousConnectionState = useRef<typeof connectionState | null>(null);
+  const reconnectedDismissTimer = useRef<number | undefined>(undefined);
+  const [showReconnected, setShowReconnected] = useState(false);
 
   // Guard: redirect if no gameId in URL or if gameId doesn't match lobby state
   useEffect(() => {
@@ -59,9 +67,41 @@ export default function Game() {
   // Track response time from when question appears
   useEffect(() => {
     if (phase === "question" && startedAt) {
-      setResponseStartTime(Date.now());
+      responseStartTime.current = Date.now();
     }
   }, [phase, startedAt]);
+
+  useEffect(() => {
+    const wasReconnecting =
+      connectionReady && previousConnectionState.current === "reconnecting";
+    const didReconnect = wasReconnecting && connectionState === "connected";
+
+    const syncTransition = window.setTimeout(() => {
+      if (!connectionReady) {
+        previousConnectionState.current = null;
+        setShowReconnected(false);
+        return;
+      }
+
+      previousConnectionState.current = connectionState;
+      if (didReconnect) {
+        setShowReconnected(true);
+        reconnectedDismissTimer.current = window.setTimeout(() => {
+          setShowReconnected(false);
+        }, 2_000);
+      } else if (connectionState !== "connected") {
+        setShowReconnected(false);
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(syncTransition);
+      if (reconnectedDismissTimer.current !== undefined) {
+        window.clearTimeout(reconnectedDismissTimer.current);
+        reconnectedDismissTimer.current = undefined;
+      }
+    };
+  }, [connectionReady, connectionState]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -71,75 +111,109 @@ export default function Game() {
   }, [reset]);
 
   function handleSubmitAnswer(answerIndex: number) {
-    if (!responseStartTime || !questionId) return;
-    const responseTime = Date.now() - responseStartTime;
+    if (!responseStartTime.current || !questionId) return;
+    const responseTime = Date.now() - responseStartTime.current;
 
     submitAnswer(questionId, answerIndex, responseTime);
   }
 
+  function handleExit() {
+    navigate("/dashboard");
+  }
+
   if (!storeGameId || !myPlayerId) return null;
 
+  const isFinished = phase === "game_finished";
+  const isOffline =
+    connectionReady && connectionState === "offline" && !isFinished;
+  const showConnectionStatus =
+    connectionReady &&
+    !isFinished &&
+    (connectionState === "reconnecting" ||
+      (connectionState === "connected" && showReconnected));
+
   return (
-    <PageShell maxWidth="3xl">
-      <header
-        className={cn(
-          "mb-5 flex min-h-16 items-center",
-          phase === "question" ? "justify-between" : "justify-start",
-        )}
-      >
-        {numberOfRounds != null && (
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 shadow-sm">
-            <span className="font-display text-sm font-extrabold text-ink">Round</span>
-            <span className="font-mono text-sm font-semibold tabular-nums text-forest">
-              {roundNumber ?? "-"} / {numberOfRounds}
-            </span>
+    <div className="min-h-dvh bg-background">
+      <main className="mx-auto flex min-h-dvh w-full max-w-4xl flex-col px-4 py-6 sm:px-6 sm:py-8">
+        {isOffline ? (
+          <div className="flex flex-1 items-center justify-center">
+            <ConnectionBanner
+              state="offline"
+              onRetry={retryConnection}
+              onExit={handleExit}
+            />
           </div>
-        )}
-        {phase === "question" && startedAt && (
-          <Timer startedAt={startedAt} timeLimit={timeLimit} />
-        )}
-      </header>
+        ) : (
+          <>
+            {showConnectionStatus && (
+              <div className="mb-4">
+                <ConnectionBanner
+                  state={
+                    connectionState === "connected" && showReconnected
+                      ? "connected"
+                      : connectionState
+                  }
+                  onRetry={retryConnection}
+                  onExit={handleExit}
+                />
+              </div>
+            )}
 
-      <div className="space-y-6">
-        {phase === "idle" && (
-          <div className="rounded-(--radius-panel) border border-border bg-surface px-6 py-12 text-center shadow-sm">
-            <p className="font-display text-lg font-bold text-muted">Starting game...</p>
-          </div>
-        )}
+            <header
+              className={cn(
+                "mb-5 flex min-h-20 flex-col gap-3 sm:flex-row sm:items-center",
+                phase === "question" ? "sm:justify-between" : "sm:justify-start",
+              )}
+            >
+              {numberOfRounds != null && (
+                <p className="font-display text-sm font-semibold text-muted-foreground">
+                  Round{" "}
+                  <span className="font-mono font-semibold tabular-nums text-ink">
+                    {roundNumber || "-"} of {numberOfRounds}
+                  </span>
+                </p>
+              )}
+              {phase === "question" && startedAt && (
+                <Timer startedAt={startedAt} timeLimit={timeLimit} />
+              )}
+            </header>
 
-        {phase === "countdown" && <Countdown countdownMs={countdownMs} />}
+            <div className="space-y-6">
+              {phase === "idle" && (
+                <section className="rounded-[var(--radius-panel)] border border-border bg-surface px-6 py-12 text-center shadow-card">
+                  <h1 className="font-display text-xl font-bold text-ink">
+                    Starting game...
+                  </h1>
+                </section>
+              )}
 
-        {phase === "question" && question && startedAt && (
-          <QuestionCard
-            question={question}
-            options={options}
-            onSubmit={handleSubmitAnswer}
-            disabled={myAnswer !== null}
-            selectedIndex={myAnswer}
-          />
-        )}
+              {phase === "countdown" && <Countdown countdownMs={countdownMs} />}
 
-        {phase === "answered" && answerResult && (
-          <AnswerFeedback result={answerResult} />
-        )}
+              {phase === "question" && question && startedAt && (
+                <QuestionCard
+                  question={question}
+                  options={options}
+                  onSubmit={handleSubmitAnswer}
+                  disabled={myAnswer !== null}
+                  selectedIndex={myAnswer}
+                />
+              )}
 
-        {phase === "round_results" && roundResults && (
-          <RoundResults roundResults={roundResults} myPlayerId={myPlayerId} />
-        )}
+              {phase === "answered" && answerResult && (
+                <AnswerFeedback result={answerResult} />
+              )}
 
-        {phase === "game_finished" && gameResults && (
-          <GameResults gameResults={gameResults} myPlayerId={myPlayerId} />
-        )}
+              {phase === "round_results" && roundResults && (
+                <RoundResults roundResults={roundResults} myPlayerId={myPlayerId} />
+              )}
 
-        {!connected && phase !== "game_finished" && (
-          <div
-            role="status"
-            className="rounded-(--radius-panel) border-2 border-danger bg-danger-soft p-4 text-center text-danger shadow-sm"
-          >
-            <p className="font-semibold">Disconnected from server. Reconnecting...</p>
-          </div>
+              {phase === "game_finished" && gameResults && (
+                <GameResults gameResults={gameResults} myPlayerId={myPlayerId} />
+              )}
+            </div>
+          </>
         )}
-      </div>
-    </PageShell>
+      </main>
+    </div>
   );
 }

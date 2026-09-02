@@ -15,7 +15,7 @@ export function Coverage() {
       <h2 className="font-display max-w-2xl text-3xl font-bold tracking-tight text-ink md:text-5xl">
         If you can study it, you can play it
       </h2>
-      <p className="mt-4 max-w-lg leading-relaxed text-muted">
+      <p className="mt-4 max-w-lg leading-relaxed text-muted-foreground">
         Bring the material you already use and turn it into a shared game.
       </p>
       <div className="mt-9 flex max-w-4xl flex-wrap gap-3" aria-label="Quiz subjects">

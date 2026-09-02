@@ -15,7 +15,7 @@ export default function ProtectedRoute({
     return (
       <div
         role="status"
-        className="flex min-h-[100dvh] items-center justify-center bg-background px-6 text-sm font-semibold text-muted"
+        className="flex min-h-dvh items-center justify-center bg-background px-6 text-sm font-semibold text-muted-foreground"
       >
         Loading Cortex...
       </div>

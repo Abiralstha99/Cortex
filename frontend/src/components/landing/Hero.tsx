@@ -38,14 +38,14 @@ export function Hero({ onCreateQuiz, onHowItWorksClick, onJoinRoom }: HeroProps)
 
   return (
     <section className="mx-auto max-w-7xl px-4 pb-10 pt-4 sm:px-6 sm:pb-16 sm:pt-6 lg:px-8">
-      <div className="grid overflow-hidden rounded-hero bg-ink text-white shadow-floating md:grid-cols-[0.46fr_0.54fr] md:items-center">
+      <div className="relative isolate overflow-hidden rounded-hero bg-ink text-white shadow-floating">
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="px-6 pb-8 pt-9 sm:px-10 sm:pb-10 sm:pt-12 lg:px-12 lg:py-14"
+          className="relative z-1 px-6 pb-8 pt-9 sm:px-10 sm:pb-10 sm:pt-12 lg:w-[46%] lg:px-10 lg:py-10 xl:px-12 xl:py-12"
         >
-          <h1 className="max-w-xl font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="max-w-xl font-display text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-[2.5rem] xl:text-5xl">
             Turn notes into a live quiz with friends
           </h1>
 
@@ -87,7 +87,7 @@ export function Hero({ onCreateQuiz, onHowItWorksClick, onJoinRoom }: HeroProps)
               onChange={handleChange}
               error={error}
               label="Have a code?"
-              className="w-40 border-white/15 bg-white text-lg text-ink placeholder:text-muted"
+              className="w-40 border-white/15 bg-white text-lg text-ink placeholder:text-text-muted-foreground"
             />
             <Button
               type="submit"
@@ -108,18 +108,25 @@ export function Hero({ onCreateQuiz, onHowItWorksClick, onJoinRoom }: HeroProps)
             delay: reduceMotion ? 0 : 0.08,
             ease: [0.16, 1, 0.3, 1],
           }}
-          className="relative self-stretch md:min-h-[35rem]"
+          className="relative -mt-5 [mask-image:linear-gradient(to_bottom,transparent_0%,black_14%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent_0%,black_14%)] lg:absolute lg:inset-y-0 lg:right-0 lg:mt-0 lg:w-[70%] lg:[mask-image:linear-gradient(to_right,transparent_0%,black_24%)] lg:[-webkit-mask-image:linear-gradient(to_right,transparent_0%,black_24%)]"
         >
-          <img
-            src="/assets/landing/cortex-quiz-arena-navy.png"
-            alt="A Cortex trophy surrounded by colorful quiz controls"
-            width="960"
-            height="640"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-            className="h-auto w-full object-cover object-[62%_center] md:absolute md:inset-0 md:h-full"
-          />
+          <picture>
+            <source
+              type="image/avif"
+              srcSet="/assets/landing/cortex-quiz-arena-navy-640.avif 640w, /assets/landing/cortex-quiz-arena-navy-960.avif 960w"
+              sizes="(min-width: 1024px) 70vw, 100vw"
+            />
+            <img
+              src="/assets/landing/cortex-quiz-arena-navy.png"
+              alt="A Cortex trophy surrounded by colorful quiz controls"
+              width="960"
+              height="640"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="block h-auto w-full object-contain lg:absolute lg:inset-y-0 lg:right-0 lg:h-full lg:w-auto lg:max-w-none"
+            />
+          </picture>
         </motion.div>
       </div>
     </section>

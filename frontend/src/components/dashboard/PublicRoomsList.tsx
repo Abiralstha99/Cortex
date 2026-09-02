@@ -3,9 +3,9 @@ import { useAuth } from "@clerk/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import EmptyState from "@/components/feedback/EmptyState";
+import LiveRoomCard from "@/components/dashboard/LiveRoomCard";
 import {
   listPublicWaitingGames,
   type PublicWaitingRoomSummary,
@@ -77,13 +77,14 @@ export default function PublicRoomsList() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="flex items-center justify-between gap-4 rounded-[var(--radius-panel)] border border-border bg-cream px-5 py-4"
+            className="flex min-h-56 flex-col rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-card"
           >
-            <div className="min-w-0 flex-1 space-y-2">
+            <div className="space-y-2">
               <Skeleton className="h-5 w-24" />
-              <Skeleton className="h-4 w-full max-w-72" />
+              <Skeleton className="h-4 w-28" />
             </div>
-            <Skeleton className="h-8 w-16 rounded-[var(--radius-control)]" />
+            <Skeleton className="mt-5 h-4 w-full" />
+            <Skeleton className="mt-auto h-12 w-full" />
           </div>
         ))}
       </div>
@@ -92,8 +93,9 @@ export default function PublicRoomsList() {
 
   if (query.isError) {
     return (
-      <div className="rounded-[var(--radius-panel)] border border-border bg-surface">
+      <div className="rounded-[var(--radius-panel)] border border-border bg-surface shadow-card">
         <EmptyState
+          className="min-h-56"
           title="Could not load public rooms"
           description="Something went wrong while finding open rooms."
           action={
@@ -110,8 +112,9 @@ export default function PublicRoomsList() {
 
   if (rooms.length === 0) {
     return (
-      <div className="rounded-[var(--radius-panel)] border border-border bg-surface">
+      <div className="rounded-[var(--radius-panel)] border border-border bg-surface shadow-card">
         <EmptyState
+          className="min-h-56"
           title="No public rooms yet"
           description="Start a public quiz and invite the first players."
           action={
@@ -126,56 +129,13 @@ export default function PublicRoomsList() {
 
   return (
     <ul className="space-y-3">
-      {rooms.map((room) => {
-        const isFull = room.playerCount >= room.maxPlayers;
-
-        return (
-          <li
-            key={room.gameId}
-            className={`flex flex-col gap-4 rounded-[var(--radius-panel)] border px-5 py-4 sm:flex-row sm:items-center sm:justify-between ${
-              isFull
-                ? "border-border/60 bg-cream/60 opacity-75"
-                : "border-border bg-cream shadow-[0_3px_0_0_#d4cbbd]"
-            }`}
-          >
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="font-mono text-base font-semibold tracking-widest text-ink">
-                  {room.roomCode}
-                </p>
-                {isFull && (
-                  <Badge variant="pink" className="text-[10px]">
-                    Full
-                  </Badge>
-                )}
-              </div>
-              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
-                <span>Host: {room.hostUsername}</span>
-                <span aria-hidden="true">|</span>
-                <span className="tabular-nums">
-                  {room.playerCount}/{room.maxPlayers} players
-                </span>
-                <span aria-hidden="true">|</span>
-                <span>{room.numberOfRounds} questions</span>
-                {room.quizGenStatus !== "ready" && (
-                  <>
-                    <span aria-hidden="true">|</span>
-                    <span className="text-muted">generating...</span>
-                  </>
-                )}
-              </p>
-            </div>
-            <Button
-              size="sm"
-              className="w-full sm:w-auto"
-              disabled={isFull}
-              onClick={() => navigate(`/game/lobby/${room.roomCode}`)}
-            >
-              {isFull ? "Full" : "Join"}
-            </Button>
-          </li>
-        );
-      })}
+      {rooms.map((room) => (
+        <LiveRoomCard
+          key={room.gameId}
+          room={room}
+          onJoin={(roomCode) => navigate(`/game/lobby/${roomCode}`)}
+        />
+      ))}
     </ul>
   );
 }

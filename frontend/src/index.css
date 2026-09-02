@@ -17,8 +17,9 @@
   --color-ink: #111936;
   --color-foreground: #111936;
   --color-muted: #697188;
-  --color-muted-foreground: #697188;
+  --color-muted-foreground: #5c657b;
   --color-text-muted: #9aa2b3;
+  --color-text-muted-foreground: #5c657b;
   --color-primary: #405a9b;
   --color-primary-hover: #506db2;
   --color-primary-soft: #eef2fb;
@@ -29,10 +30,14 @@
   --color-accent-purple: #9b79d1;
   --color-success: #32b57a;
   --color-success-soft: #eaf8f2;
+  --color-success-foreground: #137a4b;
   --color-danger: #ef5a67;
   --color-danger-soft: #fff0f2;
+  --color-danger-foreground: #b42335;
   --color-warning: #f5a623;
+  --color-warning-foreground: #8a5a00;
   --color-info: #4d8deb;
+  --color-info-foreground: #245fa8;
   --color-ring: #405a9b;
 
   --radius-control: 0.75rem;
@@ -43,16 +48,6 @@
 
   --shadow-card: 0 8px 24px rgb(32 43 72 / 0.06);
   --shadow-floating: 0 12px 32px rgb(32 43 72 / 0.10);
-
-  /* Temporary aliases removed in Task 8 after every consumer migrates. */
-  --color-cream: #f4f6fb;
-  --color-track: #eef2fb;
-  --color-forest: #405a9b;
-  --color-candy-pink: #f06c9b;
-  --color-candy-yellow: #ffbd3d;
-  --color-candy-sky: #55b8c6;
-  --color-gloss: #111936;
-  --radius-sticker: 1.5rem;
 
   --color-card: #ffffff;
   --color-card-foreground: #111936;

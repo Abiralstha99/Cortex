@@ -18,12 +18,15 @@ export default function Countdown({ countdownMs }: CountdownProps) {
   }, []);
 
   return (
-    <section className="flex flex-col items-center justify-center rounded-[var(--radius-panel)] border-4 border-white bg-candy-sky/35 px-6 py-14 text-center shadow-[0_10px_0_0_rgb(0_0_0/0.12)] ring-1 ring-candy-sky">
-      <h2 className="mb-6 text-balance font-display text-3xl font-extrabold text-ink">
+    <section
+      aria-live="polite"
+      className="flex min-h-80 flex-col items-center justify-center rounded-[var(--radius-panel)] border border-primary/20 bg-primary-soft px-6 py-14 text-center shadow-card"
+    >
+      <h1 className="mb-6 text-balance font-display text-3xl font-bold text-ink">
         Get ready
-      </h2>
+      </h1>
       {reduce ? (
-        <div className="flex size-28 items-center justify-center rounded-full bg-surface font-mono text-6xl font-semibold tabular-nums text-forest shadow-sm">
+        <div className="flex size-28 items-center justify-center rounded-full border border-primary/20 bg-surface font-mono text-5xl font-semibold tabular-nums text-primary shadow-card">
           {remaining}
         </div>
       ) : (
@@ -32,12 +35,12 @@ export default function Countdown({ countdownMs }: CountdownProps) {
           initial={{ opacity: 0.35, scale: 0.86 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", stiffness: 420, damping: 24 }}
-          className="flex size-28 items-center justify-center rounded-full bg-surface font-mono text-6xl font-semibold tabular-nums text-forest shadow-sm"
+          className="flex size-28 items-center justify-center rounded-full border border-primary/20 bg-surface font-mono text-5xl font-semibold tabular-nums text-primary shadow-card"
         >
           {remaining}
         </motion.div>
       )}
-      <p className="mt-6 text-pretty font-medium text-muted">Game starting...</p>
+      <p className="mt-6 text-pretty font-medium text-muted-foreground">Game starting...</p>
     </section>
   );
 }

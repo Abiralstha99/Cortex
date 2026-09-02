@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { LogOut, Play, Copy, Wifi, WifiOff, Crown, Check, X } from "lucide-react";
+import { Check, Copy, LogOut, Play, Wifi, WifiOff } from "lucide-react";
 import { toast } from "sonner";
-import { EmphasisPill } from "@/components/brand/EmphasisPill";
 import PageShell from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import PlayerCard from "@/components/lobby/PlayerCard";
 import QuizGenerationPanel from "@/components/lobby/QuizGenerationPanel";
 import { useLobbySocket } from "@/hooks/useLobbySocket";
 import { useLobbyStore } from "@/stores/lobbyStore";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import type { LobbyPlayer } from "@/lib/api";
 
 export default function Lobby() {
   const { roomCode = "" } = useParams();
@@ -33,6 +31,10 @@ export default function Lobby() {
   const { id: myUserId } = useCurrentUser();
   const isHost = myUserId != null && hostId === myUserId;
   const quizReady = quizGenStatus === "ready" && Boolean(quizId);
+  const currentPlayer = players.find((player) => player.id === myUserId);
+  const allPlayersReady =
+    players.length >= 2 && players.every((player) => player.ready);
+  const canStart = quizReady && allPlayersReady && status !== "starting";
 
   useEffect(() => {
     if (!storeToast) return;
@@ -87,31 +89,38 @@ export default function Lobby() {
   }
 
   return (
-    <PageShell maxWidth="2xl">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="mb-3 font-display text-2xl font-extrabold text-ink">
+    <PageShell maxWidth="3xl">
+      <header className="mb-10">
+        <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
           Game lobby
         </h1>
-        <div className="flex items-center gap-3">
-          <EmphasisPill
-            tone="gloss"
-            className="px-5 py-2.5 font-mono text-2xl tracking-[0.16em] sm:text-3xl"
-          >
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <p className="rounded-[var(--radius-card)] border border-border bg-surface px-5 py-3 font-mono text-2xl font-semibold tracking-widest text-ink sm:text-3xl">
             {normalized || "------"}
-          </EmphasisPill>
-          <button
+          </p>
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={copyCode}
-            className="rounded-full p-2 text-muted transition-colors hover:bg-track hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
-            aria-label={copied ? "Copied!" : "Copy room code"}
+            aria-label={copied ? "Copied room code" : "Copy room code"}
           >
-            {copied ? <Check size={16} className="text-success" /> : <Copy size={16} />}
-          </button>
+            {copied ? <Check className="text-success" /> : <Copy />}
+            {copied ? "Copied" : "Copy"}
+          </Button>
+          <span
+            className={`inline-flex items-center gap-1.5 text-sm font-semibold ${
+              connected
+                ? "text-success-foreground"
+                : "text-danger-foreground"
+            }`}
+            role="status"
+          >
+            {connected ? <Wifi className="size-4" aria-hidden="true" /> : <WifiOff className="size-4" aria-hidden="true" />}
+            {connected ? "Connected" : "Disconnected"}
+          </span>
         </div>
-
-        {/* Meta row */}
-        <div className="mt-3 flex items-center gap-4 text-xs text-muted">
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
           {numberOfRounds != null && (
             <span className="font-mono">{numberOfRounds} questions</span>
           )}
@@ -120,100 +129,81 @@ export default function Lobby() {
               {players.length}/{maxPlayers} players
             </span>
           )}
-          <span className={`inline-flex items-center gap-1 ${connected ? "text-success" : "text-danger"}`}>
-            {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
-            {connected ? "Connected" : "Disconnected"}
-          </span>
         </div>
-      </div>
+      </header>
 
-      {/* Status messages */}
       {status === "joining" && (
-        <p className="text-sm text-muted mb-6">Joining room...</p>
+        <p className="mb-6 text-sm text-muted-foreground" role="status">Joining room...</p>
       )}
       {status === "error" && (
-        <p className="text-sm text-danger mb-6">Failed to join room.</p>
+        <p className="mb-6 text-sm text-danger-foreground" role="alert">Failed to join room.</p>
       )}
 
       <QuizGenerationPanel isHost={isHost} />
 
-      {/* Player list */}
-      <div className="space-y-2 mb-8">
-        {players.map((player) => (
-          <PlayerRow
-            key={player.id}
-            player={player}
-            isHost={player.id === hostId}
-            isSelf={player.id === myUserId}
-          />
-        ))}
-      </div>
+      <section className="mb-10" aria-labelledby="players-heading">
+        <div className="mb-4 flex items-baseline justify-between gap-4">
+          <h2 id="players-heading" className="text-xl font-bold text-ink">
+            Players
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {players.length === 1 ? "Waiting for players" : `${players.length} players joined`}
+          </p>
+        </div>
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2" aria-live="polite">
+          {players.map((player) => (
+            <PlayerCard
+              key={player.id}
+              player={player}
+              isHost={player.id === hostId}
+              isSelf={player.id === myUserId}
+            />
+          ))}
+        </ul>
+      </section>
 
-      {/* Actions */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant="outline" onClick={toggleReady}>
-          Toggle ready
-        </Button>
-
-        {isHost && (
+      {isHost && (
+        <section
+          className="mb-6 rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-card sm:p-6"
+          aria-labelledby="start-game-heading"
+        >
+          <h2 id="start-game-heading" className="text-lg font-bold text-ink">
+            Start the game
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Start when the quiz is ready and every player is ready.
+          </p>
           <Button
             variant="default"
             onClick={handleStart}
-            disabled={status === "starting" || !quizReady}
-            title={!quizReady ? "Wait for the quiz to finish generating" : undefined}
+            disabled={!canStart}
+            title={!canStart ? "Wait for the quiz and all players to be ready" : undefined}
+            className="mt-4"
           >
-            <Play size={14} className="mr-1" />
+            <Play className="size-4" aria-hidden="true" />
             {status === "starting" ? "Starting..." : "Start game"}
           </Button>
-        )}
+        </section>
+      )}
 
-        <Button variant="ghost" onClick={handleLeave} className="text-muted">
-          <LogOut size={14} className="mr-1" />
-          Leave
+      <section className="mb-6 border-l-4 border-primary pl-5" aria-labelledby="readiness-heading">
+        <h2 id="readiness-heading" className="text-lg font-bold text-ink">
+          Your readiness
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {currentPlayer?.ready
+            ? "You are ready to play."
+            : "Mark ready when you are set to play."}
+        </p>
+        <Button variant="outline" onClick={toggleReady} className="mt-4">
+          {currentPlayer?.ready ? "Mark not ready" : "I'm ready"}
         </Button>
-      </div>
-    </PageShell>
-  );
-}
+      </section>
 
-/** Player row */
-function PlayerRow({
-  player,
-  isHost,
-  isSelf,
-}: {
-  player: LobbyPlayer;
-  isHost: boolean;
-  isSelf: boolean;
-}) {
-  return (
-    <div
-      className={`flex items-center justify-between rounded-(--radius-panel) border bg-cream px-4 py-3 shadow-[0_3px_0_0_#d4cbbd] ${
-        isSelf
-          ? "border-candy-pink ring-4 ring-candy-pink/25"
-          : "border-border"
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-ink">
-          {player.username}
-          {isSelf && <span className="ml-1 text-xs text-muted">(you)</span>}
-        </span>
-        {isHost && (
-          <Badge variant="yellow" className="gap-0.5 text-forest">
-            <Crown size={10} />
-            Host
-          </Badge>
-        )}
-      </div>
-      <span
-        className={`inline-flex items-center gap-1 text-xs font-medium ${
-          player.ready ? "text-success" : "text-muted"
-        }`}
-      >
-        {player.ready ? <Check size={12} /> : <X size={12} />}
-        {player.ready ? "Ready" : "Not ready"}
-      </span>
-    </div>
+      <Button variant="ghost" onClick={handleLeave} className="text-muted-foreground">
+        <LogOut className="size-4" aria-hidden="true" />
+        Leave lobby
+      </Button>
+    </PageShell>
   );
 }

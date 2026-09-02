@@ -58,12 +58,13 @@ export default function QuizGenerationPanel({
 
   return (
     <section
-      className="mb-8 rounded-(--radius-panel) border border-border bg-surface p-5 shadow-[0_4px_0_0_#d4cbbd]"
+      className="mb-8 rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-card sm:p-6"
       aria-live="polite"
     >
       {quizGenStatus === "processing" && (
         <StatusRow
-          icon={<Clock3 className="size-5 text-candy-pink" />}
+          tone="info"
+          icon={<Clock3 />}
           title="Generating questions..."
           detail="The quiz will be available here when it is ready."
         />
@@ -71,7 +72,8 @@ export default function QuizGenerationPanel({
 
       {quizGenStatus === "ready" && (
         <StatusRow
-          icon={<CheckCircle2 className="size-5 text-success" />}
+          tone="success"
+          icon={<CheckCircle2 />}
           title="Quiz ready"
           detail={
             numberOfRounds != null
@@ -83,7 +85,8 @@ export default function QuizGenerationPanel({
 
       {quizGenStatus === "none" && (
         <StatusRow
-          icon={<Clock3 className="size-5 text-muted" />}
+          tone="neutral"
+          icon={<Clock3 />}
           title="Waiting for quiz"
           detail="The host is preparing the questions."
         />
@@ -92,15 +95,16 @@ export default function QuizGenerationPanel({
       {quizGenStatus === "failed" && (
         <div className="space-y-4">
           <StatusRow
-            icon={<AlertCircle className="size-5 text-danger" />}
-            title="Quiz generation failed"
+            tone="danger"
+            icon={<AlertCircle />}
+            title="We couldn't finish this quiz."
             detail={quizGenError ?? "The questions could not be generated."}
           />
 
           {isHost ? (
-            <div className="border-t border-border pt-4">
-              <p className="mb-3 text-sm font-medium text-ink">
-                Upload the source again to retry
+            <div className="border-t border-border pt-5">
+              <p className="mb-4 text-sm font-medium text-ink">
+                Select the PDF or TXT file again to retry.
               </p>
               <UploadPanel
                 file={file}
@@ -111,11 +115,12 @@ export default function QuizGenerationPanel({
                 onTitleChange={setQuizTitle}
               />
               {retryError && (
-                <p className="mt-3 text-sm text-danger">{retryError}</p>
+                <p className="mt-3 text-sm font-medium text-danger-foreground" role="alert">
+                  {retryError}
+                </p>
               )}
               <Button
                 type="button"
-                variant="rose"
                 className="mt-4 w-full"
                 disabled={!file || !gameId || isRetrying}
                 onClick={handleRetry}
@@ -125,8 +130,8 @@ export default function QuizGenerationPanel({
               </Button>
             </div>
           ) : (
-            <p className="border-t border-border pt-4 text-sm text-muted">
-              The host can upload the source again.
+            <p className="border-t border-border pt-4 text-sm text-muted-foreground">
+              The host can select the source again and retry.
             </p>
           )}
         </div>
@@ -137,23 +142,33 @@ export default function QuizGenerationPanel({
 
 function StatusRow({
   icon,
+  tone,
   title,
   detail,
 }: {
   icon: ReactNode;
+  tone: "info" | "success" | "neutral" | "danger";
   title: string;
   detail: string;
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-cream">
+      <span
+        className={`flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] [&_svg]:size-5 ${
+          tone === "success"
+            ? "bg-success-soft text-success"
+            : tone === "danger"
+              ? "bg-danger-soft text-danger"
+              : tone === "info"
+                ? "bg-primary-soft text-primary"
+                : "bg-subtle text-muted"
+        }`}
+      >
         {icon}
       </span>
       <div>
-        <h2 className="font-display text-base font-extrabold text-ink">
-          {title}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{detail}</p>
+        <h2 className="text-base font-bold text-ink">{title}</h2>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{detail}</p>
       </div>
     </div>
   );

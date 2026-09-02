@@ -33,7 +33,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         align={align}
         className={cn(
-          "z-50 min-w-44 overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface p-1 text-ink shadow-[0_12px_32px_rgb(32_43_72/0.10)] outline-none",
+          "z-50 min-w-44 overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface p-1 text-ink shadow-floating outline-none focus-visible:ring-3 focus-visible:ring-primary/30",
           className,
         )}
         {...props}
@@ -50,7 +50,7 @@ function DropdownMenuItem({
     <DropdownMenuPrimitive.Item
       data-slot="dropdown-menu-item"
       className={cn(
-        "relative flex cursor-pointer select-none items-center gap-2 rounded-[calc(var(--radius-control)-2px)] px-3 py-2 text-sm outline-none transition-colors duration-150",
+        "relative flex cursor-pointer select-none items-center gap-2 rounded-[calc(var(--radius-control)-2px)] px-3 py-2 text-sm outline-none transition-colors duration-150 focus-visible:ring-3 focus-visible:ring-primary/30",
         "focus:bg-primary-soft data-highlighted:bg-primary-soft",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         className,
@@ -80,7 +80,7 @@ function DropdownMenuLabel({
   return (
     <DropdownMenuPrimitive.Label
       data-slot="dropdown-menu-label"
-      className={cn("px-3 py-2 text-xs font-medium text-muted", className)}
+      className={cn("px-3 py-2 text-xs font-medium text-muted-foreground", className)}
       {...props}
     />
   )

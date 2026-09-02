@@ -36,10 +36,10 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         "flex h-12 w-fit items-center justify-between gap-2 rounded-[var(--radius-control)] border border-border bg-subtle px-4 py-2 text-sm text-ink whitespace-nowrap shadow-none transition-[color,box-shadow] duration-150 outline-none",
-        "focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20",
+        "focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20",
         "disabled:cursor-not-allowed disabled:opacity-50",
         "aria-invalid:border-danger aria-invalid:ring-danger/20",
-        "data-[placeholder]:text-text-muted data-[size=sm]:h-10",
+        "data-[placeholder]:text-text-muted-foreground data-[size=sm]:h-10",
         "*:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted",
         className
@@ -66,7 +66,7 @@ function SelectContent({
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          "relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-[var(--radius-card)] border border-border bg-surface text-ink shadow-[0_12px_32px_rgb(32_43_72/0.10)]",
+          "relative z-50 max-h-(--radix-select-content-available-height) min-w-32 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-[var(--radius-card)] border border-border bg-surface text-ink shadow-floating",
           "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           position === "popper" &&
@@ -100,7 +100,7 @@ function SelectLabel({
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
-      className={cn("px-2 py-1.5 text-xs text-muted", className)}
+      className={cn("px-2 py-1.5 text-xs text-muted-foreground", className)}
       {...props}
     />
   )

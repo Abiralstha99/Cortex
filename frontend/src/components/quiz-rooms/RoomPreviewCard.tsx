@@ -1,3 +1,6 @@
+import type { ReactNode } from "react";
+import { BookOpen, Globe2, LockKeyhole, Users } from "lucide-react";
+
 interface RoomPreviewCardProps {
   quizTitle: string | null;
   questionCount: number | null;
@@ -12,42 +15,70 @@ export default function RoomPreviewCard({
   isPublic,
 }: RoomPreviewCardProps) {
   return (
-    <aside className="sticky top-24 overflow-hidden rounded-[1.75rem] border-[5px] border-white bg-white p-1.5 shadow-[0_6px_0_0_rgb(0_0_0/0.06)]">
-      <div className="rounded-[1.25rem] bg-gradient-to-b from-[#222222] to-[#111111] p-7">
-        <p className="font-mono text-xs font-semibold text-[#f5d76e]">
-          Room preview
-        </p>
-
-        <h2 className="mt-4 font-display text-2xl font-extrabold text-white">
+    <aside className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface shadow-card xl:sticky xl:top-24">
+      <div className="border-b border-border bg-primary-soft px-6 py-5">
+        <p className="text-sm font-semibold text-primary">Room preview</p>
+        <h2 className="mt-2 text-2xl font-bold leading-tight text-ink">
           {quizTitle ?? (
-            <span className="text-white/35">Select a quiz</span>
+            <span className="text-text-muted-foreground">Select a quiz</span>
           )}
         </h2>
+      </div>
 
-        <div className="mt-5 flex flex-wrap gap-2">
-          {questionCount !== null && (
-            <span className="rounded-full bg-[#ff8fb8] px-4 py-1.5 font-mono text-xs font-semibold text-ink">
-              {questionCount} questions
-            </span>
-          )}
-          <span className="rounded-full border border-white/12 bg-white/8 px-4 py-1.5 font-mono text-xs font-semibold text-white/85">
-            {maxPlayers} players
-          </span>
-          <span className="rounded-full border border-white/12 bg-white/8 px-4 py-1.5 font-mono text-xs font-semibold text-white/85">
-            {isPublic ? "Public" : "Private"}
-          </span>
-        </div>
+      <div className="px-6 py-5">
+        <dl className="space-y-4">
+          <PreviewDetail
+            icon={<BookOpen aria-hidden="true" />}
+            label="Questions"
+            value={questionCount !== null ? String(questionCount) : "Not set"}
+          />
+          <PreviewDetail
+            icon={<Users aria-hidden="true" />}
+            label="Players"
+            value={String(maxPlayers)}
+          />
+          <PreviewDetail
+            icon={
+              isPublic ? (
+                <Globe2 aria-hidden="true" />
+              ) : (
+                <LockKeyhole aria-hidden="true" />
+              )
+            }
+            label="Visibility"
+            value={isPublic ? "Public" : "Private"}
+          />
+        </dl>
 
-        <div className="mt-8 border-t border-white/8 pt-6">
-          <p className="font-display text-base font-extrabold text-white">
-            Good to know
+        <div className="mt-6 border-t border-border pt-5">
+          <h3 className="font-semibold text-ink">Before you launch</h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Share the room code, then wait for everyone to get ready.
           </p>
-          <ul className="mt-3 space-y-3 text-sm leading-relaxed text-white/55">
-            <li>Share the room code so friends can jump in.</li>
-            <li>Everyone readies up before the first question.</li>
-          </ul>
         </div>
       </div>
     </aside>
+  );
+}
+
+function PreviewDetail({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-subtle text-primary [&_svg]:size-5">
+        {icon}
+      </span>
+      <div className="flex min-w-0 flex-1 items-baseline justify-between gap-4">
+        <dt className="text-sm text-muted-foreground">{label}</dt>
+        <dd className="text-sm font-semibold text-ink">{value}</dd>
+      </div>
+    </div>
   );
 }

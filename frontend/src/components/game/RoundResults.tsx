@@ -1,4 +1,5 @@
 import { motion, useReducedMotion } from "motion/react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import type { RoundFinishedPayload } from "@/lib/api";
 import Leaderboard from "@/components/game/Leaderboard";
 import { cn } from "@/lib/utils";
@@ -7,6 +8,59 @@ type RoundResultsProps = {
   roundResults: RoundFinishedPayload;
   myPlayerId: string;
 };
+
+type Submission = RoundFinishedPayload["submissions"][number];
+
+function SubmissionDetails({
+  submission,
+  username,
+}: {
+  submission: Submission;
+  username: string;
+}) {
+  return (
+    <>
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="truncate font-display font-semibold text-ink">
+          {username}
+        </span>
+        <span className="text-xs font-semibold text-primary">You</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            "flex items-center gap-1 text-sm font-semibold",
+            submission.correct
+              ? "text-success-foreground"
+              : "text-danger-foreground",
+          )}
+        >
+          {submission.correct ? (
+            <CheckCircle2 className="size-4" aria-hidden="true" />
+          ) : (
+            <XCircle className="size-4" aria-hidden="true" />
+          )}
+          {submission.correct ? "Correct" : "Not quite"}
+        </span>
+        <span className="font-mono text-sm font-semibold tabular-nums text-ink">
+          +{submission.pointsEarned}
+        </span>
+        {submission.placement && (
+          <span className="font-mono text-xs font-semibold text-muted-foreground">
+            {submission.placement === 1
+              ? "1st"
+              : submission.placement === 2
+                ? "2nd"
+                : submission.placement === 3
+                  ? "3rd"
+                  : `${submission.placement}th`}
+            {" place"}
+          </span>
+        )}
+      </div>
+    </>
+  );
+}
 
 const containerVariants = {
   hidden: {},
@@ -25,94 +79,59 @@ const itemVariants = {
 export default function RoundResults({ roundResults, myPlayerId }: RoundResultsProps) {
   const { roundNumber, correctAnswer, submissions, leaderboard, isLastRound, nextRoundIn } = roundResults;
   const reduce = useReducedMotion();
-
-  const submissionRows = submissions.map((sub) => {
-    const player = leaderboard.find((p) => p.playerId === sub.playerId);
-    return (
-      <div
-        key={sub.playerId}
-        className={cn(
-          "flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-[var(--radius-control)] border px-4 py-2",
-          sub.playerId === myPlayerId
-            ? "border-forest bg-candy-yellow/35"
-            : "border-transparent bg-background",
-        )}
-      >
-        <span className="font-display font-bold text-ink">{player?.username ?? "Unknown"}</span>
-        <div className="flex items-center gap-2">
-          <span className={cn("text-sm font-semibold", sub.correct ? "text-success" : "text-danger")}>
-            {sub.correct ? "Correct" : "Wrong"}
-          </span>
-          <span className="font-mono text-sm font-semibold tabular-nums text-ink">
-            +{sub.pointsEarned}
-          </span>
-          {sub.placement && (
-            <span className="rounded-full bg-track px-2 py-1 font-mono text-xs font-semibold text-muted">
-              {sub.placement === 1 ? "1st" : sub.placement === 2 ? "2nd" : sub.placement === 3 ? "3rd" : `${sub.placement}th`}
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  });
+  const mySubmission = submissions.find((sub) => sub.playerId === myPlayerId);
+  const myUsername = leaderboard.find(
+    (player) => player.playerId === myPlayerId,
+  )?.username;
+  const answerRowClassName = cn(
+    "flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-[var(--radius-control)] border px-4 py-2",
+    mySubmission
+      ? "border-primary/40 bg-primary-soft"
+      : "border-border bg-subtle",
+  );
+  const answerDetails = mySubmission ? (
+    <SubmissionDetails
+      submission={mySubmission}
+      username={myUsername ?? "Unknown"}
+    />
+  ) : (
+    <p className="text-sm font-semibold text-muted-foreground">
+      No answer submitted
+    </p>
+  );
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[var(--radius-panel)] border-4 border-white bg-candy-sky/35 p-6 shadow-[0_8px_0_0_rgb(0_0_0/0.10)] ring-1 ring-candy-sky">
-        <h2 className="mb-2 text-balance font-display text-2xl font-extrabold text-ink">
-          Round {roundNumber} Complete
-        </h2>
-        <p className="text-pretty text-muted">
+      <section className="rounded-[var(--radius-panel)] border border-primary/20 bg-primary-soft p-6 shadow-card">
+        <h1 className="mb-2 text-balance font-display text-2xl font-bold text-ink">
+          Round {roundNumber} complete
+        </h1>
+        <p className="text-pretty text-muted-foreground">
           Correct answer:{" "}
-          <strong className="rounded-full bg-surface px-3 py-1 font-display font-extrabold text-forest">
+          <strong className="font-display font-semibold text-ink">
             {correctAnswer}
           </strong>
         </p>
       </section>
 
       <section className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-sm sm:p-6">
-        <h3 className="mb-4 font-display text-lg font-extrabold text-ink">Submissions</h3>
+        <h2 className="mb-4 font-display text-xl font-bold text-ink">
+          Your answer
+        </h2>
         {reduce ? (
-          <div className="space-y-1">{submissionRows}</div>
+          <div className="space-y-2">
+            <div className={answerRowClassName}>{answerDetails}</div>
+          </div>
         ) : (
           <motion.div
-            className="space-y-1"
+            className="space-y-2"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
-            {submissions.map((sub) => {
-              const player = leaderboard.find((p) => p.playerId === sub.playerId);
-              return (
-                <motion.div
-                  key={sub.playerId}
-                  variants={itemVariants}
-                  className={cn(
-                    "flex min-h-12 flex-wrap items-center justify-between gap-2 rounded-[var(--radius-control)] border px-4 py-2",
-                    sub.playerId === myPlayerId
-                      ? "border-forest bg-candy-yellow/35"
-                      : "border-transparent bg-background",
-                  )}
-                >
-                  <span className="font-display font-bold text-ink">
-                    {player?.username ?? "Unknown"}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className={cn("text-sm font-semibold", sub.correct ? "text-success" : "text-danger")}>
-                      {sub.correct ? "Correct" : "Wrong"}
-                    </span>
-                    <span className="font-mono text-sm font-semibold tabular-nums text-ink">
-                      +{sub.pointsEarned}
-                    </span>
-                    {sub.placement && (
-                      <span className="rounded-full bg-track px-2 py-1 font-mono text-xs font-semibold text-muted">
-                        {sub.placement === 1 ? "1st" : sub.placement === 2 ? "2nd" : sub.placement === 3 ? "3rd" : `${sub.placement}th`}
-                      </span>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
+            <motion.div variants={itemVariants} className={answerRowClassName}>
+              {answerDetails}
+            </motion.div>
           </motion.div>
         )}
       </section>
@@ -120,7 +139,7 @@ export default function RoundResults({ roundResults, myPlayerId }: RoundResultsP
       <Leaderboard entries={leaderboard} highlightPlayerId={myPlayerId} />
 
       {!isLastRound && (
-        <p className="text-center font-mono text-sm font-semibold tabular-nums text-muted">
+        <p className="text-center font-mono text-sm font-semibold tabular-nums text-muted-foreground">
           Next round in {Math.ceil(nextRoundIn / 1000)}s...
         </p>
       )}

@@ -38,9 +38,9 @@ export default function AccountMenu({
       <DropdownMenuTrigger
         aria-label="Open account menu"
         className={cn(
-          "inline-flex min-h-11 min-w-11 items-center justify-center outline-none transition-[color,box-shadow] duration-150 focus-visible:ring-[3px] focus-visible:ring-primary/30",
+          "inline-flex min-h-11 min-w-11 items-center justify-center outline-none transition-[color,box-shadow] duration-150 focus-visible:ring-3 focus-visible:ring-primary/30",
           isNavigation
-            ? "w-full gap-2 rounded-[var(--radius-control)] px-3 text-sm font-semibold text-muted hover:bg-primary-soft hover:text-ink"
+            ? "w-full gap-2 rounded-[var(--radius-control)] px-3 text-sm font-semibold text-muted-foreground hover:bg-primary-soft hover:text-ink"
             : "size-11 overflow-hidden rounded-full border border-border bg-surface text-sm font-semibold text-ink hover:border-primary/40",
         )}
       >
@@ -63,7 +63,7 @@ export default function AccountMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={() => signOut({ redirectUrl: "/" })}
-          className="min-h-11 text-muted focus:text-ink data-highlighted:text-ink"
+          className="min-h-11 text-muted-foreground focus:text-ink data-highlighted:text-ink"
         >
           <LogOut className="size-4" />
           Sign out

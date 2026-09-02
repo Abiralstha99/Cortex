@@ -16,7 +16,7 @@ export default function MobileBottomNav() {
             to={to}
             className={({ isActive }) =>
               cn(
-                "inline-flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-control)] px-1 text-xs font-semibold text-muted outline-none transition-[color,box-shadow] duration-150 hover:bg-primary-soft hover:text-primary focus-visible:ring-[3px] focus-visible:ring-primary/30",
+                "inline-flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-control)] px-1 text-xs font-semibold text-muted-foreground outline-none transition-[color,box-shadow] duration-150 hover:bg-primary-soft hover:text-primary focus-visible:ring-3 focus-visible:ring-primary/30",
                 isActive && "bg-primary-soft text-primary",
               )
             }

@@ -22,7 +22,7 @@ export default function RoomCodeInput({
   return (
     <div className="space-y-2">
       {label ? (
-        <label htmlFor={id} className="label-caps text-muted">
+        <label htmlFor={id} className="text-sm font-semibold text-ink">
           {label}
         </label>
       ) : (
@@ -45,12 +45,16 @@ export default function RoomCodeInput({
         aria-describedby={error ? `${id}-error` : undefined}
         onChange={(e) => onChange(normalizeRoomCode(e.target.value))}
         className={cn(
-          "h-11 text-center font-mono text-xl font-semibold tracking-[0.25em]",
+          "h-14 bg-subtle text-center font-mono text-2xl font-semibold tracking-widest",
           className,
         )}
       />
       {error ? (
-        <p id={`${id}-error`} className="text-sm text-danger" role="alert">
+        <p
+          id={`${id}-error`}
+          className="text-sm font-medium text-danger-foreground"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}

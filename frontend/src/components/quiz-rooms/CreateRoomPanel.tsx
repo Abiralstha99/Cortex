@@ -44,7 +44,7 @@ export default function CreateRoomPanel({
           />
         </TabsContent>
         <TabsContent value="upload">
-          <div className="rounded-xl border border-dashed border-border p-12 text-center text-muted">
+          <div className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
             <p>Upload PDF panel coming soon…</p>
           </div>
         </TabsContent>

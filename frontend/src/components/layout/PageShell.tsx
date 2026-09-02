@@ -38,9 +38,9 @@ export default function PageShell({
   const hasDashboardChrome = !isLiveGamePath(pathname);
 
   return (
-    <div className="min-h-[100dvh] bg-background">
+    <div className="min-h-dvh bg-background">
       {hasDashboardChrome && <AppSidebar />}
-      <div className={cn("min-h-[100dvh]", hasDashboardChrome && "md:pl-[88px]")}>
+      <div className={cn("min-h-dvh", hasDashboardChrome && "md:pl-22")}>
         {hasDashboardChrome && <AppHeader />}
         <main
           className={cn(

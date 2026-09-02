@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
 interface RoomSettingsProps {
   players: number;
@@ -31,18 +30,17 @@ export default function RoomSettings({
   const questionsCap = Math.max(MIN_QUESTIONS, maxQuestions);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <div className="rounded-(--radius-panel) border border-border bg-cream p-4">
-        <Label
-          htmlFor="questions-stepper"
-          className="font-display text-base font-extrabold text-ink"
-        >
-          How many questions?
-        </Label>
+    <div className="divide-y divide-border rounded-[var(--radius-card)] bg-subtle px-4 sm:px-5">
+      <div className="grid gap-4 py-5 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-center">
+        <p id="questions-label" className="text-base font-semibold text-ink">
+          Questions
+        </p>
 
         <div
           id="questions-stepper"
-          className="mt-4 flex items-center justify-between gap-3"
+          role="group"
+          aria-labelledby="questions-label"
+          className="flex items-center justify-between gap-3"
         >
           <Button
             type="button"
@@ -60,7 +58,7 @@ export default function RoomSettings({
               −
             </span>
           </Button>
-          <span className="min-w-12 text-center font-mono text-2xl font-semibold text-ink">
+          <span className="min-w-12 text-center font-mono text-xl font-semibold tabular-nums text-ink">
             {questions}
           </span>
           <Button
@@ -81,22 +79,21 @@ export default function RoomSettings({
           </Button>
         </div>
 
-        <p className="mt-3 text-center text-xs text-muted">
+        <p className="text-xs text-muted-foreground sm:col-start-2 sm:text-center">
           {MIN_QUESTIONS} - {questionsCap} questions
         </p>
       </div>
 
-      <div className="rounded-(--radius-panel) border border-border bg-cream p-4">
-        <Label
-          htmlFor="players-stepper"
-          className="font-display text-base font-extrabold text-ink"
-        >
-          How many players?
-        </Label>
+      <div className="grid gap-4 py-5 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-center">
+        <p id="players-label" className="text-base font-semibold text-ink">
+          Players
+        </p>
 
         <div
           id="players-stepper"
-          className="mt-4 flex items-center justify-between gap-3"
+          role="group"
+          aria-labelledby="players-label"
+          className="flex items-center justify-between gap-3"
         >
           <Button
             type="button"
@@ -110,7 +107,7 @@ export default function RoomSettings({
               −
             </span>
           </Button>
-          <span className="min-w-12 text-center font-mono text-2xl font-semibold text-ink">
+          <span className="min-w-12 text-center font-mono text-xl font-semibold tabular-nums text-ink">
             {players}
           </span>
           <Button
@@ -127,20 +124,20 @@ export default function RoomSettings({
           </Button>
         </div>
 
-        <p className="mt-3 text-center text-xs text-muted">
+        <p className="text-xs text-muted-foreground sm:col-start-2 sm:text-center">
           {MIN_PLAYERS} - {MAX_PLAYERS} players
         </p>
       </div>
 
-      <div className="flex items-center justify-between gap-4 rounded-(--radius-panel) border border-border bg-cream p-4 sm:col-span-2">
+      <div className="flex items-center justify-between gap-4 py-5">
         <div>
-          <Label
+          <label
             htmlFor="public-room-switch"
-            className="font-display text-base font-extrabold text-ink"
+            className="text-base font-semibold text-ink"
           >
-            Let anyone join?
-          </Label>
-          <p className="mt-1 text-xs text-muted">
+            Public room
+          </label>
+          <p className="mt-1 text-xs text-muted-foreground">
             Show this room in the live rooms feed.
           </p>
         </div>
@@ -149,7 +146,6 @@ export default function RoomSettings({
           checked={isPublic}
           onCheckedChange={(value) => onIsPublicChange(value === true)}
           aria-label="Make room public"
-          className="h-7 w-12 data-[state=checked]:bg-forest data-[slot=switch-thumb]:size-6"
         />
       </div>
     </div>

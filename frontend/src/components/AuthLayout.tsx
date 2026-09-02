@@ -19,12 +19,12 @@ export default function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-[100dvh] bg-background p-4 sm:p-6 lg:p-8">
+    <main className="min-h-dvh bg-background p-4 sm:p-6 lg:p-8">
       <div className="mx-auto grid min-h-[calc(100dvh-2rem)] max-w-7xl overflow-hidden rounded-hero border border-border bg-surface shadow-card sm:min-h-[calc(100dvh-3rem)] lg:min-h-[calc(100dvh-4rem)] lg:grid-cols-[0.88fr_1.12fr]">
         <section className="relative overflow-hidden bg-ink px-6 py-6 text-white sm:px-10 sm:py-8 lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-12">
           <BrandMark
             to="/"
-            className="relative inline-flex min-h-11 items-center rounded-control text-white outline-none focus-visible:ring-[3px] focus-visible:ring-white/35"
+            className="relative inline-flex min-h-11 items-center rounded-control text-white outline-none focus-visible:ring-3 focus-visible:ring-white/35"
           />
 
           <div className="relative mt-14 hidden max-w-md sm:block lg:my-auto">
@@ -69,7 +69,7 @@ export default function AuthLayout({
               >
                 {heading}
               </h1>
-              <p className="mt-2 text-base text-muted">{subtitle}</p>
+              <p className="mt-2 text-base text-muted-foreground">{subtitle}</p>
             </div>
 
             <div className="w-full">{children}</div>
