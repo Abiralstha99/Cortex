@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
 import PageShell from "@/components/layout/PageShell";
@@ -26,6 +26,7 @@ type CreationSource = "upload" | "past";
 
 export default function CreateGame() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<CreationSource>("upload");
   const [uploadFile, setUploadFile] = useState<File | null>(() =>
@@ -47,6 +48,26 @@ export default function CreateGame() {
       return listQuizzes(token);
     },
   });
+
+  // Read deep-linked quizId from location.state on mount and switch to "past"
+  const initialQuizId = (location.state as any)?.quizId as string | undefined;
+  useEffect(() => {
+    if (initialQuizId) {
+      setActiveTab("past");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuizId]);
+
+  // When quizzes load, select the deep-linked quiz if present.
+  useEffect(() => {
+    if (!initialQuizId) return;
+    const list: QuizSummary[] = quizzesQuery.data ?? [];
+    const match = list.find((q) => q.id === initialQuizId);
+    if (match) {
+      setSelectedQuiz(match);
+      setQuestionCount((prev) => Math.min(prev, match.questionCount));
+    }
+  }, [initialQuizId, quizzesQuery.data]);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -120,8 +141,8 @@ export default function CreateGame() {
     activeTab === "upload"
       ? questionCount
       : pastQuizCap != null
-        ? Math.min(questionCount, pastQuizCap)
-        : null;
+      ? Math.min(questionCount, pastQuizCap)
+      : null;
 
   return (
     <PageShell maxWidth="6xl">
@@ -276,3 +297,4 @@ export default function CreateGame() {
     </PageShell>
   );
 }
+

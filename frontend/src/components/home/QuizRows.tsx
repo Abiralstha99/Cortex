@@ -7,25 +7,35 @@ import { listQuizzes, type QuizSummary } from "@/lib/api";
 const QUIZZES_QUERY_KEY = ["quizzes"] as const;
 
 export default function QuizRows() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, getToken } = useAuth();
   const navigate = useNavigate();
-
-  const query = useQuery({
-    queryKey: QUIZZES_QUERY_KEY,
-    queryFn: async () => listQuizzes(null),
-  });
 
   if (!isLoaded || !isSignedIn) return null;
 
+  const query = useQuery({
+    queryKey: QUIZZES_QUERY_KEY,
+    queryFn: async () => {
+      const token = await getToken();
+      return listQuizzes(token);
+    },
+    enabled: isLoaded && isSignedIn,
+  });
+
   if (query.isLoading) {
-    return <div aria-label="quizzes-loading"><Skeleton className="h-6 w-32" /></div>;
+    return (
+      <div aria-label="quizzes-loading">
+        <Skeleton className="h-6 w-32" />
+      </div>
+    );
   }
 
   if (query.isError) {
     return (
       <div className="inline-flex items-center space-x-2" aria-label="quizzes-error">
         <span className="text-sm text-ink-muted">Could not load quizzes</span>
-        <button onClick={() => void query.refetch()} className="underline text-sm">Try again</button>
+        <button onClick={() => void query.refetch()} className="underline text-sm">
+          Try again
+        </button>
       </div>
     );
   }

@@ -19,14 +19,21 @@ function upsertPublicRoom(
 }
 
 export default function LiveRoomRows() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, getToken } = useAuth();
   const navigate = useNavigate();
+
+  if (!isLoaded || !isSignedIn) return null;
+
   const queryClient = useQueryClient();
   const { socket, connected } = useSocket();
 
   const query = useQuery({
     queryKey: PUBLIC_ROOMS_QUERY_KEY,
-    queryFn: async () => listPublicWaitingGames(null),
+    queryFn: async () => {
+      const token = await getToken();
+      return listPublicWaitingGames(token);
+    },
+    enabled: isLoaded && isSignedIn,
   });
 
   useEffect(() => {
@@ -51,8 +58,6 @@ export default function LiveRoomRows() {
       socket.emit("unwatch_public_rooms");
     };
   }, [socket, connected, queryClient]);
-
-  if (!isLoaded || !isSignedIn) return null;
 
   if (query.isLoading) {
     return <div aria-label="public-rooms-loading"><Skeleton className="h-6 w-36" /></div>;
