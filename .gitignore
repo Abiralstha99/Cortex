@@ -7,6 +7,7 @@ docs/
 .kiro/
 .agents/
 .worktrees/
+skills-lock.json
 
 # Dependencies and build output (never commit)
 node_modules/
