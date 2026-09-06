@@ -6,6 +6,8 @@ import useJoinResume from "@/components/home/useJoinResume";
 import { useHomeIntentStore } from "@/stores/homeIntentStore";
 import { useAuth } from "@clerk/react";
 import { useNavigate, useLocation } from "react-router-dom";
+import QuizRows from "@/components/home/QuizRows";
+import LiveRoomRows from "@/components/home/LiveRoomRows";
 
 export default function HomeWorkspace() {
   const navigate = useNavigate();
@@ -71,6 +73,11 @@ export default function HomeWorkspace() {
           </h1>
           {/* CreateStage slot */}
           <CreateStage onContinue={handleContinue} />
+          {/* Progressive library rows */}
+          <div className="mt-3 space-y-3">
+            <QuizRows />
+            <LiveRoomRows />
+          </div>
         </div>
         <aside className="min-w-0">
           {/* JoinRail slot */}
