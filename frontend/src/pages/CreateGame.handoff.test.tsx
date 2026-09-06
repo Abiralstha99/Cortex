@@ -1,8 +1,8 @@
 import { render, screen, cleanup } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { renderWithRouter } from "@/test/render";
 import CreateGame from "./CreateGame";
 import { useHomeIntentStore } from "@/stores/homeIntentStore";
 
@@ -11,14 +11,22 @@ vi.mock("@/lib/api", () => ({
 }));
 
 vi.mock("@clerk/react", () => ({
-  useAuth: () => ({ getToken: async () => "tok", isLoaded: true, isSignedIn: true }),
+  useAuth: () => ({
+    getToken: async () => "tok",
+    isLoaded: true,
+    isSignedIn: true,
+  }),
+  useUser: () => ({ user: { firstName: "Test", username: "testuser" } }),
+  useClerk: () => ({ signOut: () => {} }),
 }));
 
 function renderCreateGame() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      {renderWithRouter(<CreateGame />)}
+      <MemoryRouter initialEntries={["/game/create"]}>
+        <CreateGame />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
