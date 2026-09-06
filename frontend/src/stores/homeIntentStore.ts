@@ -37,3 +37,16 @@ export const useHomeIntentStore = create<HomeIntentState>((set, get) => ({
   },
   clear: () => set({ pendingFile: null, pendingJoinCode: null }),
 }));
+
+/** Survives React StrictMode remount after takePendingFile clears the store. */
+let fileHandoffCache: File | null | undefined;
+
+export function consumePendingFileForCreate(): File | null {
+  if (fileHandoffCache !== undefined) return fileHandoffCache;
+  fileHandoffCache = useHomeIntentStore.getState().takePendingFile();
+  return fileHandoffCache;
+}
+
+export function clearFileHandoffCache(): void {
+  fileHandoffCache = undefined;
+}

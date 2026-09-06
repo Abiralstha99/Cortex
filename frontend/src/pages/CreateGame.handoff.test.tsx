@@ -1,10 +1,14 @@
 import { render, screen, cleanup } from "@testing-library/react";
+import { StrictMode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import CreateGame from "./CreateGame";
-import { useHomeIntentStore } from "@/stores/homeIntentStore";
+import {
+  clearFileHandoffCache,
+  useHomeIntentStore,
+} from "@/stores/homeIntentStore";
 
 vi.mock("@/lib/api", () => ({
   listQuizzes: async () => [],
@@ -20,20 +24,22 @@ vi.mock("@clerk/react", () => ({
   useClerk: () => ({ signOut: () => {} }),
 }));
 
-function renderCreateGame() {
+function renderCreateGame(strict = false) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const tree = (
     <QueryClientProvider client={qc}>
       <MemoryRouter initialEntries={["/game/create"]}>
         <CreateGame />
       </MemoryRouter>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
+  return render(strict ? <StrictMode>{tree}</StrictMode> : tree);
 }
 
 afterEach(() => {
   cleanup();
   useHomeIntentStore.getState().clear();
+  clearFileHandoffCache();
 });
 
 describe("CreateGame handoff", () => {
@@ -51,6 +57,15 @@ describe("CreateGame handoff", () => {
     useHomeIntentStore.getState().clear();
     renderCreateGame();
     expect(screen.getByLabelText(/choose a quiz file/i)).toBeInTheDocument();
+  });
+
+  it("keeps handed-off file under StrictMode remount", () => {
+    const file = new File(["x"], "chem.pdf", { type: "application/pdf" });
+    useHomeIntentStore.getState().setPendingFile(file);
+    renderCreateGame(true);
+
+    expect(screen.getByText("chem.pdf")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/choose a quiz file/i)).not.toBeInTheDocument();
   });
 });
 

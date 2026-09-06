@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
@@ -17,7 +17,10 @@ import UploadPanel from "@/components/quiz-rooms/UploadPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { titleFromFilename } from "@/lib/upload-validation";
-import { useHomeIntentStore } from "@/stores/homeIntentStore";
+import {
+  clearFileHandoffCache,
+  consumePendingFileForCreate,
+} from "@/stores/homeIntentStore";
 
 type CreationSource = "upload" | "past";
 
@@ -25,22 +28,17 @@ export default function CreateGame() {
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<CreationSource>("upload");
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [quizTitle, setQuizTitle] = useState("");
+  const [uploadFile, setUploadFile] = useState<File | null>(() =>
+    consumePendingFileForCreate(),
+  );
+  const [quizTitle, setQuizTitle] = useState(() => {
+    const file = consumePendingFileForCreate();
+    return file ? titleFromFilename(file.name) : "";
+  });
   const [questionCount, setQuestionCount] = useState(10);
   const [selectedQuiz, setSelectedQuiz] = useState<QuizSummary | null>(null);
   const [maxPlayers, setMaxPlayers] = useState(8);
   const [isPublic, setIsPublic] = useState(false);
-
-  // Consume any handed-off file from the Home intent store on mount.
-  useEffect(() => {
-    const file = useHomeIntentStore.getState().takePendingFile();
-    if (file) {
-      setUploadFile(file);
-      setActiveTab("upload");
-      setQuizTitle(titleFromFilename(file.name));
-    }
-  }, []);
 
   const quizzesQuery = useQuery({
     queryKey: ["quizzes"],
@@ -181,6 +179,7 @@ export default function CreateGame() {
                         variant="outline"
                         onClick={() => {
                           // Return to the full upload panel without navigating away.
+                          clearFileHandoffCache();
                           setUploadFile(null);
                         }}
                       >
