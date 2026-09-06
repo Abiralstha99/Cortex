@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
@@ -28,7 +28,12 @@ export default function CreateGame() {
   const navigate = useNavigate();
   const location = useLocation();
   const { getToken } = useAuth();
-  const [activeTab, setActiveTab] = useState<CreationSource>("upload");
+  // Read deep-linked quizId from location.state without using `any`
+  const initialQuizId = (location.state as { quizId?: string } | null)?.quizId;
+
+  const [activeTab, setActiveTab] = useState<CreationSource>(() =>
+    initialQuizId ? "past" : "upload",
+  );
   const [uploadFile, setUploadFile] = useState<File | null>(() =>
     consumePendingFileForCreate(),
   );
@@ -49,25 +54,13 @@ export default function CreateGame() {
     },
   });
 
-  // Read deep-linked quizId from location.state on mount and switch to "past"
-  const initialQuizId = (location.state as any)?.quizId as string | undefined;
-  useEffect(() => {
-    if (initialQuizId) {
-      setActiveTab("past");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialQuizId]);
-
-  // When quizzes load, select the deep-linked quiz if present.
-  useEffect(() => {
-    if (!initialQuizId) return;
+  // Derive a linked quiz from the loaded list when present; prefer explicit user selection.
+  const linkedQuiz = useMemo(() => {
     const list: QuizSummary[] = quizzesQuery.data ?? [];
-    const match = list.find((q) => q.id === initialQuizId);
-    if (match) {
-      setSelectedQuiz(match);
-      setQuestionCount((prev) => Math.min(prev, match.questionCount));
-    }
-  }, [initialQuizId, quizzesQuery.data]);
+    return initialQuizId ? list.find((q) => q.id === initialQuizId) ?? null : null;
+  }, [quizzesQuery.data, initialQuizId]);
+
+  const effectiveSelected = selectedQuiz ?? linkedQuiz;
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -93,10 +86,11 @@ export default function CreateGame() {
         };
       }
 
-      if (!selectedQuiz) throw new Error("No quiz selected");
+      const chosen = effectiveSelected;
+      if (!chosen) throw new Error("No quiz selected");
       const game = await createWaitingGame(token, {
-        quizId: selectedQuiz.id,
-        rounds: Math.min(questionCount, selectedQuiz.questionCount),
+        quizId: chosen.id,
+        rounds: Math.min(questionCount, chosen.questionCount),
         maxPlayers,
         isPublic,
       });
@@ -107,49 +101,31 @@ export default function CreateGame() {
 
       if (data.generation) {
         const { token, file, count, title } = data.generation;
-        void generateQuizForGame(
-          token,
-          data.game.gameId,
-          file,
-          count,
-          title,
-        ).catch(async (error: unknown) => {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Failed to start quiz generation";
-          await markWaitingQuizFailed(token, data.game.gameId, message).catch(
-            () => {
+        void generateQuizForGame(token, data.game.gameId, file, count, title).catch(
+          async (error: unknown) => {
+            const message = error instanceof Error ? error.message : "Failed to start quiz generation";
+            await markWaitingQuizFailed(token, data.game.gameId, message).catch(() => {
               // Best-effort recovery; the original generation error is primary.
-            },
-          );
-        });
+            });
+          },
+        );
       }
     },
   });
 
-  const canLaunch =
-    activeTab === "upload" ? uploadFile !== null : selectedQuiz !== null;
+  const canLaunch = activeTab === "upload" ? uploadFile !== null : effectiveSelected !== null;
   const previewTitle =
     activeTab === "upload"
-      ? quizTitle.trim() ||
-        uploadFile?.name.replace(/\.(pdf|txt)$/i, "") ||
-        null
-      : (selectedQuiz?.title ?? null);
-  const pastQuizCap = selectedQuiz?.questionCount ?? null;
+      ? quizTitle.trim() || uploadFile?.name.replace(/\.(pdf|txt)$/i, "") || null
+      : effectiveSelected?.title ?? null;
+  const pastQuizCap = effectiveSelected?.questionCount ?? null;
   const previewQuestionCount =
-    activeTab === "upload"
-      ? questionCount
-      : pastQuizCap != null
-      ? Math.min(questionCount, pastQuizCap)
-      : null;
+    activeTab === "upload" ? questionCount : pastQuizCap != null ? Math.min(questionCount, pastQuizCap) : null;
 
   return (
     <PageShell maxWidth="6xl">
       <header className="mb-8 max-w-2xl sm:mb-10">
-        <h1 className="text-balance text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-          Create a game
-        </h1>
+        <h1 className="text-balance text-3xl font-bold tracking-tight text-ink sm:text-4xl">Create a game</h1>
         <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
           Upload your notes or choose a past quiz, then set up the room.
         </p>
@@ -157,43 +133,22 @@ export default function CreateGame() {
 
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
         <div className="min-w-0 space-y-6">
-          <section
-            aria-labelledby="quiz-source-heading"
-            className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 sm:p-6"
-          >
+          <section aria-labelledby="quiz-source-heading" className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 sm:p-6">
             <div className="mb-5">
-              <h2
-                id="quiz-source-heading"
-                className="text-xl font-bold text-ink"
-              >
-                Choose your quiz
-              </h2>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                Start from a file or reuse one of your ready quizzes.
-              </p>
+              <h2 id="quiz-source-heading" className="text-xl font-bold text-ink">Choose your quiz</h2>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Start from a file or reuse one of your ready quizzes.</p>
             </div>
-            <Tabs
-              value={activeTab}
-              onValueChange={(value) => setActiveTab(value as CreationSource)}
-            >
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as CreationSource)}>
               <TabsList className="h-12 w-full sm:w-fit">
-                <TabsTrigger value="upload" className="min-h-11 px-5">
-                  Upload notes
-                </TabsTrigger>
-                <TabsTrigger value="past" className="min-h-11 px-5">
-                  Past quizzes
-                </TabsTrigger>
+                <TabsTrigger value="upload" className="min-h-11 px-5">Upload notes</TabsTrigger>
+                <TabsTrigger value="past" className="min-h-11 px-5">Past quizzes</TabsTrigger>
               </TabsList>
               <TabsContent value="upload" className="pt-5">
                 {uploadFile ? (
                   <div className="flex items-center justify-between rounded-[var(--radius-panel)] border border-border bg-surface p-4">
                     <div className="min-w-0">
-                      <p className="max-w-full truncate font-medium text-ink">
-                        {uploadFile.name}
-                      </p>
-                      <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
-                        {(uploadFile.size / 1024).toFixed(1)} KB
-                      </p>
+                      <p className="max-w-full truncate font-medium text-ink">{uploadFile.name}</p>
+                      <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">{(uploadFile.size / 1024).toFixed(1)} KB</p>
                     </div>
                     <div>
                       <Button
@@ -209,12 +164,7 @@ export default function CreateGame() {
                     </div>
                   </div>
                 ) : (
-                  <UploadPanel
-                    file={uploadFile}
-                    onFileChange={setUploadFile}
-                    title={quizTitle}
-                    onTitleChange={setQuizTitle}
-                  />
+                  <UploadPanel file={uploadFile} onFileChange={setUploadFile} title={quizTitle} onTitleChange={setQuizTitle} />
                 )}
               </TabsContent>
               <TabsContent value="past">
@@ -222,32 +172,20 @@ export default function CreateGame() {
                   quizzes={quizzesQuery.data ?? []}
                   isLoading={quizzesQuery.isLoading}
                   error={quizzesQuery.error}
-                  selectedId={selectedQuiz?.id ?? null}
+                  selectedId={selectedQuiz?.id ?? linkedQuiz?.id ?? null}
                   onSelect={(quiz) => {
                     setSelectedQuiz(quiz);
-                    setQuestionCount(
-                      Math.min(questionCount, quiz.questionCount),
-                    );
+                    setQuestionCount(Math.min(questionCount, quiz.questionCount));
                   }}
                 />
               </TabsContent>
             </Tabs>
           </section>
 
-          <section
-            aria-labelledby="room-settings-heading"
-            className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 sm:p-6"
-          >
+          <section aria-labelledby="room-settings-heading" className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 sm:p-6">
             <div className="mb-5">
-              <h2
-                id="room-settings-heading"
-                className="text-xl font-bold text-ink"
-              >
-                Set up the room
-              </h2>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                Pick the pace and decide who can find it.
-              </p>
+              <h2 id="room-settings-heading" className="text-xl font-bold text-ink">Set up the room</h2>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Pick the pace and decide who can find it.</p>
             </div>
             <RoomSettings
               players={maxPlayers}
@@ -256,45 +194,25 @@ export default function CreateGame() {
               onQuestionsChange={setQuestionCount}
               isPublic={isPublic}
               onIsPublicChange={setIsPublic}
-              maxQuestions={
-                activeTab === "past" && pastQuizCap != null
-                  ? pastQuizCap
-                  : undefined
-              }
+              maxQuestions={activeTab === "past" && pastQuizCap != null ? pastQuizCap : undefined}
             />
           </section>
 
           {mutation.error && (
-            <p
-              role="alert"
-              className="rounded-[var(--radius-control)] bg-danger-soft px-4 py-3 text-sm font-medium text-danger-foreground"
-            >
-              {mutation.error instanceof Error
-                ? mutation.error.message
-                : "Failed to create game"}
+            <p role="alert" className="rounded-[var(--radius-control)] bg-danger-soft px-4 py-3 text-sm font-medium text-danger-foreground">
+              {mutation.error instanceof Error ? mutation.error.message : "Failed to create game"}
             </p>
           )}
 
-          <Button
-            size="lg"
-            className="w-full"
-            disabled={!canLaunch || mutation.isPending}
-            onClick={() => mutation.mutate()}
-          >
+          <Button size="lg" className="w-full" disabled={!canLaunch || mutation.isPending} onClick={() => mutation.mutate()}>
             {mutation.isPending ? "Creating..." : "Launch lobby"}
           </Button>
         </div>
 
         <div className="min-w-0">
-          <RoomPreviewCard
-            quizTitle={previewTitle}
-            questionCount={previewQuestionCount}
-            maxPlayers={maxPlayers}
-            isPublic={isPublic}
-          />
+          <RoomPreviewCard quizTitle={previewTitle} questionCount={previewQuestionCount} maxPlayers={maxPlayers} isPublic={isPublic} />
         </div>
       </div>
     </PageShell>
   );
 }
-

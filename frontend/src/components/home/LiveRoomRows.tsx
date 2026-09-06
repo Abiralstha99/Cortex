@@ -21,12 +21,10 @@ function upsertPublicRoom(
 export default function LiveRoomRows() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const navigate = useNavigate();
-
-  if (!isLoaded || !isSignedIn) return null;
-
   const queryClient = useQueryClient();
   const { socket, connected } = useSocket();
 
+  // Register hooks in stable order; enable query only when auth is ready.
   const query = useQuery({
     queryKey: PUBLIC_ROOMS_QUERY_KEY,
     queryFn: async () => {
@@ -37,6 +35,8 @@ export default function LiveRoomRows() {
   });
 
   useEffect(() => {
+    // Guard effect by auth and socket readiness.
+    if (!isLoaded || !isSignedIn) return;
     if (!socket || !connected) return;
     socket.emit("watch_public_rooms");
     void queryClient.invalidateQueries({ queryKey: PUBLIC_ROOMS_QUERY_KEY });
@@ -57,7 +57,10 @@ export default function LiveRoomRows() {
       socket.off("public_room_removed", onRemoved);
       socket.emit("unwatch_public_rooms");
     };
-  }, [socket, connected, queryClient]);
+  }, [socket, connected, queryClient, isLoaded, isSignedIn]);
+
+  // After hooks are registered (including effects), avoid rendering for unauthenticated users.
+  if (!isLoaded || !isSignedIn) return null;
 
   if (query.isLoading) {
     return <div aria-label="public-rooms-loading"><Skeleton className="h-6 w-36" /></div>;

@@ -10,8 +10,7 @@ export default function QuizRows() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const navigate = useNavigate();
 
-  if (!isLoaded || !isSignedIn) return null;
-
+  // Register hooks first; enable fetching only when auth is ready.
   const query = useQuery({
     queryKey: QUIZZES_QUERY_KEY,
     queryFn: async () => {
@@ -20,6 +19,9 @@ export default function QuizRows() {
     },
     enabled: isLoaded && isSignedIn,
   });
+
+  // After hooks are registered, short-circuit rendering for unauthenticated users.
+  if (!isLoaded || !isSignedIn) return null;
 
   if (query.isLoading) {
     return (

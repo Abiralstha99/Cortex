@@ -10,10 +10,14 @@ vi.mock("@clerk/react", () => ({
 
 const mockUseQuery = vi.fn();
 const mockUseQueryClient = vi.fn(() => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn() }));
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: any[]) => mockUseQuery(...args),
-  useQueryClient: () => mockUseQueryClient(),
-}));
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as any),
+    useQuery: (...args: unknown[]) => mockUseQuery(...args),
+    useQueryClient: () => mockUseQueryClient(),
+  };
+});
 
 vi.mock("@/hooks/useSocket", () => ({
   useSocket: () => ({ socket: null, connected: false }),

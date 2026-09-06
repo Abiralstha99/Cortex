@@ -9,9 +9,13 @@ vi.mock("@clerk/react", () => ({
 }));
 
 const mockUseQuery = vi.fn();
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: (...args: any[]) => mockUseQuery(...args),
-}));
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...(actual as any),
+    useQuery: (...args: unknown[]) => mockUseQuery(...args),
+  };
+});
 
 afterEach(() => {
   cleanup();
