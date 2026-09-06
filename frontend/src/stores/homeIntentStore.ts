@@ -17,7 +17,12 @@ export const useHomeIntentStore = create<HomeIntentState>((set, get) => ({
   pendingFile: null,
   pendingJoinCode: null,
   createResumeRequested: false,
-  setPendingFile: (file) => set({ pendingFile: file }),
+  setPendingFile: (file) => {
+    // Invalidate any previously cached module-level handoff so a later
+    // CreateGame mount will re-read the newest pending file.
+    fileHandoffCache = undefined;
+    set({ pendingFile: file });
+  },
   setPendingJoinCode: (code) => set({ pendingJoinCode: code }),
   requestCreateResume: () => set({ createResumeRequested: true }),
   takeCreateResume: () => {
@@ -35,7 +40,11 @@ export const useHomeIntentStore = create<HomeIntentState>((set, get) => ({
     set({ pendingJoinCode: null });
     return code;
   },
-  clear: () => set({ pendingFile: null, pendingJoinCode: null }),
+  clear: () => {
+    // Clear all intent state and reset create/resume flag.
+    fileHandoffCache = undefined;
+    set({ pendingFile: null, pendingJoinCode: null, createResumeRequested: false });
+  },
 }));
 
 /** Survives React StrictMode remount after takePendingFile clears the store. */

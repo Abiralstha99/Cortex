@@ -113,6 +113,12 @@
     --color-card: var(--color-surface);
     --color-card-foreground: var(--color-foreground);
     --color-input: #3b3a39;
+    /* Adjust danger foreground on dark surfaces for WCAG AA readability */
+    --color-danger-foreground: #f1707a; /* readable error text on #292827/#1b1a19 */
+    --color-danger-soft: rgba(241, 112, 122, 0.12);
+    /* Also tune success/warning foregrounds for dark theme */
+    --color-success-foreground: #7be3b1;
+    --color-warning-foreground: #ffd28a;
     --shadow-card: 0 2px 4px rgb(0 0 0 / 0.14), 0 0 2px rgb(0 0 0 / 0.12);
     --shadow-floating: 0 8px 16px rgb(0 0 0 / 0.14), 0 0 2px rgb(0 0 0 / 0.12);
     --radius-control: 0.25rem;
