@@ -1,4 +1,5 @@
 import HomeChrome from "@/components/home/HomeChrome";
+import CreateStage from "@/components/home/CreateStage";
 
 export default function HomeWorkspace() {
   return (
@@ -10,9 +11,7 @@ export default function HomeWorkspace() {
             Live quizzes from your notes
           </h1>
           {/* CreateStage slot */}
-          <section aria-label="Create stage placeholder" className="rounded-lg border border-border bg-surface/50 p-4">
-            <p className="text-sm text-muted-foreground">Create stage (coming soon)</p>
-          </section>
+          <CreateStage onContinue={() => {}} />
         </div>
         <aside className="min-w-0">
           {/* JoinRail slot */}
