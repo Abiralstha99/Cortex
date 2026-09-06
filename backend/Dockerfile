@@ -22,7 +22,7 @@ USER app
 
 RUN npm ci
 
-COPY . .
+COPY --chown=app:app . .
 
 RUN npm run build
 

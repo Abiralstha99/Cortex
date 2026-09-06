@@ -21,7 +21,7 @@ USER app
 
 RUN npm ci
 
-COPY . .
+COPY --chown=app:app . .
 
 EXPOSE 5173
 
