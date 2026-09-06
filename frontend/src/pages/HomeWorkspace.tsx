@@ -4,14 +4,14 @@ import JoinRail from "@/components/home/JoinRail";
 import useAuthCommit from "@/components/home/useAuthCommit";
 import useJoinResume from "@/components/home/useJoinResume";
 import { useHomeIntentStore } from "@/stores/homeIntentStore";
-import { useUser } from "@clerk/react";
+import { useAuth } from "@clerk/react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function HomeWorkspace() {
   const navigate = useNavigate();
   const location = useLocation();
   const { ensureSignedIn } = useAuthCommit();
-  const { isLoaded, user } = useUser();
+  const { isLoaded, isSignedIn } = useAuth();
 
   // auto-resume pending intents when Clerk finishes loading / user signs in
   useJoinResume();
@@ -23,27 +23,36 @@ export default function HomeWorkspace() {
   async function handleContinue(file: File) {
     setPendingFile(file);
     requestCreateResume();
-    const ok = await ensureSignedIn();
-    if (!ok) {
+    const result = await ensureSignedIn();
+    if (result === "already-signed-in") {
+      // consume intent then navigate
+      useHomeIntentStore.getState().takeCreateResume();
+      navigate("/game/create");
+      return;
+    }
+    if (result === "fallback-required") {
       // fallback to full-page login; leave intent in store for resume
       navigate("/login", { state: { from: location } });
       return;
     }
-    // navigate immediately after ensuring signed in
-    navigate("/game/create");
+    // modal-opened: clerk modal is visible, do nothing — resume happens via useJoinResume
   }
 
   async function handleJoin(code: string) {
     const normalized = code;
-    if (!isLoaded || !user) {
+    if (!isLoaded || !isSignedIn) {
       // store intent then prompt sign-in
       setPendingJoinCode(normalized);
-      const ok = await ensureSignedIn();
-      if (!ok) {
+      const result = await ensureSignedIn();
+      if (result === "fallback-required") {
         navigate("/login", { state: { from: location } });
         return;
       }
-      // take pending code BEFORE navigate to avoid StrictMode double-resume
+      if (result === "modal-opened") {
+        // wait for useJoinResume to resume when modal flow completes
+        return;
+      }
+      // already-signed-in case: consume then navigate
       const taken = useHomeIntentStore.getState().takePendingJoinCode();
       if (taken) navigate(`/game/lobby/${taken}`);
       return;

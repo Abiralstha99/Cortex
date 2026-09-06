@@ -4,9 +4,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithRouter } from "@/test/render";
 import HomeWorkspace from "./HomeWorkspace";
 
-vi.mock("@clerk/react", () => ({
-  useUser: () => ({ user: undefined }),
-}));
+vi.mock("@clerk/react", () => {
+  return {
+    useUser: () => ({ user: undefined }),
+    useClerk: () => ({ openSignIn: () => {} }),
+    useAuth: () => ({ isLoaded: true, isSignedIn: false }),
+  };
+});
 
 afterEach(cleanup);
 

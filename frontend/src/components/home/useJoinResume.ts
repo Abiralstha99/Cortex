@@ -1,12 +1,11 @@
 import { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/react";
 import { useHomeIntentStore } from "@/stores/homeIntentStore";
 
 // Hook to auto-resume pending join or create intents when Clerk is loaded & signed in.
 export default function useJoinResume() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { isLoaded, user } = useUser();
 
   useEffect(() => {
@@ -26,6 +25,6 @@ export default function useJoinResume() {
       return;
     }
     // nothing to resume
-  }, [isLoaded, user, navigate, location]);
+  }, [isLoaded, user, navigate]);
 }
 
