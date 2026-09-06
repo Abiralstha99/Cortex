@@ -3,13 +3,10 @@ import { FileText, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-const ACCEPTED_TYPES = ["application/pdf", "text/plain"];
-const MAX_SIZE = 10 * 1024 * 1024; // 10MB
-
-function titleFromFilename(name: string): string {
-  return name.replace(/\.(pdf|txt)$/i, "").trim();
-}
+import {
+  titleFromFilename,
+  validateQuizUploadFile,
+} from "@/lib/upload-validation";
 
 type UploadPanelProps = {
   file: File | null;
@@ -37,12 +34,9 @@ export default function UploadPanel({
 
   const handleFileSelect = useCallback(
     (selectedFile: File) => {
-      if (!ACCEPTED_TYPES.includes(selectedFile.type)) {
-        setError("Only PDF and plain text files are supported.");
-        return;
-      }
-      if (selectedFile.size > MAX_SIZE) {
-        setError("File must be under 10MB.");
+      const validation = validateQuizUploadFile(selectedFile);
+      if (!validation.ok) {
+        setError(validation.error);
         return;
       }
       onFileChange(selectedFile);
