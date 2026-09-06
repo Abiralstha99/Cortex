@@ -15,8 +15,14 @@ export function startQuizGenerateWorker(): Worker<QuizGenerateJobData> {
     QUIZ_GENERATE_QUEUE,
     async (job) => {
       if (job.name !== QUIZ_GENERATE_JOB) return;
+      console.info("[quiz-gen] worker:start", {
+        jobId: job.data.jobId,
+      });
       // Task 11: fully wired when executeStoredGeneration is implemented
       await executeStoredGeneration(job.data.jobId);
+      console.info("[quiz-gen] worker:complete", {
+        jobId: job.data.jobId,
+      });
     },
     { connection: redis },
   );

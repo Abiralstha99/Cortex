@@ -155,6 +155,12 @@ async function generateValidatedBatch(
         deps,
       );
       const parsed = parseAndValidateQuestions(raw);
+      console.info("[quiz-gen] batch:validated", {
+        batchIndex,
+        attempt,
+        requestedQuestionCount: batch.questionCount,
+        parsedQuestionCount: parsed.length,
+      });
       // Cap to requested count if the model over-generates; keep all if fewer
       return parsed.slice(0, batch.questionCount);
     } catch (err) {
@@ -182,17 +188,37 @@ export async function generateAllBatches(
   requestedCount: number,
   deps: GenerateDeps = {},
 ): Promise<GenerateAllBatchesResult> {
+  console.info("[quiz-gen] generateAllBatches:start", {
+    batchCount: batches.length,
+    requestedCount,
+    plannedQuestionCount: batches.reduce((sum, batch) => sum + batch.questionCount, 0),
+  });
   let failedBatches = 0;
   const perBatch = await mapPool(batches, GEN_CONCURRENCY, async (batch, i) => {
     const qs = await generateValidatedBatch(batch, i, batches.length, deps);
+    console.info("[quiz-gen] batch:complete", {
+      batchIndex: i,
+      requestedQuestionCount: batch.questionCount,
+      generatedQuestionCount: qs.length,
+    });
     if (qs.length === 0) failedBatches++;
     return qs;
   });
 
   const flat = perBatch.flat();
+  console.info("[quiz-gen] batches:flattened", {
+    generatedQuestionCount: flat.length,
+    failedBatches,
+  });
   // Remove near-duplicate questions (>80% text similarity)
   const deduped = dedupeQuestions(flat);
   const questions = deduped.slice(0, requestedCount);
+  console.info("[quiz-gen] questions:finalized", {
+    generatedQuestionCount: flat.length,
+    dedupedQuestionCount: deduped.length,
+    finalQuestionCount: questions.length,
+    requestedCount,
+  });
 
   return {
     questions,
@@ -222,11 +248,26 @@ export async function preparePipeline(input: {
   const text = await loadDocument({ buffer, mimeType, originalName });
   const chunks = await chunkText(text.text);
 
+  console.info("[quiz-gen] pipeline:prepared-source", {
+    sourceType: text.sourceType,
+    sourceCharacterCount: text.text.length,
+    chunkCount: chunks.length,
+    requestedCount,
+  });
+
   if (chunks.length === 0) {
     throw new Error("No batches generated");
   }
 
   const { batches, plannedLlmCalls } = planBatches(chunks, requestedCount);
+
+  console.info("[quiz-gen] pipeline:planned-batches", {
+    chunkCount: chunks.length,
+    batchCount: batches.length,
+    plannedLlmCalls,
+    requestedCount,
+    plannedQuestionCount: batches.reduce((sum, batch) => sum + batch.questionCount, 0),
+  });
 
   if (plannedLlmCalls === 0) {
     throw new Error("No planned LLM calls");
@@ -273,6 +314,13 @@ export async function runQuizGeneration(
 
   try {
     const pipeline = await preparePipeline(input);
+
+    console.info("[quiz-gen] run:dispatch", {
+      requestedCount,
+      plannedLlmCalls: pipeline.plannedLlmCalls,
+      mode:
+        pipeline.plannedLlmCalls <= MAX_SYNC_LLM_CALLS ? "sync" : "async",
+    });
 
     if (pipeline.plannedLlmCalls <= MAX_SYNC_LLM_CALLS) {
       // ── Sync path: small document, respond within the same HTTP request ──

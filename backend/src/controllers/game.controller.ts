@@ -119,6 +119,13 @@ export async function generateForWaitingGame(req: Request, res: Response) {
     });
   }
 
+  console.info("[quiz-gen] waiting-room:request", {
+    gameId,
+    requestedCount: countResult.data,
+    originalName: req.file.originalname,
+    fileSizeBytes: req.file.size,
+  });
+
   const io = getIO();
   scheduleWaitingQuizGeneration({
     gameId,

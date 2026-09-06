@@ -189,6 +189,12 @@ export async function createReadyQuiz(input: {
 }): Promise<{ id: string; questionCount: number }> {
   const { ownerId, title, sourceType, questions } = input;
 
+  console.info("[quiz-gen] postgres:persist", {
+    ownerId,
+    sourceType,
+    questionCount: questions.length,
+  });
+
   const quiz = await prisma.quiz.create({
     data: {
       ownerId,

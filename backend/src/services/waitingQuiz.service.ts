@@ -50,6 +50,13 @@ export async function attachQuizToWaitingGame(
   if (raw.status !== "waiting") throw new Error("Room is not waiting");
 
   const capped = capRoundsToQuiz(Number(raw.numberOfRounds), questionCount);
+  console.info("[quiz-gen] waiting-room:attach", {
+    gameId,
+    quizId,
+    quizQuestionCount: questionCount,
+    configuredRoundCount: Number(raw.numberOfRounds),
+    attachedRoundCount: capped,
+  });
   const updated = await setWaitingQuizFields(gameId, {
     quizId,
     quizGenStatus: "ready",
