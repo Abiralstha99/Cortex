@@ -90,6 +90,39 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Scoped Fluent 2–inspired dark semantic tokens for HomeWorkspace.
+     These variables are intentionally scoped to elements rendered under
+     [data-theme="fluent-dark"] so the light app chrome and non-home routes
+     remain unchanged. Tune hexes for WCAG AA body contrast. */
+  [data-theme="fluent-dark"] {
+    color-scheme: dark;
+    --color-background: #1b1a19; /* deep cool charcoal canvas */
+    --color-surface: #292827;
+    --color-subtle: #252423;
+    --color-border: #3b3a39;
+    --color-ink: #ffffff;
+    --color-foreground: #ffffff;
+    --color-muted: #c8c6c4;
+    --color-muted-foreground: #d2d0ce;
+    --color-text-muted: #a19f9d;
+    --color-primary: #479ef5; /* communication blue */
+    --color-primary-hover: #62abf5;
+    --color-primary-soft: #0c2e4f;
+    --color-primary-foreground: #0b1520;
+    --color-ring: #479ef5;
+    --color-card: var(--color-surface);
+    --color-card-foreground: var(--color-foreground);
+    --color-input: #3b3a39;
+    --shadow-card: 0 2px 4px rgb(0 0 0 / 0.14), 0 0 2px rgb(0 0 0 / 0.12);
+    --shadow-floating: 0 8px 16px rgb(0 0 0 / 0.14), 0 0 2px rgb(0 0 0 / 0.12);
+    --radius-control: 0.25rem;
+    --radius-card: 0.5rem;
+    --radius-panel: 0.75rem;
+    --radius-hero: 0.75rem;
+    background: var(--color-background);
+    color: var(--color-ink);
+  }
+
   .font-display {
     font-family: var(--font-display);
   }
