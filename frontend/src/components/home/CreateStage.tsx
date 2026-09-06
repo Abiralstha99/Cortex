@@ -42,10 +42,9 @@ export default function CreateStage({ onContinue }: CreateStageProps) {
 
   return (
     <motion.section
-      layout
+      layout={!reduce}
       initial={false}
-      animate={{}}
-      className="rounded-lg border border-border bg-surface p-6 shadow-card"
+      className={`rounded-lg ${selected ? "border" : "border-2 border-dashed"} border-border bg-surface p-6 shadow-card`}
     >
       <div
         onDrop={onDrop}
@@ -84,9 +83,12 @@ export default function CreateStage({ onContinue }: CreateStageProps) {
               Select file
             </label>
           ) : (
-            <motion.div layout className="flex items-center gap-3">
-              <div className="rounded-md bg-muted px-3 py-1 text-sm">
-                {selected.name}
+            <motion.div layout={!reduce} className="flex items-center gap-3">
+              <div className="rounded-md bg-muted px-3 py-2 text-sm max-w-[200px]">
+                <div className="font-semibold truncate">{selected.name}</div>
+                <div className="text-xs font-mono tabular-nums text-muted-foreground">
+                  {selected.type || "unknown"} • {(selected.size / 1024).toFixed(1)} KB
+                </div>
               </div>
               <Button
                 type="button"

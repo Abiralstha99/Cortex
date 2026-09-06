@@ -32,6 +32,7 @@ describe("CreateStage", () => {
     const file = new File(["hi"], "notes.docx", { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
     await user.upload(input, file);
     expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(screen.getByRole("alert").textContent).toBe("Only PDF and plain text files are supported.");
     expect(onContinue).not.toHaveBeenCalled();
   });
 });
