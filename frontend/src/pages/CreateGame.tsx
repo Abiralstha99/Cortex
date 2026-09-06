@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
@@ -16,6 +16,8 @@ import RoomSettings from "@/components/quiz-rooms/RoomSettings";
 import UploadPanel from "@/components/quiz-rooms/UploadPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { titleFromFilename } from "@/lib/upload-validation";
+import { useHomeIntentStore } from "@/stores/homeIntentStore";
 
 type CreationSource = "upload" | "past";
 
@@ -29,6 +31,16 @@ export default function CreateGame() {
   const [selectedQuiz, setSelectedQuiz] = useState<QuizSummary | null>(null);
   const [maxPlayers, setMaxPlayers] = useState(8);
   const [isPublic, setIsPublic] = useState(false);
+
+  // Consume any handed-off file from the Home intent store on mount.
+  useEffect(() => {
+    const file = useHomeIntentStore.getState().takePendingFile();
+    if (file) {
+      setUploadFile(file);
+      setActiveTab("upload");
+      setQuizTitle(titleFromFilename(file.name));
+    }
+  }, []);
 
   const quizzesQuery = useQuery({
     queryKey: ["quizzes"],
@@ -154,12 +166,36 @@ export default function CreateGame() {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="upload" className="pt-5">
-                <UploadPanel
-                  file={uploadFile}
-                  onFileChange={setUploadFile}
-                  title={quizTitle}
-                  onTitleChange={setQuizTitle}
-                />
+                {uploadFile ? (
+                  <div className="flex items-center justify-between rounded-[var(--radius-panel)] border border-border bg-surface p-4">
+                    <div className="min-w-0">
+                      <p className="max-w-full truncate font-medium text-ink">
+                        {uploadFile.name}
+                      </p>
+                      <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">
+                        {(uploadFile.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                    <div>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          // Return to the full upload panel without navigating away.
+                          setUploadFile(null);
+                        }}
+                      >
+                        Change file
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <UploadPanel
+                    file={uploadFile}
+                    onFileChange={setUploadFile}
+                    title={quizTitle}
+                    onTitleChange={setQuizTitle}
+                  />
+                )}
               </TabsContent>
               <TabsContent value="past">
                 <QuizPickerList
