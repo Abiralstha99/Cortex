@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import HomeWorkspace from "./pages/HomeWorkspace";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
-import Dashboard from "./pages/Dashboard";
 import CreateGame from "./pages/CreateGame";
 import JoinGame from "./pages/JoinGame";
 import ProtectedRoute from "./components/ProtectedRoute";
