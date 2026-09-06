@@ -18,4 +18,13 @@ describe("homeIntentStore", () => {
     expect(useHomeIntentStore.getState().takePendingJoinCode()).toBe("AB12C3");
     expect(useHomeIntentStore.getState().takePendingJoinCode()).toBeNull();
   });
+
+  it("create resume request flag behaves like a take-once", () => {
+    // initially false
+    expect(useHomeIntentStore.getState().takeCreateResume()).toBe(false);
+    useHomeIntentStore.getState().requestCreateResume();
+    expect(useHomeIntentStore.getState().takeCreateResume()).toBe(true);
+    // subsequent reads reset it
+    expect(useHomeIntentStore.getState().takeCreateResume()).toBe(false);
+  });
 });
