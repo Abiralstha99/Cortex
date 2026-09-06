@@ -9,6 +9,10 @@ vi.mock("@clerk/react", () => ({
 
 vi.mock("@tanstack/react-query", () => ({
   useQuery: () => ({ isLoading: false, isError: false, data: [] }),
+  useQueryClient: () => ({
+    invalidateQueries: vi.fn(),
+    setQueryData: vi.fn(),
+  }),
 }));
 
 vi.mock("@/hooks/useSocket", () => ({

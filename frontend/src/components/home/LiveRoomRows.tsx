@@ -35,10 +35,12 @@ export default function LiveRoomRows() {
     void queryClient.invalidateQueries({ queryKey: PUBLIC_ROOMS_QUERY_KEY });
 
     const onSave = (room: PublicWaitingRoomSummary) =>
-      queryClient.setQueryData(PUBLIC_ROOMS_QUERY_KEY, (cur) => upsertPublicRoom(cur as any, room));
+      queryClient.setQueryData<PublicWaitingRoomSummary[]>(PUBLIC_ROOMS_QUERY_KEY, (cur) =>
+        upsertPublicRoom(cur, room),
+      );
     const onRemoved = (payload: { gameId: string }) =>
-      queryClient.setQueryData(PUBLIC_ROOMS_QUERY_KEY, (cur) =>
-        (cur ?? []).filter((r: PublicWaitingRoomSummary) => r.gameId !== payload.gameId),
+      queryClient.setQueryData<PublicWaitingRoomSummary[]>(PUBLIC_ROOMS_QUERY_KEY, (cur) =>
+        (cur ?? []).filter((r) => r.gameId !== payload.gameId),
       );
 
     socket.on("save_as_public", onSave);
