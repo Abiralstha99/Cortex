@@ -2,7 +2,7 @@
 
 ## Status
 
-Approved through collaborative design (§1–§4). Ready for an implementation plan after user review of this document.
+Approved through collaborative design (§1–§4) plus final amendments (CreateStage-as-hero, continuous create handoff, failure-safe File recovery, progressive library reveal, idempotent join resume). This document is the source for the implementation plan.
 
 ## Goal
 
@@ -26,7 +26,9 @@ Cortex identity comes from product mechanics (upload, room codes, quizzes, live 
 - Slim `HomeChrome`
 - `CreateStage` (dominant create/upload surface)
 - `JoinRail` (compact join surface)
-- Signed-in progressive reveal: `QuizRows` + `LiveRoomRows` (dense lists)
+- Signed-in progressive reveal: `QuizRows` + `LiveRoomRows` (dense lists) only when useful data exists; no large empty library sections for new users
+- Continuous Home → `/game/create` interaction when a File is handed off (no second upload step)
+- Failure-safe `/game/create` when no pending File exists (inline reattach; route never depends on handoff)
 - `/dashboard` → redirect to `/`
 - Ephemeral create/join intent handoff bridging home → auth → `/game/create` or join
 - Clerk **modal/overlay** auth-on-commit when practical (preserve selected `File`; auto-resume join)
@@ -60,8 +62,11 @@ Implement Fluent 2 as the primary language using Tailwind + shadcn + Motion:
 | States | Strong focus, hover, pressed; inline error/loading on owning surfaces |
 | Motion | Polished and restrained; `transform` / `opacity` / `layout`; honor `prefers-reduced-motion` |
 | Density | Comfortable Fluent spacing; signed-in content as elegant rows, not tile dashboards |
+| Hierarchy | **CreateStage is the hero.** Headline is short and restrained. No oversized marketing typography, long supporting copy, or excessive whitespace |
 
 Do not dilute Fluent to “look less Microsoft.” Differentiate through Cortex’s real create/join/library content.
+
+The page must feel like **opening Cortex**, not visiting a website advertising Cortex. Visual weight order: CreateStage → compact JoinRail → optional library rows. The headline supports orientation; it does not compete with CreateStage.
 
 ## Information architecture
 
@@ -83,15 +88,15 @@ Do not dilute Fluent to “look less Microsoft.” Differentiate through Cortex�
 │ HomeChrome: BrandMark                          Account/Sign │
 ├───────────────────────────────────┬─────────────────────────┤
 │ ~70% main                         │ ~30% JoinRail           │
-│ Short brand/product headline      │ Elevated compact column │
-│ CreateStage (large upload surface)│ Room code + Join        │
+│ Short restrained product headline │ Elevated compact column │
+│ CreateStage (HERO / most weight)  │ Room code + Join        │
 │ idle → selected-file (same stage) │ Inline validation       │
 ├───────────────────────────────────┴─────────────────────────┤
-│ Signed-in only: QuizRows · LiveRoomRows (dense Fluent lists)│
+│ Progressive (only if useful data): QuizRows · LiveRoomRows  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Mobile: stack CreateStage, then JoinRail, then signed-in lists. Join must not compete visually with Create as a second full-width hero.
+Mobile: stack CreateStage, then JoinRail, then any progressive lists. Join must not compete visually with Create as a second full-width hero. For a new user with no useful library data, CreateStage + JoinRail can be essentially the entire workspace.
 
 ### Removed from home
 
@@ -101,13 +106,35 @@ LandingNav marketing anchors, Features, HowItWorks, Coverage, FinalCta, and any 
 
 ### Create (primary)
 
+Mental model across Home and `/game/create`:
+
+**Select material → configure quiz → generate → lobby**
+
+Not: Upload → leave page → upload/create experience starts again.
+
 1. User drops or selects PDF/TXT on `CreateStage`.
 2. Validation reuses / extracts the rules currently owned by `UploadPanel` (accepted types, 10MB). No duplicated validation path.
 3. On accept, the **same surface** evolves (Motion `layout`) from drop idle → selected-file state showing name, type, size, and a strong Continue action. This must not feel like a multi-screen wizard on home.
 4. Continue:
-   - **Signed in:** write `File` into the ephemeral handoff store → navigate to `/game/create`, which consumes and clears the handoff, then shows advanced settings → existing generate → lobby contract.
+   - **Signed in:** write `File` into the ephemeral handoff store → navigate to `/game/create`.
    - **Signed out:** open Clerk modal/overlay (preferred) so the selected `File` remains in memory; after success, proceed to the same handoff → `/game/create`. If overlay is impossible and a full redirect is required, create intent is preserved and the stage is focused for reattach (document this fallback; prefer overlay).
 5. Advanced settings (question count, max players, public/private, past-quiz picker) stay on `/game/create`, not on home.
+
+### Continuous create on `/game/create`
+
+When `/game/create` receives a prefilled `File` from handoff:
+
+- Do **not** show another upload step.
+- Immediately acknowledge the selected file (name/status clearly visible).
+- Transition directly into quiz configuration (advanced settings).
+- Keep the existing generate → lobby contract.
+
+When **no** pending `File` is available (direct navigation, refresh, lost in-memory state, failed auth redirect):
+
+- `/game/create` must **never** depend on pending File state existing.
+- Show an inline reattach/select-file state and allow the user to continue normally.
+- Do not throw, unexpectedly redirect, or leave the create page broken.
+- Prefilled File is an **enhancement** to `/game/create`, not a requirement for the route.
 
 ### Join (secondary rail)
 
@@ -115,18 +142,21 @@ LandingNav marketing anchors, Features, HowItWorks, Coverage, FinalCta, and any 
 2. Join:
    - **Signed in:** resume existing join path with that code (navigate into lobby/join flow without requiring a second Join click after navigation).
    - **Signed out:** store validated room code in ephemeral handoff → Clerk modal/overlay → on success **auto-resume join once** (do not make the user click Join again).
-3. Errors for invalid codes stay inline on the rail. Prefer inline Fluent states over dialogs/toasts for surface-owned feedback.
+3. For post-auth join auto-resume: **consume (take-and-clear) the pending join intent before executing the resume/navigation side effect** so the operation is idempotent and cannot fire twice (e.g. Strict Mode double-effect).
+4. Errors for invalid codes stay inline on the rail. Prefer inline Fluent states over dialogs/toasts for surface-owned feedback.
 
-### Signed-in progressive reveal
+### Progressive library reveal
 
-Below the create/join composition:
+Do **not** automatically render empty “Your Quizzes” and “Live Rooms” sections just because the user is signed in. Keep the homepage visually calm.
 
-- **Your Quizzes** — `listQuizzes` as dense Fluent rows (title, question count, status as available). Row action: host/create from that quiz via existing contracts (typically `/game/create` with selection, not invented APIs).
-- **Live Rooms** — existing public waiting-room feed as dense rows (code, host, capacity, generation fields already supported). Row action: join.
+- Show **Your Quizzes** only when useful quiz data exists (`listQuizzes` returns one or more quizzes).
+- Show **Live Rooms** only when useful public-room data exists.
+- Loading and error states must still be handled properly (compact inline status, not large empty-state blocks stacked under Create/Join).
+- Do not invent content or fake activity to populate these sections.
+- For a new user with no useful data, CreateStage + JoinRail can essentially be the entire workspace.
+- For returning users, the workspace grows beneath those controls as real content becomes available.
 
-No card grids. Empty/loading/error use the same row footprint with one clear next action where appropriate.
-
-Honest data boundary: do not invent “recent games” until finished-game persistence exists.
+When shown: dense Fluent rows (not cards). Row actions: host from a quiz via existing contracts; join from a live room. Honest data boundary: do not invent “recent games” until finished-game persistence exists.
 
 ### Auth UX principles
 
@@ -157,7 +187,8 @@ Suggested ownership:
 - Exists solely to bridge Home → auth/create → `/game/create` (and join auto-resume).
 - In-memory only (module singleton or tiny Zustand slice if that matches repo patterns). **No `localStorage` for `File`.**
 - Not a general global app store unless an existing store is clearly the right home; default to a focused ephemeral module.
-- Lifecycle: write on intent → consume on destination mount or post-auth resume → clear. Idempotent clear on cancel/unmount where needed to avoid stale Continues.
+- Lifecycle: write on intent → **consume (take-and-clear) before side effects** on destination mount or post-auth resume. Join resume must take-and-clear before navigate so double-mount cannot resume twice.
+- `/game/create` treats missing handoff as normal: show inline file select and proceed; never throw or hard-redirect solely because handoff is empty.
 
 ### Upload validation
 
@@ -185,9 +216,11 @@ Establish Fluent-inspired semantic tokens before building home components. Compo
 
 ## Verification
 
-- Focused component/page tests for: validation reuse, Continue handoff consume/clear, join auto-resume after auth mock, `/dashboard` redirect, reduced-motion path.
+- Focused component/page tests for: validation reuse; Continue handoff consume/clear; join auto-resume take-and-clear before navigate (idempotent under double invoke); `/dashboard` redirect; reduced-motion path.
+- **Failure-safe create:** direct navigation / refresh to `/game/create` with no pending File shows inline reattach and remains usable (no throw, no forced redirect).
+- Progressive library: sections absent when data empty; present when data exists; loading/error compact.
 - `npm run build` and `npm run lint` in `frontend/`.
-- Manual: guest create/join auth-on-commit with overlay; signed-in library rows; mobile stack; keyboard; contrast.
+- Manual: guest create/join auth-on-commit with overlay; signed-in library growth; mobile stack; keyboard; contrast; CreateStage visual dominance over headline.
 
 ## Delivery sequence (for implementation plan)
 
@@ -203,4 +236,4 @@ Establish Fluent-inspired semantic tokens before building home components. Compo
 
 ## Success criteria
 
-Someone understands Cortex within seconds because they can **use** create and join on a calm Fluent dark workspace—not because they read marketing sections. Create is visually dominant; Join is compact and useful; signed-in users see dense quiz and live-room rows; advanced settings remain on `/game/create`; deep links remain valid; no `@fluentui`; no fake demos; tokens are centralized for later app migration.
+Someone understands Cortex within seconds because they can **use** create and join on a calm Fluent dark workspace—not because they read marketing sections. CreateStage carries the most visual weight; the headline stays short and restrained; Join is compact; library sections appear only when useful data exists; Home → configure feels continuous when a File is handed off and remains usable when it is not; join auto-resume is idempotent; deep links remain valid; no `@fluentui`; no fake demos; tokens are centralized for later app migration.
