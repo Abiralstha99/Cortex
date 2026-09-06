@@ -37,10 +37,9 @@ export default function CreateGame() {
   const [uploadFile, setUploadFile] = useState<File | null>(() =>
     consumePendingFileForCreate(),
   );
-  const [quizTitle, setQuizTitle] = useState(() => {
-    const file = consumePendingFileForCreate();
-    return file ? titleFromFilename(file.name) : "";
-  });
+  const [quizTitle, setQuizTitle] = useState(() =>
+    uploadFile ? titleFromFilename(uploadFile.name) : "",
+  );
   const [questionCount, setQuestionCount] = useState(10);
   const [selectedQuiz, setSelectedQuiz] = useState<QuizSummary | null>(null);
   const [maxPlayers, setMaxPlayers] = useState(8);

@@ -10,9 +10,9 @@ vi.mock("@clerk/react", () => ({
 
 const mockUseQuery = vi.fn();
 vi.mock("@tanstack/react-query", async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof import("@tanstack/react-query")>();
   return {
-    ...(actual as any),
+    ...actual,
     useQuery: (...args: unknown[]) => mockUseQuery(...args),
   };
 });

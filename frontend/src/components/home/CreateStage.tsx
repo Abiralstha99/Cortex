@@ -68,17 +68,24 @@ export default function CreateStage({ onContinue }: CreateStageProps) {
 
         <div className="flex shrink-0 items-center gap-3">
           <input
-            aria-hidden
-            className="hidden"
+            className="sr-only"
             id="create-stage-file"
             type="file"
+            accept=".pdf,.txt,application/pdf,text/plain"
             onChange={onInputChange}
             data-testid="file-input"
           />
           {!selected ? (
             <label
               htmlFor="create-stage-file"
-              className="inline-flex cursor-pointer items-center rounded-md border border-dashed border-border px-4 py-2 text-sm"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  document.getElementById("create-stage-file")?.click();
+                }
+              }}
+              className="inline-flex min-h-11 cursor-pointer items-center rounded-md border border-dashed border-border px-4 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-primary/30"
             >
               Select file
             </label>

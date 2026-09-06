@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -6,6 +6,7 @@ import { renderWithRouter } from "@/test/render";
 import CreateStage from "./CreateStage";
 
 afterEach(() => {
+  cleanup();
   vi.clearAllMocks();
 });
 
@@ -15,7 +16,7 @@ describe("CreateStage", () => {
     const onContinue = vi.fn();
     renderWithRouter(<CreateStage onContinue={onContinue} />);
 
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = screen.getByTestId("file-input") as HTMLInputElement;
     const file = new File(["hi"], "notes.pdf", { type: "application/pdf" });
     await user.upload(input, file);
     expect(screen.getByText("notes.pdf")).toBeInTheDocument();
@@ -23,17 +24,19 @@ describe("CreateStage", () => {
     expect(onContinue).toHaveBeenCalledWith(file);
   });
 
-  it("shows inline error for unsupported files", async () => {
-    const user = userEvent.setup();
+  it("shows inline error for unsupported files", () => {
     const onContinue = vi.fn();
     renderWithRouter(<CreateStage onContinue={onContinue} />);
 
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    const file = new File(["hi"], "notes.docx", { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-    await user.upload(input, file);
-    expect(screen.getByRole("alert")).toBeInTheDocument();
-    expect(screen.getByRole("alert").textContent).toBe("Only PDF and plain text files are supported.");
+    const input = screen.getByTestId("file-input") as HTMLInputElement;
+    const file = new File(["hi"], "notes.docx", {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    });
+    // Bypass accept= filtering so validateQuizUploadFile runs.
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Only PDF and plain text files are supported.",
+    );
     expect(onContinue).not.toHaveBeenCalled();
   });
 });
-
