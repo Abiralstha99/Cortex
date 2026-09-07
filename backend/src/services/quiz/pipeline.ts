@@ -30,6 +30,7 @@ import { chunkText } from "./chunk.service.js";
 import type { GenerateDeps } from "./generation.service.js";
 import { callLlmForBatch } from "./generation.service.js";
 import { loadDocument } from "./load.service.js";
+import { estimateTokens } from "./tokens.js";
 import {
   createQuizProcessingJob,
   createReadyQuiz,
@@ -144,8 +145,9 @@ async function generateValidatedBatch(
 ): Promise<GeneratedQuestion[]> {
   let previousError: string | undefined;
   for (let attempt = 1; attempt <= MAX_GEN_RETRIES; attempt++) {
+    let raw: string | undefined;
     try {
-      const raw = await callLlmForBatch(
+      raw = await callLlmForBatch(
         {
           batch,
           batchIndex,
@@ -154,20 +156,56 @@ async function generateValidatedBatch(
         },
         deps,
       );
-      const parsed = parseAndValidateQuestions(raw);
+
+      console.info("[quiz-gen] gemini:response", {
+        batchIndex,
+        attempt,
+        requestedQuestionCount: batch.questionCount,
+        rawResponseLength: raw.length,
+        rawResponse: raw,
+      });
+
+      let parsed: GeneratedQuestion[];
+      try {
+        parsed = parseAndValidateQuestions(raw);
+      } catch (error) {
+        const rejection =
+          error instanceof Error ? error.message : "Question validation failed";
+        console.warn("[quiz-gen] validation:rejected", {
+          batchIndex,
+          attempt,
+          requestedQuestionCount: batch.questionCount,
+          rejection,
+          rejectedRawResponse: raw,
+        });
+        throw error;
+      }
+
+      const accepted = parsed.slice(0, batch.questionCount);
       console.info("[quiz-gen] batch:validated", {
         batchIndex,
         attempt,
         requestedQuestionCount: batch.questionCount,
         parsedQuestionCount: parsed.length,
+        acceptedQuestionCount: accepted.length,
       });
       // Cap to requested count if the model over-generates; keep all if fewer
-      return parsed.slice(0, batch.questionCount);
+      return accepted;
     } catch (err) {
       previousError = err instanceof Error ? err.message : "Unknown error";
+      const willRetry = attempt < MAX_GEN_RETRIES;
+      console.warn("[quiz-gen] batch:retry-decision", {
+        batchIndex,
+        attempt,
+        maxRetries: MAX_GEN_RETRIES,
+        requestedQuestionCount: batch.questionCount,
+        reason: previousError,
+        willRetry,
+        ...(raw === undefined ? { rawResponse: null } : {}),
+      });
       if (attempt === MAX_GEN_RETRIES) {
         console.warn(
-          `batch ${batchIndex + 1}/${totalBatches} failed after ${MAX_GEN_RETRIES} retries: ${previousError}`,
+          `[quiz-gen] batch:failed batch=${batchIndex + 1}/${totalBatches} attempts=${MAX_GEN_RETRIES}: ${previousError}`,
         );
         return [];
       }
@@ -267,6 +305,12 @@ export async function preparePipeline(input: {
     plannedLlmCalls,
     requestedCount,
     plannedQuestionCount: batches.reduce((sum, batch) => sum + batch.questionCount, 0),
+    batches: batches.map((batch, index) => ({
+      batchIndex: index,
+      questionCount: batch.questionCount,
+      chunkIndices: batch.chunkIndices,
+      estimatedInputTokens: estimateTokens(batch.text),
+    })),
   });
 
   if (plannedLlmCalls === 0) {
