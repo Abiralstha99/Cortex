@@ -25,67 +25,53 @@ export default function Timer({ startedAt, timeLimit }: TimerProps) {
 
   const remaining = Math.max(0, Math.ceil((timeLimit - elapsed) / 1000));
   const remainingProgress = timeLimit > 0 ? (timeLimit - elapsed) / timeLimit : 0;
-  const circumference = 2 * Math.PI * 45;
-
   const isUrgent = remaining <= 5;
+  const progressPercent = Math.round(remainingProgress * 100);
 
   return (
     <div
       role="timer"
       aria-label={`${remaining} ${remaining === 1 ? "second" : "seconds"} remaining`}
       className={cn(
-        "flex min-h-20 shrink-0 items-center gap-3 rounded-[var(--radius-card)] border px-3 py-2 shadow-card",
+        "flex min-h-10 shrink-0 items-center gap-2.5 rounded-[var(--radius-control)] border px-3 py-1.5",
         isUrgent
-          ? "border-danger/30 bg-danger-soft"
+          ? "border-warning/40 bg-warning/10"
           : "border-border bg-surface",
       )}
     >
-      <div className="relative size-16 shrink-0">
-        <svg className="size-full -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
-          <circle
-            cx="50"
-            cy="50"
-            r="45"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="10"
-            className={isUrgent ? "text-danger/20" : "text-primary-soft"}
-          />
-          <circle
-            cx="50"
-            cy="50"
-            r="45"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="10"
-            strokeLinecap="round"
-            strokeDasharray={`${circumference}`}
-            strokeDashoffset={`${circumference * (1 - remainingProgress)}`}
-            className={isUrgent ? "text-danger" : "text-primary"}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span
-            className={cn(
-              "font-mono text-lg font-semibold tabular-nums",
-              isUrgent ? "text-danger-foreground" : "text-ink",
-            )}
-          >
-            {remaining}
-          </span>
-        </div>
+      <div
+        role="progressbar"
+        aria-label="Time remaining"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progressPercent}
+        className="h-1.5 w-16 overflow-hidden rounded-full bg-primary-soft sm:w-24"
+      >
+        <div
+          className={cn(
+            "h-full rounded-full transition-[width,background-color] duration-150",
+            isUrgent ? "bg-warning" : "bg-primary",
+          )}
+          style={{ width: `${progressPercent}%` }}
+        />
       </div>
-      <div className="min-w-20">
-        <p className="text-xs font-semibold text-muted-foreground">
-          {remaining === 1 ? "second" : "seconds"}
-        </p>
-        {isUrgent && (
-          <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-danger-foreground">
-            <AlarmClock className="size-4" aria-hidden="true" />
-            Time running out
-          </p>
+      <span
+        className={cn(
+          "font-mono text-lg font-semibold tabular-nums",
+          isUrgent ? "text-warning-foreground" : "text-ink",
         )}
-      </div>
+      >
+        {remaining}
+      </span>
+      <span className="text-xs font-semibold text-muted-foreground">
+        {remaining === 1 ? "second" : "seconds"}
+      </span>
+      {isUrgent && (
+        <span className="hidden items-center gap-1 text-xs font-semibold text-warning-foreground sm:flex">
+          <AlarmClock className="size-4" aria-hidden="true" />
+          Time running out
+        </span>
+      )}
     </div>
   );
 }

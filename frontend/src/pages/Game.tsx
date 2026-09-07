@@ -133,8 +133,8 @@ export default function Game() {
       (connectionState === "connected" && showReconnected));
 
   return (
-    <div className="min-h-dvh bg-background">
-      <main className="mx-auto flex min-h-dvh w-full max-w-4xl flex-col px-4 py-6 sm:px-6 sm:py-8">
+    <div data-theme="fluent-dark" className="min-h-dvh bg-background text-ink">
+      <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-4 py-5 sm:px-6 sm:py-7">
         {isOffline ? (
           <div className="flex flex-1 items-center justify-center">
             <ConnectionBanner
@@ -161,7 +161,7 @@ export default function Game() {
 
             <header
               className={cn(
-                "mb-5 flex min-h-20 flex-col gap-3 sm:flex-row sm:items-center",
+                "mb-4 flex min-h-12 flex-col gap-2 sm:flex-row sm:items-center",
                 phase === "question" ? "sm:justify-between" : "sm:justify-start",
               )}
             >

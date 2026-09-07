@@ -13,6 +13,11 @@ describe("Timer", () => {
     expect(screen.getByRole("timer")).toHaveAccessibleName(
       "30 seconds remaining",
     );
+    expect(screen.getByText("30")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "100",
+    );
 
     act(() => {
       vi.advanceTimersByTime(26_000);
@@ -20,6 +25,10 @@ describe("Timer", () => {
 
     expect(screen.getByRole("timer")).toHaveAccessibleName(
       "4 seconds remaining",
+    );
+    expect(screen.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "13",
     );
 
     act(() => {
