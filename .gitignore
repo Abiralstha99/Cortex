@@ -1,13 +1,14 @@
 architecture.md
 
 docs/
-
+learning/
 .cursor/
 .claude/
 .kiro/
 .agents/
 .worktrees/
 skills-lock.json
+.cursorrules
 
 # Dependencies and build output (never commit)
 node_modules/
