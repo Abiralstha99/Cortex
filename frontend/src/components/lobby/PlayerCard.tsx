@@ -52,8 +52,8 @@ export default function PlayerCard({
     </>
   );
 
-  const className = `flex min-h-20 items-center justify-between gap-3 rounded-[var(--radius-card)] border bg-surface p-4 shadow-card ${
-    isSelf ? "border-primary" : "border-border"
+  const className = `flex min-h-16 items-center justify-between gap-3 px-4 py-3 sm:px-6 ${
+    isSelf ? "bg-primary-soft/40" : "bg-surface"
   }`;
 
   if (reduceMotion) {
@@ -66,6 +66,7 @@ export default function PlayerCard({
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+      layout
     >
       {content}
     </motion.li>

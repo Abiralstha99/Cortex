@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Check, Copy, LogOut, Play, Wifi, WifiOff } from "lucide-react";
+import { ArrowRight, Check, Copy, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import PageShell from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,18 @@ export default function Lobby() {
   const allPlayersReady =
     players.length >= 2 && players.every((player) => player.ready);
   const canStart = quizReady && allPlayersReady && status !== "starting";
+  const startReason =
+    quizGenStatus === "failed"
+      ? "Retry quiz generation to continue."
+      : !quizReady
+        ? "Waiting for the quiz to be ready."
+        : players.length < 2
+          ? "At least 2 players are needed."
+          : !allPlayersReady
+            ? "Everyone needs to be ready."
+            : status === "starting"
+              ? "Starting game..."
+              : "";
 
   useEffect(() => {
     if (!storeToast) return;
@@ -89,47 +101,38 @@ export default function Lobby() {
   }
 
   return (
-    <PageShell maxWidth="3xl">
-      <header className="mb-10">
-        <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
+    <PageShell maxWidth="5xl" variant="preGame">
+      <header className="mb-6 border-b border-border pb-6">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div>
+            <p className="mb-2 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Live room
+            </p>
+            <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
           Game lobby
-        </h1>
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <p className="rounded-[var(--radius-card)] border border-border bg-surface px-5 py-3 font-mono text-2xl font-semibold tracking-widest text-ink sm:text-3xl">
-            {normalized || "------"}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={copyCode}
-            aria-label={copied ? "Copied room code" : "Copy room code"}
-          >
-            {copied ? <Check className="text-success" /> : <Copy />}
-            {copied ? "Copied" : "Copy"}
-          </Button>
-          <span
-            className={`inline-flex items-center gap-1.5 text-sm font-semibold ${
-              connected
-                ? "text-success-foreground"
-                : "text-danger-foreground"
-            }`}
-            role="status"
-          >
-            {connected ? <Wifi className="size-4" aria-hidden="true" /> : <WifiOff className="size-4" aria-hidden="true" />}
-            {connected ? "Connected" : "Disconnected"}
-          </span>
-        </div>
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-          {numberOfRounds != null && (
-            <span className="font-mono">{numberOfRounds} questions</span>
-          )}
-          {maxPlayers != null && (
-            <span className="font-mono">
-              {players.length}/{maxPlayers} players
+            </h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-3 rounded-[var(--radius-control)] border border-border bg-subtle px-3 py-2">
+              <span className="font-mono text-base font-semibold tracking-[0.18em] text-ink">
+                {normalized || "------"}
+              </span>
+              <Button type="button" variant="ghost" size="xs" onClick={copyCode} aria-label={copied ? "Copied room code" : "Copy room code"}>
+                {copied ? <Check className="text-success-foreground" /> : <Copy />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+            <span className={`inline-flex items-center gap-1.5 px-2 text-xs font-semibold ${connected ? "text-success-foreground" : "text-danger-foreground"}`} role="status">
+              <span className={`size-2 rounded-full ${connected ? "bg-success" : "bg-danger"}`} aria-hidden="true" />
+              {connected ? "Connected" : "Disconnected"}
             </span>
-          )}
+          </div>
         </div>
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-muted-foreground">
+          {numberOfRounds != null && <span className="font-mono">{numberOfRounds} questions</span>}
+          {maxPlayers != null && <span className="font-mono">{players.length}/{maxPlayers} players</span>}
+        </div>
+        <QuizGenerationPanel isHost={isHost} />
       </header>
 
       {status === "joining" && (
@@ -139,18 +142,16 @@ export default function Lobby() {
         <p className="mb-6 text-sm text-danger-foreground" role="alert">Failed to join room.</p>
       )}
 
-      <QuizGenerationPanel isHost={isHost} />
-
-      <section className="mb-10" aria-labelledby="players-heading">
-        <div className="mb-4 flex items-baseline justify-between gap-4">
-          <h2 id="players-heading" className="text-xl font-bold text-ink">
+      <div className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface shadow-card">
+        <div className="border-b border-border px-4 py-4 sm:px-6">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 id="players-heading" className="text-lg font-bold text-ink">
             Players
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {players.length === 1 ? "Waiting for players" : `${players.length} players joined`}
-          </p>
+            </h2>
+            <p className="font-mono text-xs text-muted-foreground">{players.length} / {maxPlayers ?? "—"}</p>
+          </div>
         </div>
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2" aria-live="polite">
+        <ul className="divide-y divide-border" aria-live="polite">
           {players.map((player) => (
             <PlayerCard
               key={player.id}
@@ -160,45 +161,24 @@ export default function Lobby() {
             />
           ))}
         </ul>
-      </section>
-
-      {isHost && (
-        <section
-          className="mb-6 rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-card sm:p-6"
-          aria-labelledby="start-game-heading"
-        >
-          <h2 id="start-game-heading" className="text-lg font-bold text-ink">
-            Start the game
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Start when the quiz is ready and every player is ready.
-          </p>
-          <Button
-            variant="default"
-            onClick={handleStart}
-            disabled={!canStart}
-            title={!canStart ? "Wait for the quiz and all players to be ready" : undefined}
-            className="mt-4"
-          >
-            <Play className="size-4" aria-hidden="true" />
-            {status === "starting" ? "Starting..." : "Start game"}
-          </Button>
-        </section>
-      )}
-
-      <section className="mb-6 border-l-4 border-primary pl-5" aria-labelledby="readiness-heading">
-        <h2 id="readiness-heading" className="text-lg font-bold text-ink">
-          Your readiness
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {currentPlayer?.ready
-            ? "You are ready to play."
-            : "Mark ready when you are set to play."}
-        </p>
-        <Button variant="outline" onClick={toggleReady} className="mt-4">
-          {currentPlayer?.ready ? "Mark not ready" : "I'm ready"}
-        </Button>
-      </section>
+        <div className="sticky bottom-0 z-10 flex flex-col gap-3 border-t border-border bg-surface/95 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="min-w-0">
+            <Button variant={currentPlayer?.ready ? "secondary" : "outline"} onClick={toggleReady}>
+              {currentPlayer?.ready ? <Check aria-hidden="true" /> : null}
+              {currentPlayer?.ready ? "You're ready" : "I'm ready"}
+            </Button>
+          </div>
+          {isHost && (
+            <div className="flex min-w-0 flex-col items-stretch gap-1.5 sm:items-end">
+              <Button variant="default" onClick={handleStart} disabled={!canStart} title={!canStart ? startReason : undefined}>
+                {status === "starting" ? "Starting..." : "Start game"}
+                <ArrowRight aria-hidden="true" />
+              </Button>
+              {!canStart && <p className="text-right text-xs text-muted-foreground">{startReason}</p>}
+            </div>
+          )}
+        </div>
+      </div>
 
       <Button variant="ghost" onClick={handleLeave} className="text-muted-foreground">
         <LogOut className="size-4" aria-hidden="true" />

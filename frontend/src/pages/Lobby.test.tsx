@@ -21,10 +21,6 @@ vi.mock("@/components/layout/PageShell", () => ({
   default: ({ children }: { children: React.ReactNode }) => <main>{children}</main>,
 }));
 
-vi.mock("@/components/lobby/QuizGenerationPanel", () => ({
-  default: () => <section>Quiz generation status</section>,
-}));
-
 vi.mock("@/components/lobby/PlayerCard", () => ({
   default: ({ player }: { player: { username: string } }) => <li>{player.username}</li>,
 }));
@@ -42,27 +38,33 @@ vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({ id: "host-1" }),
 }));
 
+vi.mock("@clerk/react", () => ({
+  useAuth: () => ({ getToken: vi.fn() }),
+}));
+
 vi.mock("@/stores/lobbyStore", () => ({
   useLobbyStore: (selector: (state: typeof lobbyState) => unknown) =>
     selector(lobbyState),
 }));
 
 describe("Lobby", () => {
-  it("renders host start controls before readiness controls", () => {
+  it("keeps room status outside the Players workspace", () => {
     render(
       <MemoryRouter initialEntries={["/lobby/ABC123"]}>
         <Lobby />
       </MemoryRouter>,
     );
 
-    const startHeading = screen.getByRole("heading", { name: "Start the game" });
-    const readinessHeading = screen.getByRole("heading", {
-      name: "Your readiness",
-    });
-
-    expect(
-      startHeading.compareDocumentPosition(readinessHeading) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getByRole("heading", { name: "Players" })).toBeInTheDocument();
+    const quizStatus = screen.getByText("Ready to play").parentElement?.parentElement ?? null;
+    expect(quizStatus).toBeInTheDocument();
+    expect(quizStatus?.querySelector(".rounded-full")).toBeInTheDocument();
+    expect(quizStatus?.querySelector(".bg-success-soft")).not.toBeInTheDocument();
+    const playersHeading = screen.getByRole("heading", { name: "Players" });
+    expect(playersHeading.parentElement?.parentElement ?? null).not.toContainElement(quizStatus);
+    expect(screen.getByRole("button", { name: "You're ready" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Start game/ })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Start the game" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Your readiness" })).not.toBeInTheDocument();
   });
 });

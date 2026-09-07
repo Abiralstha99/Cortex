@@ -57,16 +57,13 @@ export default function QuizGenerationPanel({
   }
 
   return (
-    <section
-      className="mb-8 rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-card sm:p-6"
-      aria-live="polite"
-    >
+    <section className={quizGenStatus === "failed" ? "mt-4 rounded-[var(--radius-control)] border border-danger/35 bg-danger-soft/40 p-4" : "mt-3"} aria-live="polite">
       {quizGenStatus === "processing" && (
         <StatusRow
           tone="info"
           icon={<Clock3 />}
-          title="Generating questions..."
-          detail="The quiz will be available here when it is ready."
+          title="Preparing quiz…"
+          detail=""
         />
       )}
 
@@ -74,12 +71,8 @@ export default function QuizGenerationPanel({
         <StatusRow
           tone="success"
           icon={<CheckCircle2 />}
-          title="Quiz ready"
-          detail={
-            numberOfRounds != null
-              ? `${numberOfRounds} questions ready to play`
-              : "Ready to play"
-          }
+          title="Ready to play"
+          detail={numberOfRounds != null ? `${numberOfRounds} questions` : ""}
         />
       )}
 
@@ -88,7 +81,7 @@ export default function QuizGenerationPanel({
           tone="neutral"
           icon={<Clock3 />}
           title="Waiting for quiz"
-          detail="The host is preparing the questions."
+          detail=""
         />
       )}
 
@@ -153,22 +146,21 @@ function StatusRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span
-        className={`flex size-11 shrink-0 items-center justify-center rounded-[var(--radius-control)] [&_svg]:size-5 ${
-          tone === "success"
-            ? "bg-success-soft text-success"
-            : tone === "danger"
-              ? "bg-danger-soft text-danger"
-              : tone === "info"
-                ? "bg-primary-soft text-primary"
-                : "bg-subtle text-muted"
-        }`}
-      >
-        {icon}
-      </span>
-      <div>
-        <h2 className="text-base font-bold text-ink">{title}</h2>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{detail}</p>
+      {tone === "success" || tone === "info" ? (
+        <span
+          className={`mt-1.5 size-2 shrink-0 rounded-full ${
+            tone === "success" ? "bg-success" : "bg-primary"
+          }`}
+          aria-hidden="true"
+        />
+      ) : (
+        <span className="flex size-6 shrink-0 items-center justify-center [&_svg]:size-4 bg-danger-soft text-danger">
+          {icon}
+        </span>
+      )}
+      <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <h2 className="text-sm font-semibold text-ink">{title}</h2>
+        {detail && <p className="text-xs text-muted-foreground">· {detail}</p>}
       </div>
     </div>
   );
