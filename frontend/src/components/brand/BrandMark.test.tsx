@@ -10,7 +10,7 @@ describe("BrandMark", () => {
   it("gives the linked wordmark a 44px target and visible keyboard focus", () => {
     renderWithRouter(<BrandMark to="/dashboard" />);
 
-    const wordmark = screen.getByRole("link", { name: "Cortex." });
+    const wordmark = screen.getByRole("link", { name: "Cortex" });
     expect(wordmark).toHaveAttribute("href", "/dashboard");
     expect(wordmark).toHaveClass(
       "inline-flex",
@@ -25,7 +25,7 @@ describe("BrandMark", () => {
   it("preserves the optional destination's root-link default", () => {
     renderWithRouter(<BrandMark />);
 
-    expect(screen.getByRole("link", { name: "Cortex." })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Cortex" })).toHaveAttribute(
       "href",
       "/",
     );

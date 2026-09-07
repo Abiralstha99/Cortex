@@ -16,7 +16,7 @@ export function BrandMark({
         className,
       )}
     >
-      Cortex.
+      Cortex
     </Link>
   );
 }

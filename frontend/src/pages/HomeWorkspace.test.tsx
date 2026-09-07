@@ -19,7 +19,6 @@ describe("HomeWorkspace shell", () => {
     renderWithRouter(<HomeWorkspace />);
 
     expect(document.querySelector('[data-theme="fluent-dark"]')).not.toBeNull();
-    expect(screen.getByRole("link", { name: "Cortex." })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Cortex" })).toBeInTheDocument();
   });
 });
-
