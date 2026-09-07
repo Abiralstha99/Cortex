@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
 import PageShell from "@/components/layout/PageShell";
+import PreGameModeSwitch from "@/components/layout/PreGameModeSwitch";
 import {
   createWaitingGame,
   generateQuizForGame,
@@ -11,7 +12,6 @@ import {
   type QuizSummary,
 } from "@/lib/api";
 import QuizPickerList from "@/components/quiz-rooms/QuizPickerList";
-import RoomPreviewCard from "@/components/quiz-rooms/RoomPreviewCard";
 import RoomSettings from "@/components/quiz-rooms/RoomSettings";
 import UploadPanel from "@/components/quiz-rooms/UploadPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -113,29 +113,22 @@ export default function CreateGame() {
   });
 
   const canLaunch = activeTab === "upload" ? uploadFile !== null : effectiveSelected !== null;
-  const previewTitle =
-    activeTab === "upload"
-      ? quizTitle.trim() || uploadFile?.name.replace(/\.(pdf|txt)$/i, "") || null
-      : effectiveSelected?.title ?? null;
   const pastQuizCap = effectiveSelected?.questionCount ?? null;
-  const previewQuestionCount =
-    activeTab === "upload" ? questionCount : pastQuizCap != null ? Math.min(questionCount, pastQuizCap) : null;
 
   return (
-    <PageShell maxWidth="6xl">
-      <header className="mb-8 max-w-2xl sm:mb-10">
-        <h1 className="text-balance text-3xl font-bold tracking-tight text-ink sm:text-4xl">Create a game</h1>
-        <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
-          Upload your notes or choose a past quiz, then set up the room.
-        </p>
-      </header>
+    <PageShell maxWidth="6xl" variant="preGame">
+      <div className="mx-auto max-w-3xl">
+        <header className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
+          <h1 className="text-balance text-[32px] font-semibold leading-10 tracking-tight text-ink">Create a game</h1>
+          <PreGameModeSwitch />
+        </header>
 
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
-        <div className="min-w-0 space-y-6">
-          <section aria-labelledby="quiz-source-heading" className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 sm:p-6">
+        <div className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface shadow-card">
+        <div className="space-y-8 p-5 sm:p-8">
+          <section aria-labelledby="quiz-source-heading">
             <div className="mb-5">
-              <h2 id="quiz-source-heading" className="text-xl font-bold text-ink">Choose your quiz</h2>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Start from a file or reuse one of your ready quizzes.</p>
+              <h2 id="quiz-source-heading" className="text-lg font-semibold text-ink">Quiz</h2>
+              <p className="mt-1 text-sm leading-5 text-muted-foreground">Start from a file or reuse one of your ready quizzes.</p>
             </div>
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as CreationSource)}>
               <TabsList className="h-12 w-full sm:w-fit">
@@ -144,21 +137,25 @@ export default function CreateGame() {
               </TabsList>
               <TabsContent value="upload" className="pt-5">
                 {uploadFile ? (
-                  <div className="flex items-center justify-between rounded-[var(--radius-panel)] border border-border bg-surface p-4">
+                  <div className="flex items-center justify-between gap-4 rounded-[var(--radius-card)] bg-subtle p-4">
                     <div className="min-w-0">
-                      <p className="max-w-full truncate font-medium text-ink">{uploadFile.name}</p>
-                      <p className="mt-1 font-mono text-xs tabular-nums text-muted-foreground">{(uploadFile.size / 1024).toFixed(1)} KB</p>
+                      <p className="max-w-full truncate text-sm font-semibold leading-5 text-ink">{uploadFile.name}</p>
+                      <p className="mt-1 font-mono text-xs leading-4 tabular-nums text-text-muted">
+                        {uploadFile.type || "unknown"} · {(uploadFile.size / 1024).toFixed(1)} KB
+                      </p>
                     </div>
                     <div>
                       <Button
-                        variant="outline"
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0"
                         onClick={() => {
                           // Return to the full upload panel without navigating away.
                           clearFileHandoffCache();
                           setUploadFile(null);
                         }}
                       >
-                        Change file
+                          Change
                       </Button>
                     </div>
                   </div>
@@ -181,10 +178,14 @@ export default function CreateGame() {
             </Tabs>
           </section>
 
-          <section aria-labelledby="room-settings-heading" className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 sm:p-6">
+          <div className="h-px bg-border" />
+
+          <section aria-labelledby="room-settings-heading">
             <div className="mb-5">
-              <h2 id="room-settings-heading" className="text-xl font-bold text-ink">Set up the room</h2>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Pick the pace and decide who can find it.</p>
+              <h2 id="room-settings-heading" className="text-lg font-semibold text-ink">
+                Room <span className="sr-only">Set up the room</span>
+              </h2>
+              <p className="mt-1 text-sm leading-5 text-muted-foreground">Pick the pace and decide who can find it.</p>
             </div>
             <RoomSettings
               players={maxPlayers}
@@ -197,19 +198,20 @@ export default function CreateGame() {
             />
           </section>
 
+          <div className="h-px bg-border" />
+
           {mutation.error && (
-            <p role="alert" className="rounded-[var(--radius-control)] bg-danger-soft px-4 py-3 text-sm font-medium text-danger-foreground">
+            <p role="alert" className="rounded-[var(--radius-control)] bg-danger-soft px-4 py-3 text-sm font-semibold leading-5 text-danger-foreground">
               {mutation.error instanceof Error ? mutation.error.message : "Failed to create game"}
             </p>
           )}
 
-          <Button size="lg" className="w-full" disabled={!canLaunch || mutation.isPending} onClick={() => mutation.mutate()}>
-            {mutation.isPending ? "Creating..." : "Launch lobby"}
-          </Button>
+          <section aria-label="Create room action">
+            <Button size="lg" className="w-full" disabled={!canLaunch || mutation.isPending} onClick={() => mutation.mutate()}>
+              {mutation.isPending ? "Creating..." : "Create room"}
+            </Button>
+          </section>
         </div>
-
-        <div className="min-w-0">
-          <RoomPreviewCard quizTitle={previewTitle} questionCount={previewQuestionCount} maxPlayers={maxPlayers} isPublic={isPublic} />
         </div>
       </div>
     </PageShell>

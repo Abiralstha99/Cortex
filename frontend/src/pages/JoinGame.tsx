@@ -1,26 +1,19 @@
 import PageShell from "@/components/layout/PageShell";
+import PreGameModeSwitch from "@/components/layout/PreGameModeSwitch";
 import JoinRoomPanel from "@/components/quiz-rooms/JoinRoomPanel";
-import HowJoiningWorks from "@/components/quiz-rooms/HowJoiningWorks";
 
 export default function JoinGame() {
   return (
-    <PageShell maxWidth="6xl">
-      <header className="mb-8 max-w-2xl sm:mb-10">
-        <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-          Join a game
-        </h1>
-        <p className="mt-3 max-w-xl text-base leading-relaxed text-muted-foreground">
-          Enter a room code or choose a public room that is live now.
-        </p>
-      </header>
+    <PageShell maxWidth="6xl" variant="preGame">
+      <div className="mx-auto max-w-3xl">
+        <header className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
+          <h1 className="text-[32px] font-semibold leading-10 tracking-tight text-ink">
+            Join a game
+          </h1>
+          <PreGameModeSwitch />
+        </header>
 
-      <div className="grid grid-cols-1 gap-10 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
-        <div className="min-w-0">
-          <JoinRoomPanel />
-        </div>
-        <div className="min-w-0">
-          <HowJoiningWorks />
-        </div>
+        <JoinRoomPanel />
       </div>
     </PageShell>
   );

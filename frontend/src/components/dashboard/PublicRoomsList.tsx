@@ -26,7 +26,7 @@ function upsertPublicRoom(
   return next;
 }
 
-export default function PublicRoomsList() {
+export default function PublicRoomsList({ hideEmptyState = false }: { hideEmptyState?: boolean }) {
   const { getToken } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -111,6 +111,8 @@ export default function PublicRoomsList() {
   const rooms = query.data ?? [];
 
   if (rooms.length === 0) {
+    if (hideEmptyState) return null;
+
     return (
       <div className="rounded-[var(--radius-panel)] border border-border bg-surface shadow-card">
         <EmptyState

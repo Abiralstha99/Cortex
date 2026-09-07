@@ -30,9 +30,9 @@ export default function RoomSettings({
   const questionsCap = Math.max(MIN_QUESTIONS, maxQuestions);
 
   return (
-    <div className="divide-y divide-border rounded-[var(--radius-card)] bg-subtle px-4 sm:px-5">
+    <div className="divide-y divide-border">
       <div className="grid gap-4 py-5 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-center">
-        <p id="questions-label" className="text-base font-semibold text-ink">
+        <p id="questions-label" className="text-sm font-semibold leading-5 text-ink">
           Questions
         </p>
 
@@ -45,7 +45,7 @@ export default function RoomSettings({
           <Button
             type="button"
             variant="outline"
-            size="icon"
+            size="icon-lg"
             onClick={() =>
               onQuestionsChange(
                 Math.max(MIN_QUESTIONS, questions - QUESTION_STEP),
@@ -58,13 +58,13 @@ export default function RoomSettings({
               −
             </span>
           </Button>
-          <span className="min-w-12 text-center font-mono text-xl font-semibold tabular-nums text-ink">
+          <span className="min-w-12 text-center font-mono text-base font-semibold leading-[22px] tabular-nums text-ink">
             {questions}
           </span>
           <Button
             type="button"
             variant="outline"
-            size="icon"
+            size="icon-lg"
             onClick={() =>
               onQuestionsChange(
                 Math.min(questionsCap, questions + QUESTION_STEP),
@@ -79,13 +79,13 @@ export default function RoomSettings({
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground sm:col-start-2 sm:text-center">
+        <p className="text-xs leading-4 text-text-muted sm:col-start-2 sm:text-center">
           {MIN_QUESTIONS} - {questionsCap} questions
         </p>
       </div>
 
       <div className="grid gap-4 py-5 sm:grid-cols-[minmax(0,1fr)_220px] sm:items-center">
-        <p id="players-label" className="text-base font-semibold text-ink">
+        <p id="players-label" className="text-sm font-semibold leading-5 text-ink">
           Players
         </p>
 
@@ -98,7 +98,7 @@ export default function RoomSettings({
           <Button
             type="button"
             variant="outline"
-            size="icon"
+            size="icon-lg"
             onClick={() => onPlayersChange(Math.max(MIN_PLAYERS, players - 1))}
             disabled={players <= MIN_PLAYERS}
             aria-label="Decrease players"
@@ -107,13 +107,13 @@ export default function RoomSettings({
               −
             </span>
           </Button>
-          <span className="min-w-12 text-center font-mono text-xl font-semibold tabular-nums text-ink">
+          <span className="min-w-12 text-center font-mono text-base font-semibold leading-[22px] tabular-nums text-ink">
             {players}
           </span>
           <Button
             type="button"
             variant="outline"
-            size="icon"
+            size="icon-lg"
             onClick={() => onPlayersChange(Math.min(MAX_PLAYERS, players + 1))}
             disabled={players >= MAX_PLAYERS}
             aria-label="Increase players"
@@ -124,7 +124,7 @@ export default function RoomSettings({
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground sm:col-start-2 sm:text-center">
+        <p className="text-xs leading-4 text-text-muted sm:col-start-2 sm:text-center">
           {MIN_PLAYERS} - {MAX_PLAYERS} players
         </p>
       </div>
@@ -133,11 +133,11 @@ export default function RoomSettings({
         <div>
           <label
             htmlFor="public-room-switch"
-            className="text-base font-semibold text-ink"
+            className="text-sm font-semibold leading-5 text-ink"
           >
             Public room
           </label>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs leading-4 text-text-muted">
             Show this room in the live rooms feed.
           </p>
         </div>

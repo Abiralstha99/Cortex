@@ -45,14 +45,14 @@ export default function RoomCodeInput({
         aria-describedby={error ? `${id}-error` : undefined}
         onChange={(e) => onChange(normalizeRoomCode(e.target.value))}
         className={cn(
-          "h-14 bg-subtle text-center font-mono text-2xl font-semibold tracking-widest",
+          "h-16 bg-subtle text-center font-mono text-2xl font-semibold leading-8 tracking-widest placeholder:text-text-muted",
           className,
         )}
       />
       {error ? (
         <p
           id={`${id}-error`}
-          className="text-sm font-medium text-danger-foreground"
+          className="text-sm font-semibold leading-5 text-danger-foreground"
           role="alert"
         >
           {error}

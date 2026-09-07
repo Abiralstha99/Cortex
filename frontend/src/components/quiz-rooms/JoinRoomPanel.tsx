@@ -29,15 +29,15 @@ export default function JoinRoomPanel() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <form
         onSubmit={handleSubmit}
         className="space-y-6 rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-card sm:p-8"
         noValidate
       >
         <div>
-          <h2 className="text-xl font-bold text-ink">Enter your code</h2>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          <h2 className="text-base font-semibold leading-[22px] text-ink">Enter your code</h2>
+          <p className="mt-1 text-sm leading-5 text-muted-foreground">
             Room codes contain six letters or digits.
           </p>
         </div>
@@ -63,15 +63,15 @@ export default function JoinRoomPanel() {
         <div>
           <h2
             id="public-rooms-heading"
-            className="text-xl font-bold text-ink"
+            className="text-base font-semibold leading-[22px] text-ink"
           >
             Live public rooms
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm leading-5 text-muted-foreground">
             Join a room that is open to everyone.
           </p>
         </div>
-        <PublicRoomsList />
+        <PublicRoomsList hideEmptyState />
       </section>
     </div>
   );
