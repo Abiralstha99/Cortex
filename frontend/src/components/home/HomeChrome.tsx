@@ -7,7 +7,7 @@ export default function HomeChrome() {
   const { user } = useUser();
 
   return (
-    <header className="border-b border-border bg-surface/50">
+    <header className="bg-surface/50">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <BrandMark to="/" />
         <div>
@@ -26,4 +26,3 @@ export default function HomeChrome() {
     </header>
   );
 }
-

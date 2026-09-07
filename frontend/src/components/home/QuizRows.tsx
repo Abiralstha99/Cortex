@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listQuizzes, type QuizSummary } from "@/lib/api";
+import { ChevronRight } from "lucide-react";
 
 const QUIZZES_QUERY_KEY = ["quizzes"] as const;
 
@@ -34,8 +35,8 @@ export default function QuizRows() {
   if (query.isError) {
     return (
       <div className="inline-flex items-center space-x-2" aria-label="quizzes-error">
-        <span className="text-sm text-ink-muted">Could not load quizzes</span>
-        <button onClick={() => void query.refetch()} className="underline text-sm">
+        <span className="text-sm leading-5 text-text-muted">Could not load quizzes</span>
+            <button onClick={() => void query.refetch()} className="text-sm leading-5 text-primary underline underline-offset-2">
           Try again
         </button>
       </div>
@@ -47,17 +48,20 @@ export default function QuizRows() {
 
   return (
     <section aria-label="Your quizzes">
-      <h2 className="text-sm font-medium text-ink-muted">Your quizzes</h2>
+      <h2 className="text-sm font-semibold leading-5 text-ink">Your quizzes</h2>
       <ul className="mt-2 space-y-1">
         {quizzes.map((q) => (
           <li key={q.id}>
             <button
-              className="w-full text-left px-2 py-2 rounded hover:bg-surface/80"
+              className="flex min-h-11 w-full items-center justify-between rounded-md px-3 py-2 text-left transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               onClick={() => navigate("/game/create", { state: { quizId: q.id } })}
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{q.title}</span>
-                <span className="ml-4 text-xs text-ink-muted">{q.questionCount} questions</span>
+                <span className="truncate text-sm font-semibold leading-5 text-ink">{q.title}</span>
+                <span className="ml-4 flex shrink-0 items-center gap-2 text-xs leading-4 text-text-muted">
+                  {q.questionCount} questions
+                  <ChevronRight className="size-4" aria-hidden="true" />
+                </span>
               </div>
             </button>
           </li>
@@ -66,4 +70,3 @@ export default function QuizRows() {
     </section>
   );
 }
-

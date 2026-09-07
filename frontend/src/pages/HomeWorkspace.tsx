@@ -66,9 +66,9 @@ export default function HomeWorkspace() {
   return (
     <div data-theme="fluent-dark" className="min-h-dvh bg-background text-ink">
       <HomeChrome />
-      <main className="mx-auto grid max-w-6xl gap-4 px-4 pb-10 pt-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] lg:gap-5">
+      <main className="mx-auto grid max-w-[1200px] gap-6 px-4 pb-10 pt-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] lg:gap-8 lg:px-8">
         <div className="min-w-0 space-y-3">
-          <h1 className="text-balance text-xl font-semibold tracking-tight sm:text-2xl">
+          <h1 className="text-balance text-[32px] font-semibold leading-10 tracking-tight">
             Live quizzes from your notes
           </h1>
           {/* CreateStage slot */}
@@ -89,4 +89,3 @@ export default function HomeWorkspace() {
     </div>
   );
 }
-

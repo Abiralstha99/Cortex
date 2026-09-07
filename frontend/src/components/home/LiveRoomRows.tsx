@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listPublicWaitingGames, type PublicWaitingRoomSummary } from "@/lib/api";
 import { useSocket } from "@/hooks/useSocket";
+import { ChevronRight } from "lucide-react";
 
 const PUBLIC_ROOMS_QUERY_KEY = ["public-waiting-rooms"] as const;
 
@@ -69,8 +70,8 @@ export default function LiveRoomRows() {
   if (query.isError) {
     return (
       <div className="inline-flex items-center space-x-2" aria-label="public-rooms-error">
-        <span className="text-sm text-ink-muted">Could not load public rooms</span>
-        <button onClick={() => void query.refetch()} className="underline text-sm">Try again</button>
+        <span className="text-sm leading-5 text-text-muted">Could not load public rooms</span>
+        <button onClick={() => void query.refetch()} className="text-sm leading-5 text-primary underline underline-offset-2">Try again</button>
       </div>
     );
   }
@@ -80,17 +81,20 @@ export default function LiveRoomRows() {
 
   return (
     <section aria-label="Live rooms">
-      <h2 className="text-sm font-medium text-ink-muted">Open public rooms</h2>
+      <h2 className="text-sm font-semibold leading-5 text-ink">Open public rooms</h2>
       <ul className="mt-2 space-y-1">
         {rooms.map((r) => (
           <li key={r.gameId}>
             <button
-              className="w-full text-left px-2 py-2 rounded hover:bg-surface/80"
+              className="flex min-h-11 w-full items-center justify-between rounded-md px-3 py-2 text-left transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               onClick={() => navigate(`/game/lobby/${r.roomCode}`)}
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{r.hostUsername}</span>
-                <span className="ml-4 text-xs text-ink-muted">{r.playerCount}/{r.maxPlayers}</span>
+                <span className="truncate text-sm font-semibold leading-5 text-ink">{r.hostUsername}</span>
+                <span className="ml-4 flex shrink-0 items-center gap-2 text-xs leading-4 text-text-muted">
+                  {r.playerCount}/{r.maxPlayers}
+                  <ChevronRight className="size-4" aria-hidden="true" />
+                </span>
               </div>
             </button>
           </li>
@@ -99,4 +103,3 @@ export default function LiveRoomRows() {
     </section>
   );
 }
-
