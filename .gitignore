@@ -1,7 +1,12 @@
+# Project guidance and local planning
+AGENTS.md
+CLAUDE.md
+design.md
 architecture.md
-
 docs/
 learning/
+
+# Local agent and editor configuration
 .cursor/
 .claude/
 .kiro/
@@ -10,7 +15,7 @@ learning/
 skills-lock.json
 .cursorrules
 
-# Dependencies and build output (never commit)
+# Dependencies and build output
 node_modules/
 dist/
 dist-ssr/
