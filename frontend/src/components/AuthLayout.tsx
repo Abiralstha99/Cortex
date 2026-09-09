@@ -19,32 +19,32 @@ export default function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-dvh bg-background p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto grid min-h-[calc(100dvh-2rem)] max-w-7xl overflow-hidden rounded-hero border border-border bg-surface shadow-card sm:min-h-[calc(100dvh-3rem)] lg:min-h-[calc(100dvh-4rem)] lg:grid-cols-[0.88fr_1.12fr]">
-        <section className="relative overflow-hidden bg-ink px-6 py-6 text-white sm:px-10 sm:py-8 lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-12">
+    <main data-theme="fluent-dark" className="min-h-dvh bg-background p-3 text-ink sm:p-5 lg:p-6">
+      <div className="mx-auto grid min-h-[calc(100dvh-1.5rem)] max-w-7xl overflow-hidden rounded-panel border border-border bg-background shadow-floating sm:min-h-[calc(100dvh-2.5rem)] lg:min-h-[calc(100dvh-3rem)] lg:grid-cols-[0.82fr_1fr]">
+        <section className="relative overflow-hidden border-b border-border bg-background px-5 py-5 sm:px-8 sm:py-7 lg:flex lg:flex-col lg:justify-between lg:border-b-0 lg:border-r lg:px-12 lg:py-10">
           <BrandMark
             to="/"
-            className="relative inline-flex min-h-11 items-center rounded-control text-white outline-none focus-visible:ring-3 focus-visible:ring-white/35"
+            className="relative inline-flex min-h-11 items-center rounded-control text-ink outline-none focus-visible:ring-3 focus-visible:ring-primary/40"
           />
 
-          <div className="relative mt-14 hidden max-w-md sm:block lg:my-auto">
-            <p className="text-sm font-semibold text-white/70">Live quiz night</p>
-            <h2 className="mt-3 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+          <div className="relative mt-8 max-w-md sm:mt-12 lg:my-auto">
+            <p className="text-sm font-semibold text-muted">Live quiz night</p>
+            <h2 className="mt-3 max-w-sm text-3xl font-bold leading-tight tracking-tight text-ink sm:text-4xl">
               Your notes. Their fastest answers.
             </h2>
-            <p className="mt-4 max-w-sm leading-relaxed text-white/70">
+            <p className="mt-4 max-w-sm leading-relaxed text-muted">
               Create a room, bring everyone in with one code, and race for the
               top spot.
             </p>
 
-            <ul className="mt-8 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <ul className="mt-7 grid gap-2.5 sm:grid-cols-3 lg:mt-8 lg:grid-cols-1">
               {gameMoments.map(({ label, icon: Icon }) => (
                 <li
                   key={label}
-                  className="flex items-center gap-3 text-sm font-semibold"
+                  className="flex items-center gap-3 text-sm font-semibold text-ink"
                 >
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-control border border-white/15 bg-white/10">
-                    <Icon aria-hidden="true" className="size-5" />
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-control border border-border bg-surface text-primary">
+                    <Icon aria-hidden="true" className="size-[18px]" />
                   </span>
                   {label}
                 </li>
@@ -52,14 +52,14 @@ export default function AuthLayout({
             </ul>
           </div>
 
-          <p className="relative mt-12 hidden text-sm text-white/55 lg:block">
+          <p className="relative mt-8 hidden text-sm text-text-muted lg:block">
             Multiplayer study sessions, ready when your group is.
           </p>
         </section>
 
         <section
           aria-labelledby="auth-task-heading"
-          className="flex items-center justify-center bg-surface px-5 py-10 sm:px-10 lg:px-16"
+          className="flex items-center justify-center bg-subtle px-4 py-8 sm:px-8 sm:py-10 lg:px-14 lg:py-12"
         >
           <div className="w-full max-w-md">
             <div className="mb-7">
@@ -69,10 +69,12 @@ export default function AuthLayout({
               >
                 {heading}
               </h1>
-              <p className="mt-2 text-base text-muted-foreground">{subtitle}</p>
+              <p className="mt-2 text-base text-muted">{subtitle}</p>
             </div>
 
-            <div className="w-full">{children}</div>
+            <div className="w-full rounded-panel border border-border bg-surface p-5 shadow-floating sm:p-7">
+              {children}
+            </div>
           </div>
         </section>
       </div>

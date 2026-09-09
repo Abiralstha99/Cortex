@@ -74,16 +74,16 @@ export default function HomeWorkspace() {
           {/* CreateStage slot */}
           <CreateStage onContinue={handleContinue} />
           {/* Progressive library rows */}
-          <div className="mt-3 space-y-3">
+          <div className="mt-3">
             <QuizRows />
-            <LiveRoomRows />
           </div>
         </div>
-        <aside className="min-w-0">
+        <aside className="min-w-0 space-y-3">
           {/* JoinRail slot */}
           <section aria-label="Join rail" className="rounded-lg border border-border bg-surface/50 p-4">
             <JoinRail onJoin={handleJoin} />
           </section>
+          <LiveRoomRows />
         </aside>
       </main>
     </div>

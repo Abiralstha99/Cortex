@@ -12,6 +12,14 @@ vi.mock("@clerk/react", () => {
   };
 });
 
+vi.mock("@/components/home/JoinRail", () => ({
+  default: () => <div data-testid="join-game-panel">Join a game</div>,
+}));
+
+vi.mock("@/components/home/LiveRoomRows", () => ({
+  default: () => <div data-testid="public-rooms">Public rooms</div>,
+}));
+
 afterEach(cleanup);
 
 describe("HomeWorkspace shell", () => {
@@ -20,5 +28,16 @@ describe("HomeWorkspace shell", () => {
 
     expect(document.querySelector('[data-theme="fluent-dark"]')).not.toBeNull();
     expect(screen.getByRole("link", { name: "Cortex" })).toBeInTheDocument();
+  });
+
+  it("places public rooms below the join game panel", () => {
+    renderWithRouter(<HomeWorkspace />);
+
+    const main = screen.getByRole("main");
+    const joinPanel = screen.getByTestId("join-game-panel");
+    const publicRooms = screen.getByTestId("public-rooms");
+
+    expect(main.compareDocumentPosition(publicRooms) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(joinPanel.compareDocumentPosition(publicRooms) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

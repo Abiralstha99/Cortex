@@ -21,6 +21,25 @@ Rules:
 - Prefer distinct coverage of the material.`;
 
 const DEFAULT_MODEL = "gemini-3.5-flash";
+const DEFAULT_OUTPUT_TOKEN_CAP = 8192;
+
+function getResolvedModel(): string {
+  return process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
+}
+
+function getResolvedOutputTokenCap(): number {
+  return parseInt(
+    process.env.GEMINI_MAX_OUTPUT_TOKENS ?? String(DEFAULT_OUTPUT_TOKEN_CAP),
+    10,
+  );
+}
+
+export function logGenerationConfig(): void {
+  console.info("[quiz-gen] generation:config", {
+    resolvedModel: getResolvedModel(),
+    outputTokenCap: getResolvedOutputTokenCap(),
+  });
+}
 
 export type CallLlmForBatchInput = {
   batch: QuestionBatch;
@@ -31,6 +50,12 @@ export type CallLlmForBatchInput = {
 
 export type GenerateDeps = {
   complete?: (userPrompt: string) => Promise<string>;
+};
+
+export type LlmBatchResponse = {
+  text: string;
+  finishReason?: string | undefined;
+  outputTokens?: number | undefined;
 };
 
 function buildUserPrompt(input: CallLlmForBatchInput): string {
@@ -52,9 +77,9 @@ Generate exactly ${batch.questionCount} multiple-choice questions as a JSON arra
 export async function callLlmForBatch(
   input: CallLlmForBatchInput,
   deps: GenerateDeps = {},
-): Promise<string> {
+): Promise<LlmBatchResponse> {
   if (deps.complete) {
-    return deps.complete(buildUserPrompt(input));
+    return { text: await deps.complete(buildUserPrompt(input)) };
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
@@ -63,21 +88,25 @@ export async function callLlmForBatch(
   }
 
   const google = createGoogleGenerativeAI({ apiKey });
-  const model = process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
+  const model = getResolvedModel();
 
   try {
-    const { text } = await generateText({
+    const { text, finishReason, usage } = await generateText({
       model: google(model),
       system: SYSTEM_PROMPT,
       prompt: buildUserPrompt(input),
       temperature: 0.3,
-      maxOutputTokens: 2048,
+      maxOutputTokens: getResolvedOutputTokenCap(),
     });
 
     if (!text) {
       throw new Error("Empty completion from Gemini");
     }
-    return text;
+    return {
+      text,
+      finishReason,
+      outputTokens: usage.outputTokens,
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Gemini request failed";
     throw new Error(msg);

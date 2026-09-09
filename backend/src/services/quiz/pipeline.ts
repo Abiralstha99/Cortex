@@ -28,7 +28,7 @@ import type {
 import { planBatches } from "./batch.service.js";
 import { chunkText } from "./chunk.service.js";
 import type { GenerateDeps } from "./generation.service.js";
-import { callLlmForBatch } from "./generation.service.js";
+import { callLlmForBatch, logGenerationConfig } from "./generation.service.js";
 import { loadDocument } from "./load.service.js";
 import { estimateTokens } from "./tokens.js";
 import {
@@ -144,10 +144,12 @@ async function generateValidatedBatch(
   deps: GenerateDeps,
 ): Promise<GeneratedQuestion[]> {
   let previousError: string | undefined;
+  let finishReason: string | undefined;
+  let outputTokens: number | undefined;
   for (let attempt = 1; attempt <= MAX_GEN_RETRIES; attempt++) {
     let raw: string | undefined;
     try {
-      raw = await callLlmForBatch(
+      const response = await callLlmForBatch(
         {
           batch,
           batchIndex,
@@ -156,12 +158,17 @@ async function generateValidatedBatch(
         },
         deps,
       );
+      raw = response.text;
+      finishReason = response.finishReason;
+      outputTokens = response.outputTokens;
 
       console.info("[quiz-gen] gemini:response", {
         batchIndex,
         attempt,
         requestedQuestionCount: batch.questionCount,
         rawResponseLength: raw.length,
+        finishReason,
+        outputTokens,
         rawResponse: raw,
       });
 
@@ -176,6 +183,8 @@ async function generateValidatedBatch(
           attempt,
           requestedQuestionCount: batch.questionCount,
           rejection,
+          finishReason,
+          outputTokens,
           rejectedRawResponse: raw,
         });
         throw error;
@@ -201,12 +210,20 @@ async function generateValidatedBatch(
         requestedQuestionCount: batch.questionCount,
         reason: previousError,
         willRetry,
+        finishReason,
+        outputTokens,
         ...(raw === undefined ? { rawResponse: null } : {}),
       });
       if (attempt === MAX_GEN_RETRIES) {
-        console.warn(
-          `[quiz-gen] batch:failed batch=${batchIndex + 1}/${totalBatches} attempts=${MAX_GEN_RETRIES}: ${previousError}`,
-        );
+        console.warn("[quiz-gen] batch:failed", {
+          batchIndex,
+          batchNumber: `${batchIndex + 1}/${totalBatches}`,
+          attempts: MAX_GEN_RETRIES,
+          requestedQuestionCount: batch.questionCount,
+          reason: previousError,
+          finishReason,
+          outputTokens,
+        });
         return [];
       }
     }
@@ -226,6 +243,7 @@ export async function generateAllBatches(
   requestedCount: number,
   deps: GenerateDeps = {},
 ): Promise<GenerateAllBatchesResult> {
+  logGenerationConfig();
   console.info("[quiz-gen] generateAllBatches:start", {
     batchCount: batches.length,
     requestedCount,
