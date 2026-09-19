@@ -3,12 +3,8 @@
  *
  * Responsibilities:
  *  1. Load an uploaded document (PDF/text) and split it into semantic chunks.
- *  2. Plan how many LLM calls are needed to produce the requested question count.
- *  3. Decide sync vs async path:
- *       - Small jobs (≤ MAX_SYNC_LLM_CALLS): generate immediately, persist to Postgres, return 200.
- *       - Large jobs: enqueue a BullMQ job, return 202 with a polling jobId.
- *  4. For each batch: call LLM → Zod-validate → retry on failure (up to MAX_GEN_RETRIES).
- *  5. Deduplicate and cap the final question set at requestedCount.
+ *  2. Queue a sequential adaptive generation run.
+ *  3. Persist only a complete, validated question set.
  *
  * Key invariants:
  *  - A per-owner Redis SET NX key prevents concurrent generation requests (15s TTL).
@@ -17,26 +13,39 @@
  */
 
 import redis from "../../lib/redis.js";
-import { quizGenerateQueue, QUIZ_GENERATE_JOB } from "../../lib/queue.js";
+import {
+  ATTACH_QUIZ_TO_WAITING_GAME_JOB,
+  FAIL_WAITING_QUIZ_GENERATION_JOB,
+  quizGenerateQueue,
+  QUIZ_GENERATE_JOB,
+  waitingRoomQuizQueue,
+} from "../../lib/queue.js";
 import { QUIZ_GEN_INFLIGHT_KEY } from "../../lib/redisKeys.js";
 import type {
+  AdaptiveQuizGenerationInput,
+  AdaptiveQuizGenerationResult,
+  BatchOutcome,
+  BatchValidationOutcome,
+  GeminiGenerationConfig,
   GeneratedQuestion,
-  GenerateAllBatchesResult,
-  PipelinePrepareResult,
   QuestionBatch,
 } from "../../types/quiz.types.js";
-import { planBatches } from "./batch.service.js";
+import {
+  DEFAULT_BATCH_TOKEN_BUDGET,
+  packSourceChunks,
+} from "./batch.service.js";
 import { chunkText } from "./chunk.service.js";
-import type { GenerateDeps } from "./generation.service.js";
-import { callLlmForBatch, logGenerationConfig } from "./generation.service.js";
+import type { AdaptiveGenerateDeps } from "./generation.service.js";
+import { callLlmForBatch } from "./generation.service.js";
 import { loadDocument } from "./load.service.js";
-import { estimateTokens } from "./tokens.js";
+import { createAdaptivePlanner } from "./adaptive-planner.service.js";
 import {
   createQuizProcessingJob,
   createReadyQuiz,
   loadQuizGenData,
   markQuizGenJobFailed,
   markQuizGenJobReady,
+  recordPersistedQuizGenData,
   storeQuizGenData,
   clearQuizGenData,
 } from "./persist.service.js";
@@ -50,17 +59,22 @@ import {
 /** Max retry attempts per batch when Zod validation fails */
 const MAX_GEN_RETRIES = Number(process.env.MAX_GEN_RETRIES ?? 3);
 
-/** How many batches to send to the LLM concurrently */
-const GEN_CONCURRENCY = Number(process.env.QUIZ_GEN_CONCURRENCY ?? 3);
-
 /** Hard cap on questions a user can request in one generation */
 const MAX_QUESTIONS = Number(process.env.MAX_QUESTIONS ?? 50);
 
-/**
- * Threshold that decides sync (≤) vs async (>) path.
- * Sync blocks the HTTP request; async returns 202 immediately.
- */
-export const MAX_SYNC_LLM_CALLS = Number(process.env.MAX_SYNC_LLM_CALLS ?? 3);
+export class QuizGenerationIncompleteError extends Error {
+  constructor(
+    public readonly requestedCount: number,
+    public readonly generatedCount: number,
+    cause?: unknown,
+  ) {
+    super(
+      `Quiz generation incomplete: generated ${generatedCount} of ${requestedCount} requested questions`,
+      cause === undefined ? undefined : { cause },
+    );
+    this.name = "QuizGenerationIncompleteError";
+  }
+}
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -72,221 +86,281 @@ export type RunQuizGenerationInput = {
   requestedCount: number;
   /** When set, overrides the filename-derived title stored on the quiz. */
   title?: string;
+  gameId?: string;
 };
 
-export type RunQuizGenerationResult =
-  | {
-      mode: "sync";
-      statusCode: 200;
-      quizId: string;
-      status: "ready";
-      questions: GeneratedQuestion[];
-      metadata: {
-        plannedLlmCalls: number;
-        requestedCount: number;
-        generatedCount: number;
-        sourceType: "pdf" | "text";
-        title: string;
-      };
-    }
-  | {
-      mode: "async";
-      statusCode: 202;
-      /** Redis job id — not a Postgres quiz id until the worker finishes */
-      jobId: string;
-      status: "processing";
-      metadata: {
-        plannedLlmCalls: number;
-        requestedCount: number;
-        sourceType: "pdf" | "text";
-        title: string;
-      };
-    };
-
-// ─── Internal helpers ───────────────────────────────────────────────────────────
+export type RunQuizGenerationResult = {
+  mode: "async";
+  statusCode: 202;
+  /** Redis job id — not a Postgres quiz id until the worker finishes */
+  jobId: string;
+  status: "processing";
+  metadata: {
+    requestedCount: number;
+    sourceType: "pdf" | "text";
+    title: string;
+  };
+};
 
 /**
- * Generic bounded-concurrency pool.
- * Spawns up to `concurrency` workers that pull from a shared index counter.
- * Results are returned in the original item order (not completion order).
+ * Generates exactly the requested number of unique questions by adapting each
+ * request to the outcome of the previous one.
  */
-async function mapPool<T, R>(
-  items: T[],
-  concurrency: number,
-  fn: (item: T, index: number) => Promise<R>,
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let next = 0;
-  async function worker() {
-    while (next < items.length) {
-      const i = next++;
-      results[i] = await fn(items[i]!, i);
+export async function generateAdaptiveQuiz(
+  input: AdaptiveQuizGenerationInput,
+  deps: AdaptiveGenerateDeps = {},
+): Promise<AdaptiveQuizGenerationResult> {
+  const startedAt = Date.now();
+  const sourcePacks = packSourceChunks(
+    input.chunks,
+    Number(process.env.QUIZ_BATCH_TOKEN_BUDGET ?? DEFAULT_BATCH_TOKEN_BUDGET),
+  );
+  const planner = createAdaptivePlanner({
+    sourcePacks,
+    requestedTotal: input.requestedCount,
+    usableOutputBudget: input.modelConfig.usableOutputBudget,
+  });
+  const questions: GeneratedQuestion[] = [];
+  const batchSizes: number[] = [];
+  const outputTokensByBatch: Array<number | undefined> = [];
+  const tokensPerQuestionByBatch: Array<number | undefined> = [];
+  const finishReasons: Array<string | undefined> = [];
+  const validationOutcomes: BatchValidationOutcome[] = [];
+  let retries = 0;
+  let totalLlmCalls = 0;
+
+  try {
+    while (planner.hasRemainingQuestions()) {
+      const planned = planner.nextBatch();
+      const batch: QuestionBatch = {
+        text: planned.sourcePack.text,
+        chunkIndices: planned.sourcePack.chunkIndices,
+        questionCount: planned.questionCount,
+      };
+      const result = await generateAdaptiveBatch(
+        batch,
+        totalLlmCalls,
+        input.modelConfig,
+        deps,
+        questions,
+      );
+
+      batchSizes.push(...result.batchSizes);
+      outputTokensByBatch.push(...result.outputTokensByBatch);
+      tokensPerQuestionByBatch.push(...result.tokensPerQuestionByBatch);
+      finishReasons.push(...result.finishReasons);
+      validationOutcomes.push(...result.validationOutcomes);
+      retries += result.retries;
+      totalLlmCalls += result.totalLlmCalls;
+
+      console.info("[quiz-gen] run:batch", {
+        runId: input.runId,
+        batchIndex: totalLlmCalls - result.totalLlmCalls,
+        outcome: result.outcome,
+        retries: result.retries,
+        totalLlmCalls: result.totalLlmCalls,
+      });
+
+      planner.recordOutcome(result.outcome);
     }
+  } catch (error) {
+    if (error instanceof QuizGenerationIncompleteError) throw error;
+    throw new QuizGenerationIncompleteError(
+      input.requestedCount,
+      questions.length,
+      error,
+    );
   }
-  const n = Math.min(concurrency, Math.max(1, items.length));
-  await Promise.all(Array.from({ length: n }, () => worker()));
-  return results;
+
+  const state = planner.getState();
+  const generated = {
+    questions,
+    complete: questions.length === input.requestedCount,
+    metrics: {
+      resolvedModel: input.modelConfig.model,
+      configuredMaxOutputTokens: input.modelConfig.maxOutputTokens,
+      usableOutputBudget: input.modelConfig.usableOutputBudget,
+      requestedTotal: input.requestedCount,
+      batchSizes,
+      outputTokensByBatch,
+      tokensPerQuestionByBatch,
+      finishReasons,
+      validationOutcomes,
+      retries,
+      failedBatches: state.failedBatchCount,
+      successfulBatchCount: state.successfulBatchCount,
+      totalLlmCalls,
+      durationMs: Date.now() - startedAt,
+      finalGeneratedCount: questions.length,
+    },
+  };
+  console.info("[quiz-gen] run:complete", {
+    runId: input.runId,
+    complete: generated.complete,
+    metrics: generated.metrics,
+  });
+  return generated;
 }
 
-/**
- * Process a single batch: call the LLM, validate with Zod, retry on failure.
- *
- * Retry logic:
- *  - On Zod parse failure, the error string is fed back into the next LLM prompt
- *    so the model can self-correct.
- *  - After MAX_GEN_RETRIES failures the batch is skipped (returns []).
- *    This makes the pipeline non-fatal — partial results are acceptable.
- */
-async function generateValidatedBatch(
+type AdaptiveBatchResult = {
+  outcome: BatchOutcome;
+  batchSizes: number[];
+  outputTokensByBatch: Array<number | undefined>;
+  tokensPerQuestionByBatch: Array<number | undefined>;
+  finishReasons: Array<string | undefined>;
+  validationOutcomes: BatchValidationOutcome[];
+  retries: number;
+  totalLlmCalls: number;
+};
+
+async function generateAdaptiveBatch(
   batch: QuestionBatch,
   batchIndex: number,
-  totalBatches: number,
-  deps: GenerateDeps,
-): Promise<GeneratedQuestion[]> {
+  modelConfig: GeminiGenerationConfig,
+  deps: AdaptiveGenerateDeps,
+  acceptedQuestions: GeneratedQuestion[],
+): Promise<AdaptiveBatchResult> {
   let previousError: string | undefined;
-  let finishReason: string | undefined;
-  let outputTokens: number | undefined;
+  const metrics = {
+    batchSizes: [] as number[],
+    outputTokensByBatch: [] as Array<number | undefined>,
+    tokensPerQuestionByBatch: [] as Array<number | undefined>,
+    finishReasons: [] as Array<string | undefined>,
+    validationOutcomes: [] as BatchValidationOutcome[],
+    retries: 0,
+    totalLlmCalls: 0,
+  };
+
   for (let attempt = 1; attempt <= MAX_GEN_RETRIES; attempt++) {
-    let raw: string | undefined;
+    let finishReason: string | undefined;
+    let outputTokens: number | undefined;
+    let validationOutcome: BatchValidationOutcome = "provider-error";
+
     try {
       const response = await callLlmForBatch(
         {
           batch,
           batchIndex,
-          totalBatches,
-          ...(previousError !== undefined ? { previousError } : {}),
+          ...(previousError === undefined ? {} : { previousError }),
         },
+        modelConfig,
         deps,
       );
-      raw = response.text;
       finishReason = response.finishReason;
       outputTokens = response.outputTokens;
 
-      console.info("[quiz-gen] gemini:response", {
-        batchIndex,
-        attempt,
-        requestedQuestionCount: batch.questionCount,
-        rawResponseLength: raw.length,
-        finishReason,
-        outputTokens,
-        rawResponse: raw,
-      });
-
-      let parsed: GeneratedQuestion[];
-      try {
-        parsed = parseAndValidateQuestions(raw);
-      } catch (error) {
-        const rejection =
-          error instanceof Error ? error.message : "Question validation failed";
-        console.warn("[quiz-gen] validation:rejected", {
-          batchIndex,
-          attempt,
-          requestedQuestionCount: batch.questionCount,
-          rejection,
-          finishReason,
-          outputTokens,
-          rejectedRawResponse: raw,
-        });
-        throw error;
+      if (finishReason === "length") {
+        validationOutcome = "capacity-failure";
+        return failedAdaptiveBatch(batch.questionCount, finishReason, outputTokens, validationOutcome, metrics);
       }
 
-      const accepted = parsed.slice(0, batch.questionCount);
-      console.info("[quiz-gen] batch:validated", {
-        batchIndex,
-        attempt,
-        requestedQuestionCount: batch.questionCount,
-        parsedQuestionCount: parsed.length,
-        acceptedQuestionCount: accepted.length,
-      });
-      // Cap to requested count if the model over-generates; keep all if fewer
-      return accepted;
-    } catch (err) {
-      previousError = err instanceof Error ? err.message : "Unknown error";
-      const willRetry = attempt < MAX_GEN_RETRIES;
-      console.warn("[quiz-gen] batch:retry-decision", {
-        batchIndex,
-        attempt,
-        maxRetries: MAX_GEN_RETRIES,
-        requestedQuestionCount: batch.questionCount,
-        reason: previousError,
-        willRetry,
-        finishReason,
-        outputTokens,
-        ...(raw === undefined ? { rawResponse: null } : {}),
-      });
-      if (attempt === MAX_GEN_RETRIES) {
-        console.warn("[quiz-gen] batch:failed", {
-          batchIndex,
-          batchNumber: `${batchIndex + 1}/${totalBatches}`,
-          attempts: MAX_GEN_RETRIES,
-          requestedQuestionCount: batch.questionCount,
-          reason: previousError,
-          finishReason,
-          outputTokens,
-        });
-        return [];
+      const parsed = parseAndValidateQuestions(response.text);
+      if (parsed.length !== batch.questionCount) {
+        validationOutcome = "count-mismatch";
+        previousError = `Expected ${batch.questionCount} questions, received ${parsed.length}`;
+      } else {
+        const deduped = dedupeQuestions([...acceptedQuestions, ...parsed]);
+        const uniqueQuestions = deduped.slice(acceptedQuestions.length);
+        acceptedQuestions.push(...uniqueQuestions);
+        validationOutcome = "valid";
+        recordAdaptiveCall(metrics, batch.questionCount, finishReason, outputTokens, validationOutcome);
+        return {
+          ...metrics,
+          outcome: {
+            requestedQuestionCount: batch.questionCount,
+            generatedQuestionCount: parsed.length,
+            uniqueQuestionCount: uniqueQuestions.length,
+            outputTokens,
+            finishReason,
+            validationOutcome,
+            healthy: true,
+            retried: attempt > 1,
+          },
+        };
       }
+    } catch (error) {
+      previousError = error instanceof Error ? error.message : "Question validation failed";
+      validationOutcome = previousError === "Response was not valid JSON"
+        ? "invalid-json"
+        : previousError.includes("Question validation failed")
+          ? "schema-invalid"
+          : "provider-error";
+    }
+
+    recordAdaptiveCall(metrics, batch.questionCount, finishReason, outputTokens, validationOutcome);
+    if (attempt < MAX_GEN_RETRIES) {
+      metrics.retries++;
+      continue;
     }
   }
-  return [];
+
+  return failedAdaptiveBatch(
+    batch.questionCount,
+    metrics.finishReasons.at(-1),
+    metrics.outputTokensByBatch.at(-1),
+    metrics.validationOutcomes.at(-1) ?? "provider-error",
+    metrics,
+    false,
+  );
+}
+
+function recordAdaptiveCall(
+  metrics: Omit<AdaptiveBatchResult, "outcome">,
+  requestedQuestionCount: number,
+  finishReason: string | undefined,
+  outputTokens: number | undefined,
+  validationOutcome: BatchValidationOutcome,
+): void {
+  metrics.batchSizes.push(requestedQuestionCount);
+  metrics.outputTokensByBatch.push(outputTokens);
+  metrics.tokensPerQuestionByBatch.push(
+    validationOutcome === "valid" && outputTokens !== undefined
+      ? outputTokens / requestedQuestionCount
+      : undefined,
+  );
+  metrics.finishReasons.push(finishReason);
+  metrics.validationOutcomes.push(validationOutcome);
+  metrics.totalLlmCalls++;
+}
+
+function failedAdaptiveBatch(
+  requestedQuestionCount: number,
+  finishReason: string | undefined,
+  outputTokens: number | undefined,
+  validationOutcome: BatchValidationOutcome,
+  metrics: Omit<AdaptiveBatchResult, "outcome">,
+  recordCall = true,
+): AdaptiveBatchResult {
+  if (recordCall) {
+    recordAdaptiveCall(
+      metrics,
+      requestedQuestionCount,
+      finishReason,
+      outputTokens,
+      validationOutcome,
+    );
+  }
+  return {
+    ...metrics,
+    outcome: {
+      requestedQuestionCount,
+      generatedQuestionCount: 0,
+      uniqueQuestionCount: 0,
+      outputTokens,
+      finishReason,
+      validationOutcome,
+      healthy: false,
+      retried: metrics.retries > 0,
+    },
+  };
 }
 
 // ─── Public API ─────────────────────────────────────────────────────────────────
 
 /**
- * Run all planned batches concurrently, then deduplicate and trim to requestedCount.
+ * First stage: extract text from the uploaded file and split it into source chunks.
  *
- * Used by both the sync HTTP path and the async BullMQ worker.
- */
-export async function generateAllBatches(
-  batches: QuestionBatch[],
-  requestedCount: number,
-  deps: GenerateDeps = {},
-): Promise<GenerateAllBatchesResult> {
-  logGenerationConfig();
-  console.info("[quiz-gen] generateAllBatches:start", {
-    batchCount: batches.length,
-    requestedCount,
-    plannedQuestionCount: batches.reduce((sum, batch) => sum + batch.questionCount, 0),
-  });
-  let failedBatches = 0;
-  const perBatch = await mapPool(batches, GEN_CONCURRENCY, async (batch, i) => {
-    const qs = await generateValidatedBatch(batch, i, batches.length, deps);
-    console.info("[quiz-gen] batch:complete", {
-      batchIndex: i,
-      requestedQuestionCount: batch.questionCount,
-      generatedQuestionCount: qs.length,
-    });
-    if (qs.length === 0) failedBatches++;
-    return qs;
-  });
-
-  const flat = perBatch.flat();
-  console.info("[quiz-gen] batches:flattened", {
-    generatedQuestionCount: flat.length,
-    failedBatches,
-  });
-  // Remove near-duplicate questions (>80% text similarity)
-  const deduped = dedupeQuestions(flat);
-  const questions = deduped.slice(0, requestedCount);
-  console.info("[quiz-gen] questions:finalized", {
-    generatedQuestionCount: flat.length,
-    dedupedQuestionCount: deduped.length,
-    finalQuestionCount: questions.length,
-    requestedCount,
-  });
-
-  return {
-    questions,
-    generatedCount: questions.length,
-    failedBatches,
-  };
-}
-
-/**
- * First stage: extract text from the uploaded file, chunk it, and plan LLM batches.
- *
- * Flow: loadDocument → chunkText → planBatches
+ * Flow: loadDocument → chunkText
  * Throws on invalid input (bad count, empty document, no viable chunks).
  */
 export async function preparePipeline(input: {
@@ -295,7 +369,12 @@ export async function preparePipeline(input: {
   originalName: string;
   requestedCount: number;
   title?: string;
-}): Promise<PipelinePrepareResult> {
+}): Promise<{
+  title: string;
+  sourceType: "pdf" | "text";
+  chunks: string[];
+  requestedCount: number;
+}> {
   const { buffer, mimeType, originalName, requestedCount, title } = input;
   if (requestedCount < 1 || requestedCount > MAX_QUESTIONS) {
     throw new Error(`Requested count must be between 1 and ${MAX_QUESTIONS}`);
@@ -312,27 +391,7 @@ export async function preparePipeline(input: {
   });
 
   if (chunks.length === 0) {
-    throw new Error("No batches generated");
-  }
-
-  const { batches, plannedLlmCalls } = planBatches(chunks, requestedCount);
-
-  console.info("[quiz-gen] pipeline:planned-batches", {
-    chunkCount: chunks.length,
-    batchCount: batches.length,
-    plannedLlmCalls,
-    requestedCount,
-    plannedQuestionCount: batches.reduce((sum, batch) => sum + batch.questionCount, 0),
-    batches: batches.map((batch, index) => ({
-      batchIndex: index,
-      questionCount: batch.questionCount,
-      chunkIndices: batch.chunkIndices,
-      estimatedInputTokens: estimateTokens(batch.text),
-    })),
-  });
-
-  if (plannedLlmCalls === 0) {
-    throw new Error("No planned LLM calls");
+    throw new Error("No source chunks generated");
   }
 
   const trimmedTitle = title?.trim().slice(0, 255);
@@ -340,8 +399,7 @@ export async function preparePipeline(input: {
   return {
     title: trimmedTitle || text.title,
     sourceType: text.sourceType,
-    batches,
-    plannedLlmCalls,
+    chunks,
     requestedCount,
   };
 }
@@ -349,9 +407,7 @@ export async function preparePipeline(input: {
 /**
  * Main entry point called by the HTTP controller (POST /api/quiz/generate).
  *
- * Sync/async decision gate:
- *  - plannedLlmCalls ≤ MAX_SYNC_LLM_CALLS → generate in-request, persist to Postgres, return 200.
- *  - plannedLlmCalls > MAX_SYNC_LLM_CALLS → store work in Redis, enqueue BullMQ job, return 202.
+ * Every request is stored in Redis and dispatched to the adaptive worker.
  *
  * Concurrency guard:
  *  - A SET NX key per ownerId (15s TTL) prevents the same user from double-submitting.
@@ -379,74 +435,41 @@ export async function runQuizGeneration(
 
     console.info("[quiz-gen] run:dispatch", {
       requestedCount,
-      plannedLlmCalls: pipeline.plannedLlmCalls,
-      mode:
-        pipeline.plannedLlmCalls <= MAX_SYNC_LLM_CALLS ? "sync" : "async",
+      mode: "async",
     });
 
-    if (pipeline.plannedLlmCalls <= MAX_SYNC_LLM_CALLS) {
-      // ── Sync path: small document, respond within the same HTTP request ──
-      const result = await generateAllBatches(pipeline.batches, requestedCount);
-      if (result.questions.length === 0) {
-        throw new Error("No questions generated");
-      }
+    const job = await createQuizProcessingJob({
+      ownerId,
+      title: pipeline.title,
+      sourceType: pipeline.sourceType,
+      requestedCount: pipeline.requestedCount,
+    });
 
-      // Persist the completed quiz + questions to Postgres in one transaction
-      const quiz = await createReadyQuiz({
-        ownerId,
-        title: pipeline.title,
-        sourceType: pipeline.sourceType,
-        questions: result.questions,
-      });
+    // Store source chunks and metadata separately so the worker can load
+    // the work by jobId without passing a large payload through BullMQ.
+    await storeQuizGenData(job.jobId, {
+      ownerId,
+      chunks: pipeline.chunks,
+      requestedCount: pipeline.requestedCount,
+      sourceType: pipeline.sourceType,
+      title: pipeline.title,
+      ...(input.gameId === undefined ? {} : { gameId: input.gameId }),
+    });
 
-      return {
-        mode: "sync",
-        statusCode: 200,
-        quizId: quiz.id,
-        status: "ready",
-        questions: result.questions,
-        metadata: {
-          plannedLlmCalls: pipeline.plannedLlmCalls,
-          requestedCount,
-          generatedCount: result.generatedCount,
-          sourceType: pipeline.sourceType,
-          title: pipeline.title,
-        },
-      };
-    } else {
-      // ── Async path: large document, offload to BullMQ worker ──
+    // Enqueue the lightweight BullMQ job (just the jobId reference).
+    await quizGenerateQueue.add(QUIZ_GENERATE_JOB, { jobId: job.jobId });
 
-      // 1. Create a pollable job status entry in Redis (status: "processing")
-      const job = await createQuizProcessingJob({
-        ownerId,
-        title: pipeline.title,
-        sourceType: pipeline.sourceType,
+    return {
+      mode: "async",
+      statusCode: 202,
+      jobId: job.jobId,
+      status: "processing",
+      metadata: {
         requestedCount: pipeline.requestedCount,
-        plannedLlmCalls: pipeline.plannedLlmCalls,
-      });
-
-      // 2. Store the full work payload (batches, metadata) in a separate Redis key
-      //    so the worker can load it by jobId without passing large data through BullMQ
-      await storeQuizGenData(job.jobId, {
-        ownerId,
-        batches: pipeline.batches,
-        requestedCount: pipeline.requestedCount,
-        plannedLlmCalls: pipeline.plannedLlmCalls,
         sourceType: pipeline.sourceType,
         title: pipeline.title,
-      });
-
-      // 3. Enqueue the lightweight BullMQ job (just the jobId reference)
-      await quizGenerateQueue.add(QUIZ_GENERATE_JOB, { jobId: job.jobId });
-
-      return {
-        mode: "async",
-        statusCode: 202,
-        jobId: job.jobId,
-        status: "processing",
-        metadata: pipeline,
-      };
-    }
+      },
+    };
   } finally {
     // Always release the inflight lock so the user can retry on failure
     await redis.del(QUIZ_GEN_INFLIGHT_KEY(ownerId));
@@ -457,45 +480,134 @@ export async function runQuizGeneration(
  * BullMQ worker entry point — called by quizGenerate.worker.ts.
  *
  * Flow:
- *  1. Load the work payload from Redis (batches + metadata).
- *  2. Run generateAllBatches (same logic as sync path).
+ *  1. Load the work payload from Redis (source chunks + metadata).
+ *  2. Run sequential adaptive generation.
  *  3. On success: persist quiz to Postgres → mark Redis job "ready" → clean up work key.
  *  4. On failure: mark Redis job "failed" with the error message (no Postgres write).
  *
  * The work payload is only cleared on success so that debugging failed jobs
  * is possible by inspecting the Redis key before TTL expiry.
  */
-export async function executeStoredGeneration(jobId: string): Promise<void> {
+export async function executeStoredGeneration(
+  jobId: string,
+  modelConfig: GeminiGenerationConfig,
+): Promise<void> {
+  return executeStoredGenerationWithDeps(jobId, modelConfig);
+}
+
+export type StoredGenerationDeps = {
+  loadWork: typeof loadQuizGenData;
+  generateQuiz: typeof generateAdaptiveQuiz;
+  persistQuiz: typeof createReadyQuiz;
+  recordPersistedQuiz: typeof recordPersistedQuizGenData;
+  markReady: typeof markQuizGenJobReady;
+  markFailed: typeof markQuizGenJobFailed;
+  clearWork: typeof clearQuizGenData;
+  enqueueWaitingRoomJob: (
+    name: string,
+    data: Parameters<typeof waitingRoomQuizQueue.add>[1],
+  ) => Promise<unknown>;
+};
+
+const storedGenerationDeps: StoredGenerationDeps = {
+  loadWork: loadQuizGenData,
+  generateQuiz: generateAdaptiveQuiz,
+  persistQuiz: createReadyQuiz,
+  recordPersistedQuiz: recordPersistedQuizGenData,
+  markReady: markQuizGenJobReady,
+  markFailed: markQuizGenJobFailed,
+  clearWork: clearQuizGenData,
+  enqueueWaitingRoomJob: (name, data) =>
+    waitingRoomQuizQueue.add(name, data, {
+      attempts: 3,
+      backoff: { type: "exponential", delay: 1000 },
+  }),
+};
+
+async function generateAndPersistQuiz(
+  jobId: string,
+  work: NonNullable<Awaited<ReturnType<typeof loadQuizGenData>>>,
+  modelConfig: GeminiGenerationConfig,
+  deps: StoredGenerationDeps,
+): Promise<{ id: string; questionCount: number }> {
+  const result = await deps.generateQuiz({
+    chunks: work.chunks,
+    requestedCount: work.requestedCount,
+    modelConfig,
+  });
+  if (!result.complete || result.questions.length !== work.requestedCount) {
+    throw new QuizGenerationIncompleteError(
+      work.requestedCount,
+      result.questions.length,
+    );
+  }
+
+  const quiz = await deps.persistQuiz({
+    ownerId: work.ownerId,
+    title: work.title,
+    sourceType: work.sourceType,
+    questions: result.questions,
+  });
+  await deps.recordPersistedQuiz(jobId, quiz);
+  return quiz;
+}
+
+export async function executeStoredGenerationWithDeps(
+  jobId: string,
+  modelConfig: GeminiGenerationConfig,
+  deps: StoredGenerationDeps = storedGenerationDeps,
+): Promise<void> {
+  let gameId: string | undefined;
+  let generationPersisted = false;
+  let generationReady = false;
   try {
-    const work = await loadQuizGenData(jobId);
+    const work = await deps.loadWork(jobId);
     if (!work) {
-      await markQuizGenJobFailed(jobId, "Quiz generation work not found");
+      await deps.markFailed(jobId, "Quiz generation work not found");
       return;
     }
 
-    const { ownerId, title, sourceType } = work;
+    gameId = work.gameId;
 
-    const result = await generateAllBatches(work.batches, work.requestedCount);
-    if (result.questions.length === 0) {
-      await markQuizGenJobFailed(jobId, "No questions generated");
-      return;
+    if (!work.chunks) {
+      throw new Error("Adaptive quiz generation work is incomplete");
     }
-
-    // Persist to Postgres only on success
-    const quiz = await createReadyQuiz({
-      ownerId,
-      title,
-      sourceType,
-      questions: result.questions,
-    });
+    const quiz = work.persistedQuizId && work.persistedQuestionCount
+      ? {
+          id: work.persistedQuizId,
+          questionCount: work.persistedQuestionCount,
+        }
+      : await generateAndPersistQuiz(jobId, work, modelConfig, deps);
+    generationPersisted = true;
 
     // Update Redis job status so the polling client sees "ready" + quizId
-    await markQuizGenJobReady(jobId, quiz.id);
+    await deps.markReady(jobId, quiz.id);
+    generationReady = true;
+    if (gameId) {
+      await deps.enqueueWaitingRoomJob(
+        ATTACH_QUIZ_TO_WAITING_GAME_JOB,
+        {
+          type: "attach",
+          gameId,
+          quizId: quiz.id,
+          questionCount: quiz.questionCount,
+        },
+      );
+    }
     // Remove the now-unnecessary work payload from Redis
-    await clearQuizGenData(jobId);
+    await deps.clearWork(jobId);
   } catch (error) {
+    if (generationPersisted || generationReady) {
+      throw error;
+    }
     const message =
       error instanceof Error ? error.message : "Unknown generation error";
-    await markQuizGenJobFailed(jobId, message);
+    await deps.markFailed(jobId, message);
+    if (gameId) {
+      await deps.enqueueWaitingRoomJob(
+        FAIL_WAITING_QUIZ_GENERATION_JOB,
+        { type: "fail", gameId, message },
+      );
+    }
   }
 }

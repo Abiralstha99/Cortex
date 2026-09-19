@@ -12,10 +12,7 @@
  * rows and keeps the quizzes table clean for queries/joins.
  */
 
-import type {
-  GeneratedQuestion,
-  QuestionBatch,
-} from "../../types/quiz.types.js";
+import type { GeneratedQuestion } from "../../types/quiz.types.js";
 import redis from "../../lib/redis.js";
 import { QUIZ_GEN_JOB_KEY, QUIZ_GEN_WORK_KEY } from "../../lib/redisKeys.js";
 import { prisma } from "../../lib/prisma.js";
@@ -29,12 +26,14 @@ const JOB_TTL_SECONDS = 3600;
 
 /** Full work payload stored in Redis for the async BullMQ worker to consume. */
 export type QuizGenWorkPayload = {
-  batches: QuestionBatch[];
+  chunks: string[];
   requestedCount: number;
   sourceType: "pdf" | "text";
   title: string;
   ownerId: string;
-  plannedLlmCalls: number;
+  gameId?: string;
+  persistedQuizId?: string;
+  persistedQuestionCount?: number;
 };
 
 /** Fields common to all job status variants. */
@@ -44,7 +43,6 @@ export type QuizGenJobBase = {
   title: string;
   sourceType: "pdf" | "text";
   requestedCount: number;
-  plannedLlmCalls: number;
   createdAt: string;
 };
 
@@ -88,6 +86,19 @@ export async function loadQuizGenData(
   return JSON.parse(value) as QuizGenWorkPayload;
 }
 
+export async function recordPersistedQuizGenData(
+  jobId: string,
+  quiz: { id: string; questionCount: number },
+): Promise<void> {
+  const work = await loadQuizGenData(jobId);
+  if (!work) throw new Error(`Quiz generation work ${jobId} not found`);
+  await storeQuizGenData(jobId, {
+    ...work,
+    persistedQuizId: quiz.id,
+    persistedQuestionCount: quiz.questionCount,
+  });
+}
+
 /** Remove the work payload after successful generation (no longer needed). */
 export async function clearQuizGenData(jobId: string): Promise<void> {
   await redis.del(QUIZ_GEN_WORK_KEY(jobId));
@@ -104,13 +115,14 @@ export async function createQuizProcessingJob(input: {
   title: string;
   sourceType: "pdf" | "text";
   requestedCount: number;
-  plannedLlmCalls: number;
 }): Promise<{ jobId: string }> {
   const jobId = crypto.randomUUID();
   await redis.set(
     QUIZ_GEN_JOB_KEY(jobId),
     JSON.stringify({
+      jobId,
       status: "processing",
+      createdAt: new Date().toISOString(),
       ...input,
     }),
     "EX",
@@ -140,9 +152,11 @@ export async function markQuizGenJobReady(
 ): Promise<void> {
   const result = await redis.get(QUIZ_GEN_JOB_KEY(jobId));
   if (!result) throw new Error(`Quiz generation job ${jobId} not found`);
+  const job = JSON.parse(result) as QuizGenJob;
   await redis.set(
     QUIZ_GEN_JOB_KEY(jobId),
     JSON.stringify({
+      ...job,
       status: "ready",
       quizId,
     }),
@@ -161,9 +175,11 @@ export async function markQuizGenJobFailed(
 ): Promise<void> {
   const result = await redis.get(QUIZ_GEN_JOB_KEY(jobId));
   if (!result) throw new Error(`Quiz generation job ${jobId} not found`);
+  const job = JSON.parse(result) as QuizGenJob;
   await redis.set(
     QUIZ_GEN_JOB_KEY(jobId),
     JSON.stringify({
+      ...job,
       status: "failed",
       errorMessage: message,
     }),

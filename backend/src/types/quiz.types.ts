@@ -14,16 +14,86 @@ export type QuestionBatch = {
   chunkIndices: number[];
 };
 
-export type PipelinePrepareResult = {
-  title: string;
-  sourceType: "pdf" | "text";
-  batches: QuestionBatch[];
-  plannedLlmCalls: number;
-  requestedCount: number;
+export type SourcePack = {
+  text: string;
+  chunkIndices: number[];
+  estimatedInputTokens: number;
 };
 
-export type GenerateAllBatchesResult = {
-  questions: GeneratedQuestion[];
-  generatedCount: number;
+export type BatchValidationOutcome =
+  | "valid"
+  | "invalid-json"
+  | "schema-invalid"
+  | "count-mismatch"
+  | "capacity-failure"
+  | "provider-error";
+
+export type BatchOutcome = {
+  requestedQuestionCount: number;
+  generatedQuestionCount: number;
+  uniqueQuestionCount: number;
+  outputTokens?: number | undefined;
+  finishReason?: string | undefined;
+  validationOutcome: BatchValidationOutcome;
+  healthy: boolean;
+  retried: boolean;
+};
+
+export type AdaptivePlannerState = {
+  requestedTotal: number;
+  generatedTotal: number;
+  remainingQuestions: number;
+  currentBatchSize: number;
+  observedTokensPerQuestion: number | null;
+  usableOutputBudget: number;
+  previousBatchOutcome: BatchOutcome | null;
+  successfulBatchCount: number;
+  failedBatchCount: number;
+  retryCount: number;
+  totalLlmCalls: number;
+  noProgressCount: number;
+};
+
+export type PlannedAdaptiveBatch = {
+  questionCount: number;
+  sourcePack: SourcePack;
+  sourcePackIndex: number;
+};
+
+export type GenerationMetrics = {
+  resolvedModel: string;
+  configuredMaxOutputTokens: number;
+  usableOutputBudget: number;
+  requestedTotal: number;
+  batchSizes: number[];
+  outputTokensByBatch: Array<number | undefined>;
+  tokensPerQuestionByBatch: Array<number | undefined>;
+  finishReasons: Array<string | undefined>;
+  validationOutcomes: BatchValidationOutcome[];
+  retries: number;
   failedBatches: number;
+  successfulBatchCount: number;
+  totalLlmCalls: number;
+  durationMs: number;
+  finalGeneratedCount: number;
+};
+
+export type GeminiGenerationConfig = {
+  model: string;
+  maxOutputTokens: number;
+  usableOutputBudget: number;
+  apiKey?: string | undefined;
+};
+
+export type AdaptiveQuizGenerationInput = {
+  chunks: string[];
+  requestedCount: number;
+  modelConfig: GeminiGenerationConfig;
+  runId?: string | undefined;
+};
+
+export type AdaptiveQuizGenerationResult = {
+  questions: GeneratedQuestion[];
+  metrics: GenerationMetrics;
+  complete: boolean;
 };

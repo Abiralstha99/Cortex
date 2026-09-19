@@ -2,50 +2,69 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   DEFAULT_BATCH_TOKEN_BUDGET,
-  planBatches,
+  packSourceChunks,
 } from "../batch.service.js";
 import { estimateTokens } from "../tokens.js";
 import { words } from "./helpers.js";
 
-describe("planBatches", () => {
-  it("returns plannedLlmCalls equal to batches.length", () => {
-    const chunks = [words(100), words(100), words(100)];
-    const { batches, plannedLlmCalls } = planBatches(chunks, 6);
-    assert.equal(plannedLlmCalls, batches.length);
-    assert.ok(batches.length >= 1);
-    const totalQ = batches.reduce((s, b) => s + b.questionCount, 0);
-    assert.equal(totalQ, 6);
+describe("packSourceChunks", () => {
+  it("returns an empty list for empty input", () => {
+    assert.deepEqual(packSourceChunks([], 3000), []);
   });
 
-  it("packs multiple small chunks into one batch under token budget", () => {
+  it("preserves source order and original chunk indices", () => {
+    const chunks = ["alpha source chunk", "beta source chunk", "gamma source chunk"];
+    const packs = packSourceChunks(chunks, DEFAULT_BATCH_TOKEN_BUDGET);
+
+    assert.equal(packs.length, 1);
+    assert.deepEqual(packs[0]!.chunkIndices, [0, 1, 2]);
+    assert.equal(
+      packs[0]!.text,
+      "alpha source chunk\n\n---\n\nbeta source chunk\n\n---\n\ngamma source chunk",
+    );
+  });
+
+  it("packs multiple small chunks under the input token budget", () => {
     const chunks = [words(50), words(50), words(50)];
-    const { batches, plannedLlmCalls } = planBatches(chunks, 3, {
-      tokenBudget: DEFAULT_BATCH_TOKEN_BUDGET,
-    });
-    assert.equal(plannedLlmCalls, 1);
-    assert.equal(batches.length, 1);
-    assert.equal(batches[0]!.questionCount, 3);
+    const packs = packSourceChunks(chunks, DEFAULT_BATCH_TOKEN_BUDGET);
+
+    assert.equal(packs.length, 1);
+    assert.equal(packs[0]!.estimatedInputTokens, estimateTokens(packs[0]!.text));
+    assert.ok(packs[0]!.estimatedInputTokens <= DEFAULT_BATCH_TOKEN_BUDGET);
   });
 
-  it("opens a new batch when adding a chunk would exceed token budget", () => {
+  it("counts join separators against the input budget", () => {
+    // Each five-word chunk is 7 tokens; joined text with "---" is 15 tokens.
+    const chunks = [words(5), words(5)];
+    const packs = packSourceChunks(chunks, 14);
+
+    assert.equal(packs.length, 2);
+    for (const pack of packs) {
+      assert.equal(pack.estimatedInputTokens, estimateTokens(pack.text));
+      assert.ok(pack.estimatedInputTokens <= 14);
+    }
+  });
+
+  it("opens a new pack when adding a chunk would exceed the input budget", () => {
     const big = words(400);
-    const chunks = [big, big, big, big];
-    const { batches, plannedLlmCalls } = planBatches(chunks, 8, {
-      tokenBudget: 600,
-      maxQuestionsPerBatch: 8,
-    });
-    assert.ok(plannedLlmCalls >= 3);
-    for (const b of batches) {
-      assert.ok(estimateTokens(b.text) <= 700);
+    const packs = packSourceChunks([big, big, big, big], 600);
+
+    assert.ok(packs.length >= 3);
+    for (const pack of packs) {
+      assert.ok(pack.estimatedInputTokens > 0);
+      assert.ok(pack.chunkIndices.length >= 1);
     }
+
+    const allIndices = packs.flatMap((p) => p.chunkIndices);
+    assert.deepEqual(allIndices, [0, 1, 2, 3]);
   });
 
-  it("never assigns more questions per batch than maxQuestionsPerBatch", () => {
-    const { batches } = planBatches([words(200)], 50, {
-      maxQuestionsPerBatch: 8,
-    });
-    for (const b of batches) {
-      assert.ok(b.questionCount <= 8);
-    }
+  it("keeps an oversized single chunk as its own pack", () => {
+    const oversized = words(1000);
+    const packs = packSourceChunks([oversized], 100);
+
+    assert.equal(packs.length, 1);
+    assert.deepEqual(packs[0]!.chunkIndices, [0]);
+    assert.equal(packs[0]!.estimatedInputTokens, estimateTokens(oversized));
   });
 });

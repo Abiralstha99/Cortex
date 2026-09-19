@@ -1,6 +1,9 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
-import type { QuestionBatch } from "../../types/quiz.types.js";
+import type {
+  GeminiGenerationConfig,
+  QuestionBatch,
+} from "../../types/quiz.types.js";
 
 /**
  * Single-batch question generation via Google Gemini (Vercel AI SDK).
@@ -20,37 +23,21 @@ Rules:
 - Questions must be answerable from the provided source text only.
 - Prefer distinct coverage of the material.`;
 
-const DEFAULT_MODEL = "gemini-3.5-flash";
-const DEFAULT_OUTPUT_TOKEN_CAP = 8192;
-
-function getResolvedModel(): string {
-  return process.env.GEMINI_MODEL ?? DEFAULT_MODEL;
-}
-
-function getResolvedOutputTokenCap(): number {
-  return parseInt(
-    process.env.GEMINI_MAX_OUTPUT_TOKENS ?? String(DEFAULT_OUTPUT_TOKEN_CAP),
-    10,
-  );
-}
-
-export function logGenerationConfig(): void {
-  console.info("[quiz-gen] generation:config", {
-    resolvedModel: getResolvedModel(),
-    outputTokenCap: getResolvedOutputTokenCap(),
-  });
-}
-
 export type CallLlmForBatchInput = {
   batch: QuestionBatch;
   batchIndex: number;
-  totalBatches: number;
   previousError?: string;
 };
 
 export type GenerateDeps = {
-  complete?: (userPrompt: string) => Promise<string>;
+  complete?: (
+    userPrompt: string,
+    config: GeminiGenerationConfig,
+  ) => Promise<string | LlmBatchResponse>;
 };
+
+/** Dependency contract for deterministic adaptive response-metadata tests. */
+export type AdaptiveGenerateDeps = GenerateDeps;
 
 export type LlmBatchResponse = {
   text: string;
@@ -59,8 +46,9 @@ export type LlmBatchResponse = {
 };
 
 function buildUserPrompt(input: CallLlmForBatchInput): string {
-  const { batch, batchIndex, totalBatches, previousError } = input;
-  let prompt = `Source material (batch ${batchIndex + 1} of ${totalBatches}):
+  const { batch, batchIndex, previousError } = input;
+  const batchLabel = `adaptive batch ${batchIndex + 1}`;
+  let prompt = `Source material (${batchLabel}):
 ${batch.text}
 Generate exactly ${batch.questionCount} multiple-choice questions as a JSON array.`;
 
@@ -72,31 +60,31 @@ Generate exactly ${batch.questionCount} multiple-choice questions as a JSON arra
 
 /**
  * One raw LLM call for a single batch (not validated).
- * Prefer deps.complete in tests; otherwise Gemini with GEMINI_API_KEY / GEMINI_MODEL.
+ * Prefer deps.complete in tests; otherwise use the startup-resolved Gemini config.
  */
 export async function callLlmForBatch(
   input: CallLlmForBatchInput,
+  config: GeminiGenerationConfig,
   deps: GenerateDeps = {},
 ): Promise<LlmBatchResponse> {
   if (deps.complete) {
-    return { text: await deps.complete(buildUserPrompt(input)) };
+    const completion = await deps.complete(buildUserPrompt(input), config);
+    return typeof completion === "string" ? { text: completion } : completion;
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  if (!config.apiKey) {
     throw new Error("GEMINI_API_KEY is not configured");
   }
 
-  const google = createGoogleGenerativeAI({ apiKey });
-  const model = getResolvedModel();
+  const google = createGoogleGenerativeAI({ apiKey: config.apiKey });
 
   try {
     const { text, finishReason, usage } = await generateText({
-      model: google(model),
+      model: google(config.model),
       system: SYSTEM_PROMPT,
       prompt: buildUserPrompt(input),
       temperature: 0.3,
-      maxOutputTokens: getResolvedOutputTokenCap(),
+      maxOutputTokens: config.maxOutputTokens,
     });
 
     if (!text) {

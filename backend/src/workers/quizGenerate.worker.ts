@@ -9,8 +9,11 @@ import {
   type QuizGenerateJobData,
 } from "../lib/queue.js";
 import { executeStoredGeneration } from "../services/quiz/pipeline.js";
+import type { ModelGenerationConfig } from "../services/quiz/model-config.service.js";
 
-export function startQuizGenerateWorker(): Worker<QuizGenerateJobData> {
+export function startQuizGenerateWorker(
+  modelConfig: ModelGenerationConfig,
+): Worker<QuizGenerateJobData> {
   const worker = new Worker<QuizGenerateJobData>(
     QUIZ_GENERATE_QUEUE,
     async (job) => {
@@ -18,8 +21,7 @@ export function startQuizGenerateWorker(): Worker<QuizGenerateJobData> {
       console.info("[quiz-gen] worker:start", {
         jobId: job.data.jobId,
       });
-      // Task 11: fully wired when executeStoredGeneration is implemented
-      await executeStoredGeneration(job.data.jobId);
+      await executeStoredGeneration(job.data.jobId, modelConfig);
       console.info("[quiz-gen] worker:complete", {
         jobId: job.data.jobId,
       });

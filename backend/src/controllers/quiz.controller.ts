@@ -46,7 +46,7 @@ export async function generateQuiz(req: Request, res: Response) {
         .json({ error: "Invalid title", details: titleResult.error.issues });
     }
 
-    // Run the quiz generation pipeline (sync or async depending on size)
+    // Queue the adaptive quiz-generation pipeline.
     const result = await runQuizGeneration({
       ownerId,
       buffer: req.file.buffer,
@@ -56,17 +56,7 @@ export async function generateQuiz(req: Request, res: Response) {
       ...(titleResult.data !== undefined ? { title: titleResult.data } : {}),
     });
 
-    // Sync path → 200 with quiz data
-    if (result.mode === "sync") {
-      return res.status(200).json({
-        quizId: result.quizId,
-        status: result.status,
-        questions: result.questions,
-        metadata: result.metadata,
-      });
-    }
-
-    // Async path → 202 with job ID for polling
+    // Return 202 with a job ID for polling.
     return res.status(202).json({
       jobId: result.jobId,
       status: result.status,
@@ -82,8 +72,7 @@ export async function generateQuiz(req: Request, res: Response) {
     }
     if (
       message.includes("too short") ||
-      message.includes("No batches generated") ||
-      message.includes("No planned LLM calls") ||
+      message.includes("No source chunks generated") ||
       message.includes("Requested count must be")
     ) {
       return res.status(400).json({ error: message });

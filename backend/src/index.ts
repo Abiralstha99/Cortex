@@ -12,8 +12,14 @@ import { startRoundEndWorker } from "./workers/roundEnd.worker.js";
 import { startQuizGenerateWorker } from "./workers/quizGenerate.worker.js";
 import gameRouter from "./routes/game.routes.js";
 import { quizGenerateRouter, quizzesRouter } from "./routes/quiz.routes.js";
+import {
+  logModelGenerationConfig,
+  resolveModelGenerationConfig,
+} from "./services/quiz/model-config.service.js";
 
 dotenv.config();
+const modelGenerationConfig = resolveModelGenerationConfig();
+logModelGenerationConfig(modelGenerationConfig);
 
 const app = express();
 const httpServer = createServer(app);
@@ -39,7 +45,7 @@ const io = attachSocket(httpServer);
 // Start the round end worker
 startRoundEndWorker(io);
 // Start the quiz-generate worker (async generation path)
-startQuizGenerateWorker();
+startQuizGenerateWorker(modelGenerationConfig);
 
 app.use("/api/games", gameRouter);
 app.use("/api/quiz", quizGenerateRouter);
