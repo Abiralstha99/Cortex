@@ -6,6 +6,7 @@ import { GAME_KEY } from "../../lib/redisKeys.js";
 import {
   attachQuizToWaitingGame,
   markWaitingQuizFailed,
+  setWaitingQuizJobIdIfProcessing,
   setWaitingQuizFields,
 } from "../waitingQuiz.service.js";
 
@@ -59,6 +60,21 @@ describe("waiting quiz writes", () => {
 
     assert.equal(updated, true);
     assert.equal(await redis.hget(gameKey, "quizGenStatus"), "failed");
+  });
+
+  it("does not overwrite a completed quiz status while recording a job ID", async () => {
+    await redis.hset(gameKey, {
+      gameId,
+      status: "waiting",
+      quizGenStatus: "ready",
+      quizId: crypto.randomUUID(),
+    });
+
+    const updated = await setWaitingQuizJobIdIfProcessing(gameId, "job-1");
+
+    assert.equal(updated, false);
+    assert.equal(await redis.hget(gameKey, "quizGenStatus"), "ready");
+    assert.equal(await redis.hget(gameKey, "quizGenJobId"), null);
   });
 
   it("quietly ignores failure updates after a room disappears", async () => {

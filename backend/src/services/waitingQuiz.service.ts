@@ -1,11 +1,10 @@
 import redis from "../lib/redis.js";
-import { prisma } from "../lib/prisma.js";
 import { GAME_KEY } from "../lib/redisKeys.js";
 import type { QuizGenStatus } from "../types/room.types.js";
 import { capRoundsToQuiz } from "./gamePlay.helpers.js";
 import { runQuizGeneration } from "./quiz/pipeline.js";
 
-type WaitingQuizStatusPayload = {
+export type WaitingQuizStatusPayload = {
   quizId: string | null;
   quizGenStatus: QuizGenStatus;
   quizGenError: string | null;
@@ -35,6 +34,29 @@ export async function setWaitingQuizFields(
     1,
     GAME_KEY(gameId),
     ...entries,
+  );
+
+  return updated === 1;
+}
+
+export async function setWaitingQuizJobIdIfProcessing(
+  gameId: string,
+  jobId: string,
+): Promise<boolean> {
+  const updated = await redis.eval(
+    `
+      if redis.call("HGET", KEYS[1], "status") ~= "waiting" then
+        return 0
+      end
+      if redis.call("HGET", KEYS[1], "quizGenStatus") ~= "processing" then
+        return 0
+      end
+      redis.call("HSET", KEYS[1], "quizGenJobId", ARGV[1])
+      return 1
+    `,
+    1,
+    GAME_KEY(gameId),
+    jobId,
   );
 
   return updated === 1;
@@ -130,71 +152,11 @@ export function scheduleWaitingQuizGeneration(input: {
         mimeType: input.mimeType,
         originalName: input.originalName,
         requestedCount: input.requestedCount,
+        gameId,
         ...(input.title !== undefined ? { title: input.title } : {}),
       });
 
-      if (result.mode === "async") {
-        const jobAttached = await setWaitingQuizFields(gameId, {
-          quizGenStatus: "processing",
-          quizGenJobId: result.jobId,
-        });
-        if (!jobAttached) return;
-
-        const { getQuizGenJob } = await import("./quiz/persist.service.js");
-        for (let attempt = 0; attempt < 90; attempt++) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          const job = await getQuizGenJob(result.jobId);
-          if (!job) continue;
-
-          if (job.status === "ready") {
-            const quiz = await prisma.quiz.findUnique({
-              where: { id: job.quizId },
-              select: { questionCount: true },
-            });
-            const questionCount =
-              quiz?.questionCount ?? input.requestedCount;
-            const attached = await attachQuizToWaitingGame(
-              gameId,
-              job.quizId,
-              questionCount,
-            );
-            onStatus(attached);
-            return;
-          }
-
-          if (job.status === "failed") {
-            const failed = await markWaitingQuizFailed(
-              gameId,
-              job.errorMessage || "Generation failed",
-            );
-            if (failed) onStatus(failed);
-            return;
-          }
-        }
-
-        const failed = await markWaitingQuizFailed(
-          gameId,
-          "Generation timed out",
-        );
-        if (failed) onStatus(failed);
-        return;
-      }
-
-      if (!result.quizId || result.questions.length === 0) {
-        const failed = await markWaitingQuizFailed(
-          gameId,
-          "No questions generated",
-        );
-        if (failed) onStatus(failed);
-        return;
-      }
-
-      const attached = await attachQuizToWaitingGame(
-        gameId,
-        result.quizId,
-        result.questions.length,
-      );
-      onStatus(attached);
+      await setWaitingQuizJobIdIfProcessing(gameId, result.jobId);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Generation failed";
