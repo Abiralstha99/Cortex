@@ -11,6 +11,7 @@ import { attachSocket } from "./socket/index.js";
 import { startRoundEndWorker } from "./workers/roundEnd.worker.js";
 import { startQuizGenerateWorker } from "./workers/quizGenerate.worker.js";
 import { startWaitingRoomQuizWorker } from "./workers/waitingRoomQuiz.worker.js";
+import { startGameFinishWorker } from "./workers/gameFinish.worker.js";
 import gameRouter from "./routes/game.routes.js";
 import { quizGenerateRouter, quizzesRouter } from "./routes/quiz.routes.js";
 import {
@@ -45,6 +46,7 @@ const io = attachSocket(httpServer);
 
 // Start the round end worker
 startRoundEndWorker(io);
+startGameFinishWorker(io);
 // Start the quiz-generate worker (async generation path)
 startQuizGenerateWorker(modelGenerationConfig);
 startWaitingRoomQuizWorker();

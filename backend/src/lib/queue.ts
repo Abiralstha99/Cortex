@@ -1,5 +1,10 @@
 import { Queue } from "bullmq";
 import redis from "./redis.js";
+import {
+  GAME_FINISH_JOB,
+  GAME_FINISH_JOB_ID,
+  type GameFinishJobData,
+} from "../services/gameFinish.queue.js";
 
 // Defines the data for the job that will be enqueued.
 export interface RoundEndJobData {
@@ -13,6 +18,18 @@ export const ROUND_END_JOB = "end-round";
 
 export const roundEndQueue = new Queue<RoundEndJobData>(ROUND_END_QUEUE, {
   connection: redis,
+});
+
+export const GAME_FINISH_QUEUE = "game-finish";
+export { GAME_FINISH_JOB, GAME_FINISH_JOB_ID, type GameFinishJobData };
+
+export const gameFinishQueue = new Queue<GameFinishJobData>(GAME_FINISH_QUEUE, {
+  connection: redis,
+  defaultJobOptions: {
+    attempts: 5,
+    backoff: { type: "exponential", delay: 1_000 },
+    removeOnComplete: { age: 3_600, count: 1_000 },
+  },
 });
 
 // Quiz generation always runs in the adaptive background worker.

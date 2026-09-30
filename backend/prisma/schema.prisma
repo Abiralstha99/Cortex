@@ -41,7 +41,6 @@ model User {
   lastActive  DateTime @default(now()) @map("last_active")
 
   hostedGames  Game[]       @relation("GameHost")
-  wonGames     Game[]       @relation("GameWinner")
   gamePlayers  GamePlayer[]
   answers      Answer[]
   quizzes      Quiz[]
@@ -95,16 +94,13 @@ model Game {
   rounds     Int        @default(10)
   createdAt  DateTime   @default(now()) @map("created_at")
   finishedAt DateTime?  @map("finished_at")
-  winnerId   String?    @map("winner_id") @db.Uuid
 
   quiz        Quiz         @relation(fields: [quizId], references: [id])
   host        User         @relation("GameHost", fields: [hostId], references: [id])
-  winner      User?        @relation("GameWinner", fields: [winnerId], references: [id])
   gamePlayers GamePlayer[]
   answers     Answer[]
 
   @@index([hostId])
-  @@index([winnerId])
   @@index([quizId])
   @@index([createdAt])
   @@map("games")
@@ -133,7 +129,7 @@ model Answer {
   gameId         String   @map("game_id") @db.Uuid
   userId         String   @map("user_id") @db.Uuid
   questionId     String   @map("question_id") @db.Uuid
-  answerIndex    Int      @map("answer_index")
+  response       Json     @db.JsonB
   correct        Boolean
   points         Int
   responseTimeMs Int      @map("response_time_ms")

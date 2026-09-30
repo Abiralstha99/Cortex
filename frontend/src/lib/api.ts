@@ -177,11 +177,7 @@ export type RoundFinishedPayload = {
 
 export type GameFinishedPayload = {
   finalLeaderboard: LeaderboardEntry[];
-  winner: {
-    playerId: string;
-    username: string;
-    score: number;
-  };
+  winners: LeaderboardEntry[];
 };
 
 export type QuizSummary = {

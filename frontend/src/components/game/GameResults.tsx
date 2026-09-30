@@ -13,9 +13,11 @@ type GameResultsProps = {
 export default function GameResults({ gameResults, myPlayerId }: GameResultsProps) {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
-  const { finalLeaderboard, winner } = gameResults;
+  const { finalLeaderboard, winners } = gameResults;
 
-  const isWinner = winner.playerId === myPlayerId;
+  const isWinner = winners.some((winner) => winner.playerId === myPlayerId);
+  const winnerNames = winners.map((winner) => winner.username).join(", ");
+  const winnerScore = winners[0]?.score ?? 0;
   const currentPlayer = finalLeaderboard.find(
     (entry) => entry.playerId === myPlayerId,
   );
@@ -36,9 +38,10 @@ export default function GameResults({ gameResults, myPlayerId }: GameResultsProp
           {isWinner ? "You won" : "Game finished"}
         </h1>
         <p className="mt-3 text-pretty text-muted-foreground">
-          Winner: <strong className="font-display text-ink">{winner.username}</strong>,{" "}
+          {winners.length === 1 ? "Winner:" : "Winners:"}{" "}
+          <strong className="font-display text-ink">{winnerNames}</strong>,{" "}
           <span className="font-mono font-semibold tabular-nums text-ink">
-            {winner.score} pts
+            {winnerScore} pts
           </span>
         </p>
         {currentPlayer && (

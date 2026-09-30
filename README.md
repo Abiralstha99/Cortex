@@ -11,6 +11,7 @@ Cortex turns study material into a live competition: upload a PDF, let an LLM ge
 - **AI quiz pipeline** — PDF/text extraction → semantic chunking → Gemini generation → Zod validation with retry
 - **Lobby-first UX** — create a room immediately; generation runs in the background with in-lobby status and host retry
 - **Real-time multiplayer** — Socket.io lobby join/ready/leave, room codes, host-controlled start
+- **Durable game results** — finished games save ranked players and submitted answers to PostgreSQL
 - **Split datastores** — Redis for live waiting/game state (TTL’d); PostgreSQL (Prisma) for durable users, quizzes, and finished games
 - **Auth** — Clerk for identity; webhook-provisioned user rows; JWT verified on REST and WebSocket handshakes
 - **Containerized local stack** — Docker Compose for backend, frontend, and Redis
@@ -156,7 +157,6 @@ npm run smoke:quiz-pipeline
 ## Future implementation
 
 - Complete end-to-end play loop polish (round UX, results screens, reconnect handling)
-- Finish transaction for game completion (ranks, answers, rating changes in one Postgres boundary)
 - Multi-player ELO / rating updates with a settled formula for 2–8 players
 - Socket.io Redis adapter for safe multi-instance deployments
 - Solo flashcard / practice mode from the same generated quiz bank

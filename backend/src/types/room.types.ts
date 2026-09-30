@@ -75,6 +75,7 @@ export type SubmissionRecord = {
   roundNumber: number;
   questionId: string;
   answerIndex: number;
+  responseTimeMs?: number;
   correct: boolean;
   pointsEarned: number;
   placement: number | null;
@@ -113,5 +114,5 @@ export type RoundFinishedPayload = {
 // Payload for the game_finished broadcast.
 export type GameFinishedPayload = {
   finalLeaderboard: LeaderboardEntry[];
-  winner: { playerId: string; username: string; score: number };
+  winners: LeaderboardEntry[];
 };

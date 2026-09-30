@@ -17,6 +17,13 @@ import type { SubmissionRecord, AnswerResult } from "../types/room.types.js";
 
 export const ROUND_TIME_LIMIT_MS = 30_000;
 
+export function calculateResponseTimeMs(
+  startedAtMs: number,
+  submittedAtMs: number,
+): number {
+  return Math.max(0, submittedAtMs - startedAtMs);
+}
+
 // 1st=100, 2nd=75, 3rd=50, 4th+=25, wrong=0
 export function calculatePoints(
   isCorrect: boolean,
@@ -102,11 +109,15 @@ export async function submitAnswer(params: {
 
   const correctIndex = Number(raw.correctIndex);
   const startedAt = new Date(raw.startedAt!).getTime();
-  const submittedAt = new Date().toISOString();
+  const submissionTime = new Date();
+  const submittedAt = submissionTime.toISOString();
 
   // Reject late submissions immediately — round timer has elapsed
-  const timeTaken = Date.now() - startedAt;
-  if (timeTaken > ROUND_TIME_LIMIT_MS) {
+  const responseTimeMs = calculateResponseTimeMs(
+    startedAt,
+    submissionTime.getTime(),
+  );
+  if (responseTimeMs > ROUND_TIME_LIMIT_MS) {
     throw new Error("Submission received after round time limit");
   }
 
@@ -121,6 +132,7 @@ export async function submitAnswer(params: {
     roundNumber,
     questionId,
     answerIndex,
+    responseTimeMs,
     submittedAt,
   };
 
@@ -191,6 +203,7 @@ export async function getRoundSubmissions(
         roundNumber,
         questionId: "",
         answerIndex: -1,
+        responseTimeMs: 0,
         submittedAt: new Date().toISOString(),
         correct: false,
         pointsEarned: 0,

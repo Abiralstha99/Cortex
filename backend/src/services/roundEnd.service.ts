@@ -15,10 +15,13 @@ import type { Server } from "socket.io";
 import type {
   RoundFinishedPayload,
   LeaderboardEntry,
-  GameFinishedPayload,
   Player,
 } from "../types/room.types.js";
-import { ROUND_END_JOB, roundEndQueue } from "../lib/queue.js";
+import {
+  ROUND_END_JOB,
+  gameFinishQueue,
+  roundEndQueue,
+} from "../lib/queue.js";
 import {
   GAME_KEY,
   ROUND_ENDED_KEY,
@@ -29,6 +32,8 @@ import redis from "../lib/redis.js";
 import { getRoundSubmissions, ROUND_TIME_LIMIT_MS } from "./answer.service.js";
 import { startRound } from "./round.service.js";
 import { publicNewQuestionFromRound } from "./gamePlay.helpers.js";
+import { rankPlayers } from "./gameCompletion.helpers.js";
+import { enqueueGameFinish } from "./gameFinish.queue.js";
 
 export const BETWEEN_ROUND_DELAY_MS = 3000;
 
@@ -55,14 +60,7 @@ export async function computeLeaderboard(
     throw new Error(`Game ${gameId} not found`);
   }
   const players = JSON.parse(game.players) as Player[];
-  return [...players]
-    .sort((a, b) => b.score - a.score)
-    .map((player, index) => ({
-      rank: index + 1,
-      playerId: player.id,
-      username: player.username,
-      score: player.score,
-    }));
+  return rankPlayers(players);
 }
 
 // Update each player's cumulative score in the GAME_KEY hash.
@@ -202,7 +200,7 @@ export async function endRound(
 
   // Decide next action: end game or start next round
   if (currentRound >= numberOfRounds) {
-    await endGame(gameId, io);
+    await endGame(gameId);
   } else {
     // Schedule next round after a delay
     setTimeout(async () => {
@@ -228,29 +226,7 @@ export async function endRound(
   }
 }
 
-// Compute final ranks and broadcast game_finished.
-// Does NOT write to Postgres — that is Phase 4 (persistence).
-export async function endGame(gameId: string, io: Server): Promise<void> {
-  // Compute final leaderboard
-  const leaderboard = await computeLeaderboard(gameId);
-  const winner = leaderboard[0];
-
-  if (!winner) {
-    throw new Error("No winner found");
-  }
-
-  // Build and broadcast game_finished payload
-  const payload: GameFinishedPayload = {
-    finalLeaderboard: leaderboard,
-    winner: {
-      playerId: winner.playerId,
-      username: winner.username,
-      score: winner.score,
-    },
-  };
-
-  io.to(`game:${gameId}`).emit("game_finished", payload);
-
-  // Update game status to finished
-  await redis.hset(GAME_KEY(gameId), "status", "finished");
+// Schedule durable game completion. The worker retries transient database failures.
+export async function endGame(gameId: string): Promise<void> {
+  await enqueueGameFinish(gameFinishQueue, gameId, new Date().toISOString());
 }
