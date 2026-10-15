@@ -138,6 +138,7 @@ export type NewQuestionPayload = {
   question: string;
   options: string[];
   startedAt: string; // ISO timestamp
+  phaseVersion?: number;
 };
 
 export type AnswerResult = {
@@ -145,11 +146,13 @@ export type AnswerResult = {
   pointsEarned: number;
   placement: number | null;
   correctAnswer: string;
+  phaseVersion?: number;
 };
 
 export type AnswerSubmittedPayload = {
   playerId: string;
   username: string;
+  phaseVersion?: number;
 };
 
 export type LeaderboardEntry = {
@@ -173,12 +176,28 @@ export type RoundFinishedPayload = {
   leaderboard: LeaderboardEntry[];
   isLastRound: boolean;
   nextRoundIn: number; // ms
+  phaseVersion?: number;
 };
 
 export type GameFinishedPayload = {
   finalLeaderboard: LeaderboardEntry[];
   winners: LeaderboardEntry[];
+  phaseVersion?: number;
 };
+
+export type GameSnapshot = {
+  gameId: string;
+  numberOfRounds: number;
+  phaseVersion: number;
+  phase: "countdown" | "question" | "round_results" | "game_finished";
+  payload: Record<string, unknown>;
+  myAnswer: number | null;
+  answerResult: AnswerResult | null;
+};
+
+export type ResumeGameResponse =
+  | { ok: true; snapshot: GameSnapshot }
+  | { ok: false; reason: "invalid_game" | "unavailable" | "not_member" | "temporary" };
 
 export type QuizSummary = {
   id: string;

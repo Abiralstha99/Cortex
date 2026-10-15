@@ -34,6 +34,7 @@ import { startRound } from "./round.service.js";
 import { publicNewQuestionFromRound } from "./gamePlay.helpers.js";
 import { rankPlayers } from "./gameCompletion.helpers.js";
 import { enqueueGameFinish } from "./gameFinish.queue.js";
+import { publishGamePhase } from "./gameResume.service.js";
 
 export const BETWEEN_ROUND_DELAY_MS = 3000;
 
@@ -196,7 +197,8 @@ export async function endRound(
     isLastRound,
     nextRoundIn: isLastRound ? 0 : BETWEEN_ROUND_DELAY_MS,
   };
-  io.to(`game:${gameId}`).emit("round_finished", payload);
+  const publishedResults = await publishGamePhase(gameId, "round_results", payload);
+  io.to(`game:${gameId}`).emit("round_finished", publishedResults);
 
   // Decide next action: end game or start next round
   if (currentRound >= numberOfRounds) {
@@ -208,10 +210,9 @@ export async function endRound(
         const nextRound = await startRound(gameId);
 
         // Emit new_question to the room
-        io.to(`game:${gameId}`).emit(
-          "new_question",
-          publicNewQuestionFromRound(nextRound),
-        );
+        const question = await publishGamePhase(gameId, "question",
+          publicNewQuestionFromRound(nextRound));
+        io.to(`game:${gameId}`).emit("new_question", question);
 
         // Schedule round-end job
         await scheduleRoundEnd(

@@ -6,6 +6,7 @@ import type {
   RoundFinishedPayload,
   GameFinishedPayload,
   LeaderboardEntry,
+  GameSnapshot,
 } from "../lib/api";
 
 type GamePhase =
@@ -46,6 +47,7 @@ type GameState = {
   applyAnswerSubmitted: (payload: AnswerSubmittedPayload) => void;
   applyRoundFinished: (payload: RoundFinishedPayload) => void;
   applyGameFinished: (payload: GameFinishedPayload) => void;
+  applySnapshot: (snapshot: GameSnapshot) => void;
   submitAnswer: (answerIndex: number) => void;
   reset: () => void;
 };
@@ -74,6 +76,8 @@ export const useGameStore = create<GameState>((set) => ({
     set({
       phase: "countdown",
       countdownMs,
+      myAnswer: null,
+      answerResult: null,
     }),
 
   applyNewQuestion: (payload) =>
@@ -113,6 +117,29 @@ export const useGameStore = create<GameState>((set) => ({
       gameResults: payload,
       leaderboard: payload.finalLeaderboard,
     }),
+
+  applySnapshot: (snapshot) => {
+    const payload = snapshot.payload;
+    if (snapshot.phase === "countdown") {
+      set({ ...initialState, phase: "countdown", countdownMs: Math.max(0,
+        Number(payload.countdownEndsAt) - Date.now()) });
+    } else if (snapshot.phase === "question") {
+      const question = payload as NewQuestionPayload;
+      set({ ...initialState, phase: snapshot.answerResult ? "answered" : "question",
+        roundNumber: question.roundNumber, question: question.question,
+        options: question.options, startedAt: new Date(question.startedAt),
+        questionId: question.questionId, myAnswer: snapshot.myAnswer,
+        answerResult: snapshot.answerResult });
+    } else if (snapshot.phase === "round_results") {
+      const results = payload as RoundFinishedPayload;
+      set({ ...initialState, phase: "round_results", roundNumber: results.roundNumber,
+        roundResults: results, leaderboard: results.leaderboard });
+    } else {
+      const results = payload as GameFinishedPayload;
+      set({ ...initialState, phase: "game_finished", roundNumber: snapshot.numberOfRounds,
+        gameResults: results, leaderboard: results.finalLeaderboard });
+    }
+  },
 
   submitAnswer: (answerIndex) =>
     set({

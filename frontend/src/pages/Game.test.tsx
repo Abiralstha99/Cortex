@@ -12,6 +12,8 @@ const gameSocketState = vi.hoisted(() => ({
     | "connected"
     | "reconnecting"
     | "offline",
+  recoveryState: "ready" as "connecting" | "ready" | "unavailable",
+  recoveryReason: null as string | null,
   submitAnswer: vi.fn(),
   retryConnection: vi.fn(),
 }));
@@ -43,6 +45,8 @@ describe("Game connection feedback", () => {
     gameSocketState.connected = false;
     gameSocketState.connectionReady = false;
     gameSocketState.connectionState = "reconnecting";
+    gameSocketState.recoveryState = "ready";
+    gameSocketState.recoveryReason = null;
     gameSocketState.submitAnswer.mockClear();
     gameSocketState.retryConnection.mockClear();
   });
@@ -96,5 +100,19 @@ describe("Game connection feedback", () => {
 
     act(() => vi.advanceTimersByTime(1));
     expect(screen.queryByText("Reconnected.")).not.toBeInTheDocument();
+  });
+
+  it("shows recovery while stores are empty and a return action after a definitive failure", () => {
+    useLobbyStore.getState().reset();
+    gameSocketState.recoveryState = "connecting";
+    const view = render(gameRoute());
+    expect(screen.getByText("Connecting to game...")).toBeInTheDocument();
+    expect(screen.queryByText("Return home")).not.toBeInTheDocument();
+
+    gameSocketState.recoveryState = "unavailable";
+    gameSocketState.recoveryReason = "not_member";
+    view.rerender(gameRoute());
+    expect(screen.getByText("You're not a player in this game.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Return home" })).toBeInTheDocument();
   });
 });

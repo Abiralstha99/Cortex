@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 type ConnectionBannerProps = {
   state: ConnectionState;
   onRetry: () => void;
-  onExit: () => void;
+  onExit?: () => void;
 };
 
 export default function ConnectionBanner({
@@ -35,9 +35,9 @@ export default function ConnectionBanner({
             <RefreshCw aria-hidden="true" />
             Try again
           </Button>
-          <Button type="button" variant="outline" onClick={onExit}>
+          {onExit && <Button type="button" variant="outline" onClick={onExit}>
             Return home
-          </Button>
+          </Button>}
         </div>
       </section>
     );

@@ -18,7 +18,6 @@ export default function Game() {
   const navigate = useNavigate();
   const { id: myPlayerId } = useCurrentUser();
 
-  const storeGameId = useLobbyStore((s) => s.gameId);
   const numberOfRounds = useLobbyStore((s) => s.numberOfRounds);
 
   const phase = useGameStore((s) => s.phase);
@@ -38,6 +37,8 @@ export default function Game() {
   const {
     connectionReady,
     connectionState,
+    recoveryState,
+    recoveryReason,
     submitAnswer,
     retryConnection,
   } = useGameSocket(gameId ?? "");
@@ -46,23 +47,6 @@ export default function Game() {
   const previousConnectionState = useRef<typeof connectionState | null>(null);
   const reconnectedDismissTimer = useRef<number | undefined>(undefined);
   const [showReconnected, setShowReconnected] = useState(false);
-
-  // Guard: redirect if no gameId in URL or if gameId doesn't match lobby state
-  useEffect(() => {
-    if (!gameId) {
-      navigate("/dashboard", { replace: true });
-      return;
-    }
-
-    if (!storeGameId) {
-      navigate("/dashboard", { replace: true });
-      return;
-    }
-
-    if (storeGameId !== gameId) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [storeGameId, gameId, navigate]);
 
   // Track response time from when question appears
   useEffect(() => {
@@ -121,8 +105,6 @@ export default function Game() {
     navigate("/dashboard");
   }
 
-  if (!storeGameId || !myPlayerId) return null;
-
   const isFinished = phase === "game_finished";
   const isOffline =
     connectionReady && connectionState === "offline" && !isFinished;
@@ -135,14 +117,30 @@ export default function Game() {
   return (
     <div data-theme="fluent-dark" className="min-h-dvh bg-background text-ink">
       <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-4 py-5 sm:px-6 sm:py-7">
-        {isOffline ? (
+        {recoveryState === "unavailable" || !gameId ? (
+          <section role="alert" className="m-auto rounded-[var(--radius-panel)] border border-border bg-surface p-8 text-center">
+            <h1 className="font-display text-2xl font-bold">Game unavailable</h1>
+            <p className="mt-2 text-muted-foreground">
+              {recoveryReason === "not_member"
+                ? "You're not a player in this game."
+                : "This game is no longer available."}
+            </p>
+            <button className="mt-6 text-primary underline" type="button" onClick={handleExit}>Return home</button>
+          </section>
+        ) : isOffline ? (
           <div className="flex flex-1 items-center justify-center">
             <ConnectionBanner
               state="offline"
               onRetry={retryConnection}
-              onExit={handleExit}
             />
           </div>
+        ) : recoveryState !== "ready" || !myPlayerId ? (
+          <section role="status" className="m-auto text-center">
+            <h1 className="font-display text-xl font-semibold">Connecting to game...</h1>
+            {connectionReady && connectionState === "connected" && (
+              <button className="mt-4 text-primary underline" type="button" onClick={retryConnection}>Try again</button>
+            )}
+          </section>
         ) : (
           <>
             {showConnectionStatus && (
@@ -154,7 +152,6 @@ export default function Game() {
                       : connectionState
                   }
                   onRetry={retryConnection}
-                  onExit={handleExit}
                 />
               </div>
             )}

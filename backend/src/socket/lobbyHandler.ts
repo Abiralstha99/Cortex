@@ -11,6 +11,7 @@ import { ROUND_TIME_LIMIT_MS } from "../services/answer.service.js";
 import { JoinGamePayloadSchema } from "../schemas/game.js";
 import { parseSocketPayload } from "./parsePayload.js";
 import { publicNewQuestionFromRound } from "../services/gamePlay.helpers.js";
+import { publishGamePhase } from "../services/gameResume.service.js";
 import {
   announcePublicWaitingUpsert,
   retractPublicWaitingRoom,
@@ -108,10 +109,12 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
       });
 
       // Emit game_started immediately
-      io.to(`game:${game.gameId}`).emit("game_started", {
+      const countdown = await publishGamePhase(game.gameId, "countdown", {
         gameId: game.gameId,
         countdownMs: ROUND_START_DELAY_MS,
+        countdownEndsAt: Date.now() + ROUND_START_DELAY_MS,
       });
+      io.to(`game:${game.gameId}`).emit("game_started", countdown);
 
       // Prefetch the first question during the countdown, then start the clock
       // only when players actually see the question (avoids a ~3s timer deficit).
@@ -122,10 +125,9 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
           const round = await roundPromise;
           const startedAt = await beginRoundClock(game.gameId);
 
-          io.to(`game:${game.gameId}`).emit(
-            "new_question",
-            publicNewQuestionFromRound({ ...round, startedAt }),
-          );
+          const question = await publishGamePhase(game.gameId, "question",
+            publicNewQuestionFromRound({ ...round, startedAt }));
+          io.to(`game:${game.gameId}`).emit("new_question", question);
 
           await scheduleRoundEnd(
             game.gameId,

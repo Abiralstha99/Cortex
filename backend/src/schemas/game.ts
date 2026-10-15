@@ -51,6 +51,8 @@ export const SubmitAnswerPayloadSchema = z.object({
   responseTime: z.number().int().nonnegative(),
 });
 
+export const ResumeGamePayloadSchema = z.object({ gameId: z.string().uuid() });
+
 export type CreateWaitingGameInput = z.infer<typeof CreateWaitingGameSchema>;
 export type FailWaitingQuizInput = z.infer<typeof FailWaitingQuizSchema>;
 export type WaitingGameIdParams = z.infer<typeof WaitingGameIdParamsSchema>;

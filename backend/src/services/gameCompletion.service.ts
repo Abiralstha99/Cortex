@@ -6,6 +6,7 @@ import type { Player, SubmissionRecord } from "../types/room.types.js";
 import { getRoundSubmissions } from "./answer.service.js";
 import { buildGameFinishedPayload, rankPlayers } from "./gameCompletion.helpers.js";
 import { persistGameCompletion } from "./gameCompletion.persistence.js";
+import { publishGamePhase } from "./gameResume.service.js";
 
 export async function finalizeGame(
   gameId: string,
@@ -53,8 +54,7 @@ export async function finalizeGame(
   );
 
   await redis.hset(GAME_KEY(gameId), "status", "finished");
-  io.to(`game:${gameId}`).emit(
-    "game_finished",
-    buildGameFinishedPayload(finalLeaderboard),
-  );
+  const result = await publishGamePhase(gameId, "game_finished",
+    buildGameFinishedPayload(finalLeaderboard));
+  io.to(`game:${gameId}`).emit("game_finished", result);
 }

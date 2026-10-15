@@ -373,13 +373,11 @@ export async function startGame(
   // Flip Redis to "playing". If this fails we roll back the Postgres row so
   // there's no orphaned DB record with no live state behind it.
   try {
-    await redis.hset(
-      GAME_KEY(gameId),
-      "status",
-      "playing",
-      "usedQuestionIds",
-      "[]",
-    );
+    await redis.multi()
+      .hset(GAME_KEY(gameId), "status", "playing", "usedQuestionIds", "[]")
+      .expire(GAME_KEY(gameId), 2 * 60 * 60)
+      .expire(ROOM_CODE_KEY(validatedRoomCode), 2 * 60 * 60)
+      .exec();
   } catch (err) {
     await prisma.game.delete({ where: { id: dbGame.id } });
     throw new Error("Failed to update game state; rolled back", { cause: err });

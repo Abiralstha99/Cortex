@@ -22,6 +22,13 @@ export const ROOM_CODE_KEY = (roomCode: string) => `room-code:${roomCode}`;
 //   Added when game starts (status → "playing"):
 //     currentRound    string   — coerced number, starts at 0
 //     usedQuestionIds string   — JSON: string[] (question UUIDs) grows each round
+//     phaseVersion    string   — monotonic public phase sequence, starts with countdown
+//     publicPhase     string   — countdown | question | round_results | game_finished
+//     publicPayload   string   — JSON of the last phase broadcast, without its version
+//   resume_game snapshots return gameId, numberOfRounds, phaseVersion, phase,
+//   payload, myAnswer and answerResult. The player's submission is read from
+//   SUBMISSION_KEY. Public question payload never includes the answer key.
+//   GAME_KEY and ROOM_CODE_KEY TTLs refresh to two hours when play starts.
 export const GAME_KEY = (gameId: string) => `game:${gameId}`;
 
 // ROUND_KEY      game:<gameId>:round           hash
