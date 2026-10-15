@@ -8,8 +8,6 @@ learning/
 
 # Local agent and editor configuration
 .cursor/
-.claude/
-.kiro/
 .codex/
 .agents/
 .worktrees/
@@ -20,3 +18,7 @@ skills-lock.json
 node_modules/
 dist/
 dist-ssr/
+
+
+# Supabase
+supabase/
