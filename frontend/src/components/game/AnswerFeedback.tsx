@@ -48,7 +48,7 @@ export default function AnswerFeedback({ result }: AnswerFeedbackProps) {
   );
 
   const baseClasses = cn(
-    "rounded-[var(--radius-panel)] border p-7 text-center shadow-card sm:p-9",
+    "editorial-stage rounded-[var(--radius-panel)] border p-7 text-center shadow-card sm:p-9",
     result.correct
       ? "border-success/30 bg-success-soft"
       : "border-danger/30 bg-danger-soft",

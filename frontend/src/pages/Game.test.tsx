@@ -59,7 +59,7 @@ describe("Game connection feedback", () => {
   it("does not report a lost connection before socket hydration", () => {
     const view = render(gameRoute());
 
-    expect(document.querySelector('[data-theme="fluent-dark"]')).not.toBeNull();
+    expect(document.querySelector('[data-theme="editorial-app"]')).not.toBeNull();
 
     expect(
       screen.queryByText("Connection lost. Reconnecting..."),

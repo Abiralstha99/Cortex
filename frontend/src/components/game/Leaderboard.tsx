@@ -27,6 +27,7 @@ export default function Leaderboard({ entries, highlightPlayerId }: LeaderboardP
   const rows = entries.map((entry) => (
     <li
       key={entry.playerId}
+      data-rank={entry.rank}
       className={cn(
         "flex min-h-12 items-center justify-between gap-3 rounded-[var(--radius-control)] border px-3 py-2",
         entry.rank === 1
@@ -63,7 +64,7 @@ export default function Leaderboard({ entries, highlightPlayerId }: LeaderboardP
   ));
 
   return (
-    <section className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+    <section className="editorial-leaderboard rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-sm sm:p-6">
       <h2 className="mb-4 font-display text-xl font-bold text-ink">Leaderboard</h2>
       {reduce ? (
         <ol className="space-y-2">{rows}</ol>
@@ -77,6 +78,7 @@ export default function Leaderboard({ entries, highlightPlayerId }: LeaderboardP
           {entries.map((entry) => (
             <motion.li
               key={entry.playerId}
+              data-rank={entry.rank}
               variants={itemVariants}
               className={cn(
                 "flex min-h-12 items-center justify-between gap-3 rounded-[var(--radius-control)] border px-3 py-2",

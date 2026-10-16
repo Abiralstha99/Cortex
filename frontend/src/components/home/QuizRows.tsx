@@ -7,7 +7,7 @@ import { ChevronRight } from "lucide-react";
 
 const QUIZZES_QUERY_KEY = ["quizzes"] as const;
 
-export default function QuizRows() {
+export default function QuizRows({ showEmptyState = false }: { showEmptyState?: boolean }) {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const navigate = useNavigate();
 
@@ -26,17 +26,22 @@ export default function QuizRows() {
 
   if (query.isLoading) {
     return (
-      <div aria-label="quizzes-loading">
-        <Skeleton className="h-6 w-32" />
-      </div>
+      <section aria-label="quizzes-loading">
+        {showEmptyState && <h2 className="mb-5 text-sm font-semibold leading-5 text-ink">Your quizzes</h2>}
+        <div className={showEmptyState ? "space-y-3" : ""}>
+          {(showEmptyState ? [0, 1, 2] : [0]).map((item) => (
+            <Skeleton key={item} className={showEmptyState ? "h-16 w-full" : "h-6 w-32"} />
+          ))}
+        </div>
+      </section>
     );
   }
 
   if (query.isError) {
     return (
-      <div className="inline-flex items-center space-x-2" aria-label="quizzes-error">
+      <div className={showEmptyState ? "border-t border-border py-8" : "inline-flex items-center space-x-2"} aria-label="quizzes-error">
         <span className="text-sm leading-5 text-text-muted">Could not load quizzes</span>
-            <button onClick={() => void query.refetch()} className="text-sm leading-5 text-primary underline underline-offset-2">
+        <button onClick={() => void query.refetch()} className="ml-3 min-h-11 text-sm leading-5 text-primary underline underline-offset-2">
           Try again
         </button>
       </div>
@@ -44,7 +49,18 @@ export default function QuizRows() {
   }
 
   const quizzes: QuizSummary[] = query.data ?? [];
-  if (quizzes.length === 0) return null;
+  if (quizzes.length === 0) {
+    return showEmptyState ? (
+      <section aria-label="Your quizzes">
+        <h2 className="text-sm font-semibold leading-5 text-ink">Your quizzes</h2>
+        <div className="mt-5 border-t border-border py-8">
+          <p className="font-serif text-2xl text-ink">No quizzes yet.</p>
+          <p className="mt-2 text-muted-foreground">Upload notes to make your first one.</p>
+          <button className="mt-5 min-h-11 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground" onClick={() => navigate("/game/create")}>Create a quiz</button>
+        </div>
+      </section>
+    ) : null;
+  }
 
   return (
     <section aria-label="Your quizzes">

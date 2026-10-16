@@ -20,7 +20,7 @@ export default function Countdown({ countdownMs }: CountdownProps) {
   return (
     <section
       aria-live="polite"
-      className="flex min-h-80 flex-col items-center justify-center rounded-[var(--radius-panel)] border border-primary/20 bg-primary-soft px-6 py-14 text-center shadow-card"
+      className="editorial-stage flex min-h-80 flex-col items-center justify-center rounded-[var(--radius-panel)] border border-primary/20 bg-primary-soft px-6 py-14 text-center shadow-card"
     >
       <h1 className="mb-6 text-balance font-display text-3xl font-bold text-ink">
         Get ready

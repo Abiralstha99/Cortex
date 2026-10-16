@@ -1,5 +1,5 @@
-import { cleanup, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithRouter } from "@/test/render";
 import HomeWorkspace from "./HomeWorkspace";
@@ -20,14 +20,62 @@ vi.mock("@/components/home/LiveRoomRows", () => ({
   default: () => <div data-testid="public-rooms">Public rooms</div>,
 }));
 
-afterEach(cleanup);
+beforeEach(() => {
+  vi.stubGlobal("IntersectionObserver", class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  });
+});
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("HomeWorkspace shell", () => {
-  it("exposes fluent-dark theme and brand chrome", () => {
+  it("exposes the editorial landing theme and brand chrome", () => {
     renderWithRouter(<HomeWorkspace />);
 
-    expect(document.querySelector('[data-theme="fluent-dark"]')).not.toBeNull();
+    expect(document.querySelector('[data-theme="editorial-landing"]')).not.toBeNull();
     expect(screen.getByRole("link", { name: "Cortex" })).toBeInTheDocument();
+  });
+
+  it("keeps create and join entry points on the landing page", () => {
+    renderWithRouter(<HomeWorkspace />);
+
+    expect(document.querySelector("#create")).not.toBeNull();
+    expect(document.querySelector("#join")).not.toBeNull();
+    expect(screen.getAllByRole("link", { name: "Create a quiz" })[0]).toHaveAttribute("href", "#create");
+    expect(screen.getAllByRole("link", { name: "Join a game" })[0]).toHaveAttribute("href", "#join");
+  });
+
+  it("keeps the PLAY orbital story readable without WebGL", () => {
+    renderWithRouter(<HomeWorkspace />);
+
+    const heroArt = document.querySelector(".landing-hero-art");
+    expect(heroArt).not.toBeNull();
+    expect(within(heroArt as HTMLElement).getByRole("img", {
+      name: /play connects the host, friends, questions, and scores/i,
+    })).toBeInTheDocument();
+    for (const label of ["HOST", "FRIENDS", "QUESTIONS", "SCORES", "PLAY"]) {
+      expect(within(heroArt as HTMLElement).getByText(label)).toBeInTheDocument();
+    }
+  });
+
+  it("keeps every animated heading accessible within a line mask", () => {
+    renderWithRouter(<HomeWorkspace />);
+
+    for (const name of [
+      /Your notes\. Game night/i,
+      /From notes to game night/i,
+      /Learning sticks better when everyone plays/i,
+      /Ready to make some noise/i,
+      /The best study session is the one you play/i,
+    ]) {
+      const heading = screen.getByRole("heading", { name });
+      expect(heading.querySelectorAll(".landing-line-mask").length).toBeGreaterThan(0);
+    }
   });
 
   it("places public rooms below the join game panel", () => {

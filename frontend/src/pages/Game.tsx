@@ -12,6 +12,7 @@ import { useGameStore } from "@/stores/gameStore";
 import { useGameSocket } from "@/hooks/useGameSocket";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { cn } from "@/lib/utils";
+import "@/styles/editorialApp.css";
 
 export default function Game() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -115,7 +116,7 @@ export default function Game() {
       (connectionState === "connected" && showReconnected));
 
   return (
-    <div data-theme="fluent-dark" className="min-h-dvh bg-background text-ink">
+    <div data-theme="editorial-app" className="editorial-app editorial-game min-h-dvh bg-background text-ink">
       <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-4 py-5 sm:px-6 sm:py-7">
         {recoveryState === "unavailable" || !gameId ? (
           <section role="alert" className="m-auto rounded-[var(--radius-panel)] border border-border bg-surface p-8 text-center">
@@ -158,10 +159,11 @@ export default function Game() {
 
             <header
               className={cn(
-                "mb-4 flex min-h-12 flex-col gap-2 sm:flex-row sm:items-center",
+                "editorial-game-header mb-4 flex min-h-12 flex-col gap-2 sm:flex-row sm:items-center",
                 phase === "question" ? "sm:justify-between" : "sm:justify-start",
               )}
             >
+              <span className="editorial-game-wordmark" aria-label="Cortex">Cortex</span>
               {numberOfRounds != null && (
                 <p className="font-display text-sm font-semibold text-muted-foreground">
                   Round{" "}
@@ -169,6 +171,11 @@ export default function Game() {
                     {roundNumber || "-"} of {numberOfRounds}
                   </span>
                 </p>
+              )}
+              {phase === "question" && numberOfRounds != null && (
+                <div className="editorial-round-progress" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={numberOfRounds} aria-valuenow={roundNumber}>
+                  <span style={{ width: `${Math.min(100, Math.max(0, roundNumber / numberOfRounds * 100))}%` }} />
+                </div>
               )}
               {phase === "question" && startedAt && (
                 <Timer startedAt={startedAt} timeLimit={timeLimit} />

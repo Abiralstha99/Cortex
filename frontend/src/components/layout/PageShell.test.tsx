@@ -22,6 +22,7 @@ describe("PageShell", () => {
     renderWithRouter(<PageShell>Live game</PageShell>, "/game/game-123");
 
     expect(screen.getByText("Live game")).toBeInTheDocument();
+    expect(document.querySelector('[data-theme="editorial-app"]')).toBeInTheDocument();
     expect(screen.queryByTestId("desktop-navigation")).not.toBeInTheDocument();
     expect(screen.queryByTestId("app-header")).not.toBeInTheDocument();
     expect(screen.queryByTestId("mobile-navigation")).not.toBeInTheDocument();
@@ -33,5 +34,6 @@ describe("PageShell", () => {
     expect(screen.getByTestId("desktop-navigation")).toBeInTheDocument();
     expect(screen.getByTestId("app-header")).toBeInTheDocument();
     expect(screen.getByTestId("mobile-navigation")).toBeInTheDocument();
+    expect(document.querySelector('[data-theme="editorial-app"]')).toBeInTheDocument();
   });
 });

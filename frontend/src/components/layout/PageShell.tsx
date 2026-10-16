@@ -5,6 +5,7 @@ import HomeChrome from "@/components/home/HomeChrome";
 import { cn } from "@/lib/utils";
 import AppSidebar from "./AppSidebar";
 import MobileBottomNav from "./MobileBottomNav";
+import "@/styles/editorialApp.css";
 
 const widths = {
   "2xl": "max-w-2xl",
@@ -45,8 +46,8 @@ export default function PageShell({
 
   return (
     <div
-      data-theme={isPreGame ? "fluent-dark" : undefined}
-      className="min-h-dvh bg-background text-ink"
+      data-theme="editorial-app"
+      className="editorial-app min-h-dvh bg-background text-ink"
     >
       {isPreGame && <HomeChrome />}
       {hasDashboardChrome && <AppSidebar />}
@@ -54,7 +55,7 @@ export default function PageShell({
         {hasDashboardChrome && <AppHeader />}
         <main
           className={cn(
-            "mx-auto px-4 py-8 sm:px-6 md:px-8 md:py-10",
+            "editorial-page mx-auto px-4 py-8 sm:px-6 md:px-8 md:py-10",
             hasDashboardChrome && "pb-28 md:pb-10",
             isPreGame && "pregame-content-enter",
             widths[maxWidth],

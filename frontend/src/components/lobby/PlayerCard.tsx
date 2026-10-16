@@ -57,12 +57,13 @@ export default function PlayerCard({
   }`;
 
   if (reduceMotion) {
-    return <li className={className}>{content}</li>;
+    return <li className={className} data-self={isSelf}>{content}</li>;
   }
 
   return (
     <motion.li
       className={className}
+      data-self={isSelf}
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}

@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/react";
+import { motion, useReducedMotion } from "motion/react";
 import PageShell from "@/components/layout/PageShell";
 import PreGameModeSwitch from "@/components/layout/PreGameModeSwitch";
 import {
@@ -16,6 +17,8 @@ import RoomSettings from "@/components/quiz-rooms/RoomSettings";
 import UploadPanel from "@/components/quiz-rooms/UploadPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { titleFromFilename } from "@/lib/upload-validation";
 import {
   clearFileHandoffCache,
@@ -28,6 +31,7 @@ export default function CreateGame() {
   const navigate = useNavigate();
   const location = useLocation();
   const { getToken } = useAuth();
+  const prefersReducedMotion = useReducedMotion();
   // Read deep-linked quizId from location.state without using `any`
   const initialQuizId = (location.state as { quizId?: string } | null)?.quizId;
 
@@ -116,16 +120,25 @@ export default function CreateGame() {
   const pastQuizCap = effectiveSelected?.questionCount ?? null;
 
   return (
-    <PageShell maxWidth="6xl" variant="preGame">
-      <div className="mx-auto max-w-3xl">
+    <PageShell maxWidth="6xl" variant="preGame" className="editorial-setup editorial-create">
+      <div className="editorial-create-content mx-auto">
         <header className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
-          <h1 className="text-balance text-[32px] font-semibold leading-10 tracking-tight text-ink">Create a game</h1>
+          <div>
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-danger-foreground">Make a quiz</p>
+            <h1 className="text-balance text-[32px] font-semibold leading-10 tracking-tight text-ink">What are we studying?</h1>
+          </div>
           <PreGameModeSwitch />
         </header>
 
-        <div className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface shadow-card">
-        <div className="space-y-8 p-5 sm:p-8">
-          <section aria-labelledby="quiz-source-heading">
+        <div className="editorial-create-panel">
+          <div className="editorial-create-grid">
+          <motion.section
+            aria-labelledby="quiz-source-heading"
+            className="editorial-create-quiz"
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          >
             <div className="mb-5">
               <h2 id="quiz-source-heading" className="text-lg font-semibold text-ink">Quiz</h2>
               <p className="mt-1 text-sm leading-5 text-muted-foreground">Start from a file or reuse one of your ready quizzes.</p>
@@ -137,6 +150,7 @@ export default function CreateGame() {
               </TabsList>
               <TabsContent value="upload" className="pt-5">
                 {uploadFile ? (
+                  <div className="space-y-4">
                   <div className="flex items-center justify-between gap-4 rounded-[var(--radius-card)] bg-subtle p-4">
                     <div className="min-w-0">
                       <p className="max-w-full truncate text-sm font-semibold leading-5 text-ink">{uploadFile.name}</p>
@@ -159,6 +173,19 @@ export default function CreateGame() {
                       </Button>
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quiz-title" className="font-semibold text-ink">Give your quiz a name</Label>
+                    <Input
+                      id="quiz-title"
+                      type="text"
+                      value={quizTitle}
+                      maxLength={255}
+                      placeholder="Cell Biology Midterm"
+                      onChange={(event) => setQuizTitle(event.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">Leave it blank and we will use the file name.</p>
+                  </div>
+                  </div>
                 ) : (
                   <UploadPanel file={uploadFile} onFileChange={setUploadFile} title={quizTitle} onTitleChange={setQuizTitle} />
                 )}
@@ -176,11 +203,15 @@ export default function CreateGame() {
                 />
               </TabsContent>
             </Tabs>
-          </section>
+          </motion.section>
 
-          <div className="h-px bg-border" />
-
-          <section aria-labelledby="room-settings-heading">
+          <motion.section
+            aria-labelledby="room-settings-heading"
+            className="editorial-create-room"
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: prefersReducedMotion ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
+          >
             <div className="mb-5">
               <h2 id="room-settings-heading" className="text-lg font-semibold text-ink">
                 Room <span className="sr-only">Set up the room</span>
@@ -196,10 +227,15 @@ export default function CreateGame() {
               onIsPublicChange={setIsPublic}
               maxQuestions={activeTab === "past" && pastQuizCap != null ? pastQuizCap : undefined}
             />
-          </section>
+          </motion.section>
+          </div>
 
-          <div className="h-px bg-border" />
-
+          <motion.div
+            className="editorial-create-footer"
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: prefersReducedMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
+          >
           {mutation.error && (
             <p role="alert" className="rounded-[var(--radius-control)] bg-danger-soft px-4 py-3 text-sm font-semibold leading-5 text-danger-foreground">
               {mutation.error instanceof Error ? mutation.error.message : "Failed to create game"}
@@ -211,7 +247,7 @@ export default function CreateGame() {
               {mutation.isPending ? "Creating..." : "Create room"}
             </Button>
           </section>
-        </div>
+          </motion.div>
         </div>
       </div>
     </PageShell>

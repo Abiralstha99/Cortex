@@ -49,8 +49,14 @@ describe("CreateGame handoff", () => {
     renderCreateGame();
 
     expect(screen.getByText("chem.pdf")).toBeInTheDocument();
+    expect(screen.getByLabelText("Give your quiz a name")).toHaveValue("chem");
+    expect(screen.getByRole("button", { name: "Change" })).toBeInTheDocument();
     expect(screen.queryByLabelText(/choose a quiz file/i)).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /set up the room/i })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Questions" })).toHaveTextContent("10");
+    expect(screen.getByRole("group", { name: "Players" })).toHaveTextContent("8");
+    expect(screen.getByRole("switch", { name: "Make room public" })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Create room" })).toBeEnabled();
   });
 
   it("remains usable when opened with no pending file", () => {

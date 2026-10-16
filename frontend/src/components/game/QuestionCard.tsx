@@ -21,11 +21,16 @@ export default function QuestionCard({
   const reduce = useReducedMotion();
 
   return (
-    <section className="rounded-[var(--radius-panel)] border border-border bg-surface p-4 shadow-card sm:p-5">
+    <motion.section
+      className="editorial-question rounded-[var(--radius-panel)] border border-border bg-surface p-4 shadow-card sm:p-5"
+      initial={reduce ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+    >
       <h1 className="mb-5 max-w-3xl text-balance font-display text-2xl font-bold leading-tight text-ink sm:text-[1.75rem]">
         {question}
       </h1>
-      <div className="space-y-2.5">
+      <div className="editorial-question-options space-y-2.5">
         {options.map((option, index) => {
           const isSelected = selectedIndex === index;
           const ButtonTag = reduce ? "button" : motion.button;
@@ -42,7 +47,7 @@ export default function QuestionCard({
               type="button"
               aria-pressed={isSelected}
               className={cn(
-                "flex min-h-14 w-full items-center rounded-[var(--radius-control)] border px-3 py-2.5 text-left transition-[background-color,border-color,box-shadow,transform] duration-150 sm:min-h-16 sm:px-4",
+                "editorial-answer flex min-h-14 w-full items-center rounded-[var(--radius-control)] border px-3 py-2.5 text-left transition-[background-color,border-color,box-shadow,transform] duration-150 sm:min-h-16 sm:px-4",
                 "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
                 isSelected
                   ? "border-primary bg-primary-soft ring-1 ring-primary"
@@ -81,6 +86,6 @@ export default function QuestionCard({
           Answer submitted
         </p>
       )}
-    </section>
+    </motion.section>
   );
 }

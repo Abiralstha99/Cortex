@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowRight, Check, Copy, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { motion, useReducedMotion } from "motion/react";
 import PageShell from "@/components/layout/PageShell";
 import { Button } from "@/components/ui/button";
 import PlayerCard from "@/components/lobby/PlayerCard";
@@ -11,6 +12,7 @@ import { useLobbyStore } from "@/stores/lobbyStore";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function Lobby() {
+  const reduceMotion = useReducedMotion();
   const { roomCode = "" } = useParams();
   const normalized = roomCode.toUpperCase();
   const navigate = useNavigate();
@@ -101,19 +103,24 @@ export default function Lobby() {
   }
 
   return (
-    <PageShell maxWidth="5xl" variant="preGame">
-      <header className="mb-6 border-b border-border pb-6">
+    <PageShell maxWidth="5xl" variant="preGame" className="editorial-lobby">
+      <motion.header
+        className="editorial-lobby-header mb-6 border-b border-border pb-6"
+        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+      >
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
             <p className="mb-2 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Live room
             </p>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-ink">
+            <h1 className="editorial-lobby-title text-ink">
           Game lobby
             </h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-3 rounded-[var(--radius-control)] border border-border bg-subtle px-3 py-2">
+            <div className="editorial-lobby-code flex items-center gap-3 px-3 py-2">
               <span className="font-mono text-base font-semibold tracking-[0.18em] text-ink">
                 {normalized || "------"}
               </span>
@@ -133,7 +140,7 @@ export default function Lobby() {
           {maxPlayers != null && <span className="font-mono">{players.length}/{maxPlayers} players</span>}
         </div>
         <QuizGenerationPanel isHost={isHost} />
-      </header>
+      </motion.header>
 
       {status === "joining" && (
         <p className="mb-6 text-sm text-muted-foreground" role="status">Joining room...</p>
@@ -142,16 +149,19 @@ export default function Lobby() {
         <p className="mb-6 text-sm text-danger-foreground" role="alert">Failed to join room.</p>
       )}
 
-      <div className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface shadow-card">
+      <div className="editorial-players overflow-hidden">
         <div className="border-b border-border px-4 py-4 sm:px-6">
           <div className="flex items-baseline justify-between gap-4">
-            <h2 id="players-heading" className="text-lg font-bold text-ink">
+            <h2 id="players-heading" className="font-serif text-3xl font-normal text-ink">
             Players
             </h2>
             <p className="font-mono text-xs text-muted-foreground">{players.length} / {maxPlayers ?? "—"}</p>
           </div>
         </div>
         <ul className="divide-y divide-border" aria-live="polite">
+          {players.length === 0 && status !== "joining" && (
+            <li className="px-4 py-8 text-sm text-muted-foreground">Waiting for players to join…</li>
+          )}
           {players.map((player) => (
             <PlayerCard
               key={player.id}
@@ -161,7 +171,7 @@ export default function Lobby() {
             />
           ))}
         </ul>
-        <div className="sticky bottom-0 z-10 flex flex-col gap-3 border-t border-border bg-surface/95 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex flex-col gap-3 border-t border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="min-w-0">
             <Button variant={currentPlayer?.ready ? "secondary" : "outline"} onClick={toggleReady}>
               {currentPlayer?.ready ? <Check aria-hidden="true" /> : null}
@@ -176,6 +186,9 @@ export default function Lobby() {
               </Button>
               {!canStart && <p className="text-right text-xs text-muted-foreground">{startReason}</p>}
             </div>
+          )}
+          {!isHost && currentPlayer?.ready && (
+            <p className="text-sm text-muted-foreground">Waiting for the host to start.</p>
           )}
         </div>
       </div>

@@ -101,8 +101,8 @@ export default function RoundResults({ roundResults, myPlayerId }: RoundResultsP
   );
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[var(--radius-panel)] border border-primary/20 bg-primary-soft p-6 shadow-card">
+    <div className="editorial-round-results space-y-6">
+      <section className="editorial-stage rounded-[var(--radius-panel)] border border-primary/20 bg-primary-soft p-6 shadow-card">
         <h1 className="mb-2 text-balance font-display text-2xl font-bold text-ink">
           Round {roundNumber} complete
         </h1>
@@ -114,7 +114,7 @@ export default function RoundResults({ roundResults, myPlayerId }: RoundResultsP
         </p>
       </section>
 
-      <section className="rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+      <section className="editorial-stage rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-sm sm:p-6">
         <h2 className="mb-4 font-display text-xl font-bold text-ink">
           Your answer
         </h2>

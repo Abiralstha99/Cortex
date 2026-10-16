@@ -29,6 +29,7 @@ export default function GameResults({ gameResults, myPlayerId }: GameResultsProp
   const content = (
     <>
       <section className="rounded-[var(--radius-panel)] border border-warning/40 bg-accent-yellow/20 p-8 shadow-card sm:p-10">
+        <p className="editorial-results-eyebrow">Game complete</p>
         <Trophy
           className="mx-auto mb-4 size-9 text-warning"
           strokeWidth={2}
@@ -72,7 +73,7 @@ export default function GameResults({ gameResults, myPlayerId }: GameResultsProp
   );
 
   if (reduce) {
-    return <div className="space-y-6 text-center">{content}</div>;
+    return <div className="editorial-results space-y-6 text-center">{content}</div>;
   }
 
   return (
@@ -80,7 +81,7 @@ export default function GameResults({ gameResults, myPlayerId }: GameResultsProp
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      className="space-y-6 text-center"
+      className="editorial-results space-y-6 text-center"
     >
       {content}
     </motion.div>

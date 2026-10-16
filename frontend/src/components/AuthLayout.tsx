@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Sparkles, Trophy, UsersRound } from "lucide-react";
 
 import { BrandMark } from "@/components/brand/BrandMark";
+import "@/styles/editorialApp.css";
 
 const gameMoments = [
   { label: "Create from notes", icon: Sparkles },
@@ -19,7 +20,7 @@ export default function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <main data-theme="fluent-dark" className="min-h-dvh bg-background p-3 text-ink sm:p-5 lg:p-6">
+    <main data-theme="editorial-app" className="editorial-app editorial-auth min-h-dvh bg-background p-3 text-ink sm:p-5 lg:p-6">
       <div className="mx-auto grid min-h-[calc(100dvh-1.5rem)] max-w-7xl overflow-hidden rounded-panel border border-border bg-background shadow-floating sm:min-h-[calc(100dvh-2.5rem)] lg:min-h-[calc(100dvh-3rem)] lg:grid-cols-[0.82fr_1fr]">
         <section className="relative overflow-hidden border-b border-border bg-background px-5 py-5 sm:px-8 sm:py-7 lg:flex lg:flex-col lg:justify-between lg:border-b-0 lg:border-r lg:px-12 lg:py-10">
           <BrandMark

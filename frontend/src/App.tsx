@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomeWorkspace from "./pages/HomeWorkspace";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
@@ -7,6 +7,7 @@ import JoinGame from "./pages/JoinGame";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Lobby from "./pages/Lobby";
 import Game from "./pages/Game";
+import Dashboard from "./pages/Dashboard";
 function App() {
   return (
     <>
@@ -24,7 +25,7 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Navigate to="/" replace />
+                <Dashboard />
               </ProtectedRoute>
             }
           />

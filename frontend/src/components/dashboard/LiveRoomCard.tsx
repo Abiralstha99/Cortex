@@ -27,7 +27,7 @@ export default function LiveRoomCard({
 
   return (
     <li
-      className={`flex min-h-56 flex-col rounded-[var(--radius-panel)] border bg-surface p-5 shadow-card ${
+      className={`editorial-room-card flex min-h-56 flex-col rounded-[var(--radius-panel)] border bg-surface p-5 shadow-card ${
         isFull ? "border-border opacity-70" : "border-border"
       }`}
     >
