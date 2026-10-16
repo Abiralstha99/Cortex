@@ -86,11 +86,11 @@ export default function LiveRoomRows() {
         {rooms.map((r) => (
           <li key={r.gameId}>
             <button
-              className="flex min-h-11 w-full items-center justify-between rounded-md px-3 py-2 text-left transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="flex min-h-11 w-full min-w-0 items-center rounded-md px-3 py-2 text-left transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               onClick={() => navigate(`/game/lobby/${r.roomCode}`)}
             >
-              <div className="flex items-center justify-between">
-                <span className="truncate text-sm font-semibold leading-5 text-ink">{r.hostUsername}</span>
+              <div className="flex w-full min-w-0 items-center justify-between">
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-5 text-ink">{r.hostUsername}</span>
                 <span className="ml-4 flex shrink-0 items-center gap-2 text-xs leading-4 text-text-muted">
                   {r.playerCount}/{r.maxPlayers}
                   <ChevronRight className="size-4" aria-hidden="true" />

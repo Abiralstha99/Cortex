@@ -72,7 +72,7 @@ export default function CreateStage({ onContinue }: CreateStageProps) {
           ) : null}
         </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
           <input
             className="sr-only"
             id="create-stage-file"
@@ -96,8 +96,8 @@ export default function CreateStage({ onContinue }: CreateStageProps) {
               Select file
             </label>
           ) : (
-            <motion.div layout={!reduce} className="flex min-w-0 flex-wrap items-center justify-end gap-3">
-              <div className="min-w-0 max-w-[240px] rounded-md bg-subtle px-3 py-2">
+            <motion.div layout={!reduce} className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-3">
+              <div className="min-w-0 max-w-full rounded-md bg-subtle px-3 py-2 sm:max-w-[240px]">
                 <div className="truncate text-sm font-semibold leading-5 text-ink">{selected.name}</div>
                 <div className="font-mono text-xs leading-4 tabular-nums text-text-muted">
                   {selected.type || "unknown"} • {(selected.size / 1024).toFixed(1)} KB

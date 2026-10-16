@@ -64,6 +64,7 @@
 
 @layer base {
   :root {
+    --app-underlay: #171717;
     --accent: #405a9b;
     --bg: #f4f6fb;
     --bg-raised: #ffffff;
@@ -81,12 +82,12 @@
   body,
   #root {
     min-height: 100%;
+    background-color: var(--app-underlay);
   }
 
   body {
     margin: 0;
     font-family: var(--font-sans);
-    background: var(--color-background);
     color: var(--color-ink);
     -webkit-font-smoothing: antialiased;
   }
@@ -97,7 +98,7 @@
      remain unchanged. Tune hexes for WCAG AA body contrast. */
   [data-theme="fluent-dark"] {
     color-scheme: dark;
-    --color-background: #171717;
+    --color-background: var(--app-underlay);
     --color-surface: #242424;
     --color-surface-hover: #2b2b2b;
     --color-subtle: #202020;
