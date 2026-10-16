@@ -12,11 +12,17 @@ export function BrandMark({
     <Link
       to={to}
       className={cn(
-        "inline-flex min-h-11 min-w-11 items-center rounded-control font-sans text-xl font-bold tracking-tight text-primary no-underline outline-none focus-visible:ring-3 focus-visible:ring-primary/30",
+        "inline-flex min-h-11 min-w-11 items-center gap-2.5 rounded-control font-sans text-xl font-bold tracking-tight text-primary no-underline outline-none focus-visible:ring-3 focus-visible:ring-primary/30",
         className,
       )}
     >
-      Cortex
+      <img
+        src="/assets/Cortex-logo.png"
+        alt=""
+        aria-hidden
+        className="h-9 w-9 shrink-0 object-contain"
+      />
+      <span>Cortex</span>
     </Link>
   );
 }

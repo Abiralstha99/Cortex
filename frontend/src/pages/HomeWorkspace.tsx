@@ -6,6 +6,7 @@ import JoinRail from "@/components/home/JoinRail";
 import useAuthCommit from "@/components/home/useAuthCommit";
 import useJoinResume from "@/components/home/useJoinResume";
 import { useHomeIntentStore } from "@/stores/homeIntentStore";
+import { BrandMark } from "@/components/brand/BrandMark";
 import { useAuth } from "@clerk/react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
@@ -208,7 +209,7 @@ export default function HomeWorkspace() {
           </motion.div>
         </section>
       </main>
-      <footer className="landing-footer"><div className="landing-shell"><span>Cortex</span><a href="#how-it-works">How it works</a></div></footer>
+      <footer className="landing-footer"><div className="landing-shell"><BrandMark className="landing-wordmark" /><a href="#how-it-works">How it works</a></div></footer>
     </div>
   );
 }

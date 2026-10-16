@@ -163,7 +163,9 @@ export default function Game() {
                 phase === "question" ? "sm:justify-between" : "sm:justify-start",
               )}
             >
-              <span className="editorial-game-wordmark" aria-label="Cortex">Cortex</span>
+              <span className="editorial-game-wordmark" aria-label="Cortex">
+                <img src="/assets/Cortex-logo.png" alt="" />
+              </span>
               {numberOfRounds != null && (
                 <p className="font-display text-sm font-semibold text-muted-foreground">
                   Round{" "}
