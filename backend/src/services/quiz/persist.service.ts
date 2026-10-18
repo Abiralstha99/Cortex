@@ -17,6 +17,9 @@ import type { GeneratedQuestion } from "../../types/quiz.types.js";
 import redis from "../../lib/redis.js";
 import { QUIZ_GEN_JOB_KEY, QUIZ_GEN_WORK_KEY } from "../../lib/redisKeys.js";
 import { prisma } from "../../lib/prisma.js";
+import type { Prisma } from "../../../app/generated/prisma/client.js";
+import { chunkIdForIndex } from "./batch.service.js";
+import { parseAndValidateQuestions } from "./validation.service.js";
 
 // ─── Constants ──────────────────────────────────────────────────────────────────
 
@@ -192,20 +195,40 @@ export async function markQuizGenJobFailed(
 // ─── Postgres: Quiz + Questions persistence ─────────────────────────────────────
 
 /**
- * Atomically create a quiz and all its questions in a single Postgres transaction.
- * Prisma's nested `create` is implicitly transactional — if any question insert
- * fails, the entire operation (including the quiz row) rolls back.
+ * Atomically create a quiz, its questions, and cited source records in Postgres.
+ * A failed child insert rolls back the entire operation.
  *
- * Called by both the sync HTTP path and the async BullMQ worker on success.
+ * Called by the BullMQ worker after complete generation.
  */
 export async function createReadyQuiz(input: {
   ownerId: string;
   title: string;
   sourceType: "pdf" | "text";
   questions: GeneratedQuestion[];
+  chunks: string[];
+}): Promise<{ id: string; questionCount: number }> {
+  return persistReadyQuiz((operation) => prisma.$transaction(operation, { timeout: 30_000 }), input);
+}
+
+export type ReadyQuizTransactionRunner = <T>(
+  operation: (transaction: Prisma.TransactionClient) => Promise<T>,
+) => Promise<T>;
+
+export async function persistReadyQuiz(runTransaction: ReadyQuizTransactionRunner, input: {
+  ownerId: string;
+  title: string;
+  sourceType: "pdf" | "text";
+  questions: GeneratedQuestion[];
+  chunks: string[];
 }): Promise<{ id: string; questionCount: number }> {
   const { ownerId, title, sourceType } = input;
   const questions = GeneratedQuestionsArraySchema.parse(input.questions);
+  // Validate again at the persistence boundary, including worker retries and
+  // injected generation implementations. Only cited chunks become durable.
+  parseAndValidateQuestions(JSON.stringify(questions), input.chunks.map((text, index) => ({
+    chunkId: chunkIdForIndex(index), text,
+  })));
+  const citedIds = new Set(questions.flatMap((question) => question.sources.map((source) => source.chunkId)));
 
   console.info("[quiz-gen] postgres:persist", {
     ownerId,
@@ -213,43 +236,64 @@ export async function createReadyQuiz(input: {
     questionCount: questions.length,
   });
 
-  const quiz = await prisma.quiz.create({
-    data: {
-      ownerId,
-      title,
-      sourceType,
-      status: "ready",
-      questionCount: questions.length,
-      questions: {
-        create: questions.map((q, index) => ({
-          question: q.question,
-          type: q.type,
-          content: q.content,
-          explanation: q.explanation,
-          position: index,
-        })),
+  return runTransaction(async (transaction) => {
+    const quiz = await transaction.quiz.create({
+      data: {
+        ownerId,
+        title,
+        sourceType,
+        status: "ready",
+        questionCount: questions.length,
       },
-    },
-    select: { id: true, questionCount: true },
+      select: { id: true, questionCount: true },
+    });
+    await transaction.sourceChunk.createMany({
+      data: input.chunks.flatMap((text, index) => {
+        const chunkId = chunkIdForIndex(index);
+        return citedIds.has(chunkId) ? [{ quizId: quiz.id, chunkId, text }] : [];
+      }),
+    });
+    for (const [position, question] of questions.entries()) {
+      const references = [...new Map(question.sources.map((source) =>
+        [`${source.chunkId}\0${source.quote}`, source])).values()];
+      await transaction.question.create({
+        data: {
+          quizId: quiz.id,
+          question: question.question,
+          type: question.type,
+          content: question.content,
+          explanation: question.explanation,
+          position,
+          sourceReferences: {
+            create: references.map((source) => ({
+              quote: source.quote,
+              sourceChunk: { connect: { quizId_chunkId: { quizId: quiz.id, chunkId: source.chunkId } } },
+            })),
+          },
+        },
+      });
+    }
+    return quiz;
   });
-
-  return quiz;
 }
 
 /**
- * Fetch a single quiz with all its questions (ordered by position).
+ * Fetch non-sensitive quiz metadata.
  * Scoped to ownerId so users can only access their own quizzes.
  * Returns null if not found or if the quiz belongs to another user.
  */
 export async function getQuiz(quizId: string, ownerId: string) {
-  const quiz = await prisma.quiz.findFirst({
-    where: { id: quizId, ownerId },
-    include: {
-      questions: { orderBy: { position: "asc" } },
-    },
-  });
+  return prisma.quiz.findFirst(quizMetadataQuery(quizId, ownerId));
+}
 
-  return quiz;
+export function quizMetadataQuery(quizId: string, ownerId: string) {
+  return {
+    where: { id: quizId, ownerId },
+    select: {
+      id: true, title: true, sourceType: true, status: true,
+      questionCount: true, createdAt: true,
+    },
+  } as const;
 }
 
 /**

@@ -9,11 +9,13 @@ export type QuestionBatch = {
   questionCount: number;
   /** Original chunk indices included (debug / logging) */
   chunkIndices: number[];
+  chunks: Array<{ chunkId: string; text: string }>;
 };
 
 export type SourcePack = {
   text: string;
   chunkIndices: number[];
+  chunks: Array<{ chunkId: string; text: string }>;
   estimatedInputTokens: number;
 };
 

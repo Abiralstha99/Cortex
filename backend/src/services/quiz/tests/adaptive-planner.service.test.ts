@@ -8,11 +8,13 @@ const sourcePacks: SourcePack[] = [
   {
     text: "first source pack",
     chunkIndices: [0],
+    chunks: [{ chunkId: "chunk-1", text: "first source pack" }],
     estimatedInputTokens: 10,
   },
   {
     text: "second source pack",
     chunkIndices: [1],
+    chunks: [{ chunkId: "chunk-2", text: "second source pack" }],
     estimatedInputTokens: 12,
   },
 ];

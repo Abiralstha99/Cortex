@@ -38,6 +38,9 @@ function transactionRecorder() {
     game: {
       update: async (args: unknown) => calls.push({ model: "game", args }),
     },
+    gameRound: {
+      upsert: async (args: unknown) => calls.push({ model: "gameRound", args }),
+    },
   };
   const runTransaction: CompletionTransactionRunner = async (work) =>
     work(transaction as unknown as GameCompletionTransaction);
@@ -54,6 +57,7 @@ describe("persistGameCompletion", () => {
       gameId: "game-1",
       leaderboard,
       answers,
+      questionIds: ["question-1", "question-2"],
       finishedAt,
     });
 
@@ -62,6 +66,8 @@ describe("persistGameCompletion", () => {
       "gamePlayer",
       "gamePlayer",
       "answer",
+      "gameRound",
+      "gameRound",
       "game",
     ]);
     assert.deepEqual(calls.at(-1), {
@@ -87,6 +93,7 @@ describe("persistGameCompletion", () => {
             throw new Error("answer insert failed");
           },
         },
+        gameRound: { upsert: async (args: unknown) => calls.push({ model: "gameRound", args }) },
         game: {
           update: async (args: unknown) => calls.push({ model: "game", args }),
         },
@@ -99,6 +106,7 @@ describe("persistGameCompletion", () => {
         gameId: "game-1",
         leaderboard,
         answers,
+        questionIds: ["question-1"],
         finishedAt: new Date("2026-09-29T12:05:00.000Z"),
       }),
       /answer insert failed/,

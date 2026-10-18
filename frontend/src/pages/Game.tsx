@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth } from "@clerk/react";
 import Countdown from "@/components/game/Countdown";
 import QuestionCard from "@/components/game/QuestionCard";
 import Timer from "@/components/game/Timer";
@@ -13,11 +14,13 @@ import { useGameSocket } from "@/hooks/useGameSocket";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { cn } from "@/lib/utils";
 import "@/styles/editorialApp.css";
-import type { AnswerValue } from "@/lib/api";
+import { getGameReview, type AnswerValue } from "@/lib/api";
 
 export default function Game() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  const { getToken } = useAuth();
+  const loadReview = useCallback(async () => getGameReview(await getToken(), gameId ?? ""), [gameId, getToken]);
   const { id: myPlayerId } = useCurrentUser();
 
   const numberOfRounds = useLobbyStore((s) => s.numberOfRounds);
@@ -218,7 +221,7 @@ export default function Game() {
               )}
 
               {phase === "game_finished" && gameResults && (
-                <GameResults gameResults={gameResults} myPlayerId={myPlayerId} />
+                <GameResults gameResults={gameResults} myPlayerId={myPlayerId} loadReview={loadReview} />
               )}
             </div>
           </>

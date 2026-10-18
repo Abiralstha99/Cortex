@@ -77,7 +77,7 @@ const itemVariants = {
 };
 
 export default function RoundResults({ roundResults, myPlayerId }: RoundResultsProps) {
-  const { roundNumber, correctAnswer, submissions, leaderboard, isLastRound, nextRoundIn } = roundResults;
+  const { roundNumber, submissions, leaderboard, isLastRound, nextRoundIn } = roundResults;
   const reduce = useReducedMotion();
   const mySubmission = submissions.find((sub) => sub.playerId === myPlayerId);
   const myUsername = leaderboard.find(
@@ -106,12 +106,7 @@ export default function RoundResults({ roundResults, myPlayerId }: RoundResultsP
         <h1 className="mb-2 text-balance font-display text-2xl font-bold text-ink">
           Round {roundNumber} complete
         </h1>
-        <p className="text-pretty text-muted-foreground">
-          Correct answer:{" "}
-          <strong className="font-display font-semibold text-ink">
-            {correctAnswer}
-          </strong>
-        </p>
+        <p className="text-pretty text-muted-foreground">Review answers after the game.</p>
       </section>
 
       <section className="editorial-stage rounded-[var(--radius-panel)] border border-border bg-surface p-5 shadow-sm sm:p-6">

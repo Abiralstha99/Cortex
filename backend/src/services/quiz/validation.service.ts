@@ -10,7 +10,10 @@ function stripFences(raw: string): string {
   return s.trim();
 }
 
-export function parseAndValidateQuestions(raw: string): GeneratedQuestion[] {
+export function parseAndValidateQuestions(
+  raw: string,
+  sourceChunks?: Array<{ chunkId: string; text: string }>,
+): GeneratedQuestion[] {
   const stripped = stripFences(raw);
   let parsed: unknown;
   try {
@@ -21,11 +24,22 @@ export function parseAndValidateQuestions(raw: string): GeneratedQuestion[] {
 
   try {
     const result = GeneratedQuestionsArraySchema.parse(parsed);
+    if (sourceChunks) {
+      const chunksById = new Map(sourceChunks.map((chunk) => [chunk.chunkId, chunk.text]));
+      for (const question of result) {
+        for (const source of question.sources) {
+          const chunk = chunksById.get(source.chunkId);
+          if (!chunk || !chunk.includes(source.quote)) {
+            throw new Error(`Invalid source reference ${source.chunkId}: quote must appear verbatim in its source chunk`);
+          }
+        }
+      }
+    }
     return result;
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Question validation failed";
-    throw new Error(message);
+    throw new Error(`Question validation failed: ${message}`);
   }
 }
 

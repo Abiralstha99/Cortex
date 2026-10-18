@@ -51,7 +51,7 @@ describe("resumeGame Redis recovery", () => {
     if (result.ok) {
       assert.equal(result.snapshot.phaseVersion, 3);
       assert.equal(result.snapshot.phase, "round_results");
-      assert.equal(result.snapshot.payload.correctAnswer, "C");
+      assert.equal("correctAnswer" in result.snapshot.payload, false);
     }
   });
 
@@ -69,7 +69,8 @@ describe("resumeGame Redis recovery", () => {
     assert.equal(result.ok, true);
     if (result.ok) {
       assert.equal(result.snapshot.myAnswer, 2);
-      assert.equal(result.snapshot.answerResult?.correctAnswer, "C");
+      assert.equal(result.snapshot.answerResult?.correct, true);
+      assert.equal(JSON.stringify(result).includes("correctAnswer"), false);
     }
   });
 

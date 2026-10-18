@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { after, describe, it } from "node:test";
+import redis from "../../../lib/redis.js";
+
+after(() => redis.disconnect());
 
 import {
   generateAdaptiveQuiz,
@@ -30,6 +33,7 @@ function question(topic: string): GeneratedQuestion {
     type: "MCQ",
     content: { options: ["First option", "Second option", "Third option", "Fourth option"], correctIndex: 0 },
     explanation: `The source material explains the ${topic} concept in detail.`,
+    sources: [{ chunkId: "chunk-1", quote: "notes" }],
   };
 }
 
@@ -191,5 +195,20 @@ describe("adaptive quiz generation pipeline", () => {
         return true;
       },
     );
+  });
+
+  it("retries a batch when a citation is not in the source pack", async () => {
+    let attempts = 0;
+    const result = await generateAdaptiveQuiz({
+      chunks: ["notes about the answer"], requestedCount: 1, modelConfig: testModelConfig,
+    }, { complete: async () => {
+      attempts++;
+      return successfulResponse(["alpha"]).text.replace('"quote":"notes"',
+        `"quote":"${attempts === 1 ? "invented" : "notes"}"`);
+    } });
+    assert.equal(attempts, 2);
+    assert.equal(result.metrics.retries, 1);
+    assert.deepEqual(result.metrics.validationOutcomes, ["schema-invalid", "valid"]);
+    assert.equal(result.questions[0]!.sources[0]!.quote, "notes");
   });
 });

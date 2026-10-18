@@ -4,13 +4,16 @@ import { Trophy } from "lucide-react";
 import type { GameFinishedPayload } from "@/lib/api";
 import Leaderboard from "@/components/game/Leaderboard";
 import { Button } from "@/components/ui/button";
+import PostGameReview from "./PostGameReview";
+import type { GameReview } from "@/lib/api";
 
 type GameResultsProps = {
   gameResults: GameFinishedPayload;
   myPlayerId: string;
+  loadReview: () => Promise<GameReview>;
 };
 
-export default function GameResults({ gameResults, myPlayerId }: GameResultsProps) {
+export default function GameResults({ gameResults, myPlayerId, loadReview }: GameResultsProps) {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
   const { finalLeaderboard, winners } = gameResults;
@@ -65,6 +68,8 @@ export default function GameResults({ gameResults, myPlayerId }: GameResultsProp
       </section>
 
       <Leaderboard entries={finalLeaderboard} highlightPlayerId={myPlayerId} />
+
+      <PostGameReview loadReview={loadReview} />
 
       <Button onClick={handleExit} className="min-h-12 w-full">
         Return home

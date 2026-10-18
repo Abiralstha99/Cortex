@@ -23,7 +23,11 @@ export const JobIdParamsSchema = z.object({
 
 const questionBase = {
   question: z.string().trim().min(10),
-  explanation: z.string().trim().min(10),
+  explanation: z.string().trim().min(10).max(320),
+  sources: z.array(z.object({
+    chunkId: z.string().regex(/^chunk-[1-9]\d*$/),
+    quote: z.string().min(1).max(500),
+  }).strict()).min(1),
 };
 const nonemptyAnswer = z.string().trim().min(1);
 

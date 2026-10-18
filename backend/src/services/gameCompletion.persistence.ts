@@ -16,6 +16,7 @@ export async function persistGameCompletion(
     gameId: string;
     leaderboard: LeaderboardEntry[];
     answers: SubmissionRecord[];
+    questionIds: string[];
     finishedAt: Date;
   },
 ): Promise<void> {
@@ -50,6 +51,14 @@ export async function persistGameCompletion(
           responseTimeMs: record.responseTimeMs,
           createdAt: record.createdAt,
         },
+      });
+    }
+
+    for (const [index, questionId] of input.questionIds.entries()) {
+      await transaction.gameRound.upsert({
+        where: { gameId_roundNumber: { gameId: input.gameId, roundNumber: index + 1 } },
+        create: { gameId: input.gameId, roundNumber: index + 1, questionId },
+        update: { questionId },
       });
     }
 

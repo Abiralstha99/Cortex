@@ -5,6 +5,7 @@ import {
   failWaitingQuiz,
   generateForWaitingGame,
   listPublicWaiting,
+  reviewGame,
 } from "../controllers/game.controller.js";
 import { requireAuth } from "../middleware/requireAuth.middleware.js";
 import {
@@ -31,6 +32,9 @@ gameRouter.post(
 );
 
 gameRouter.get("/waiting/public", requireAuth, listPublicWaiting);
+
+gameRouter.get("/:gameId/review", requireAuth,
+  validateParams(WaitingGameIdParamsSchema), reviewGame);
 
 gameRouter.post(
   "/waiting/:gameId/generate",

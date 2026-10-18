@@ -18,9 +18,10 @@ describe("packSourceChunks", () => {
 
     assert.equal(packs.length, 1);
     assert.deepEqual(packs[0]!.chunkIndices, [0, 1, 2]);
+    assert.deepEqual(packs[0]!.chunks.map((chunk) => chunk.chunkId), ["chunk-1", "chunk-2", "chunk-3"]);
     assert.equal(
       packs[0]!.text,
-      "alpha source chunk\n\n---\n\nbeta source chunk\n\n---\n\ngamma source chunk",
+      "[chunk-1]\nalpha source chunk\n\n---\n\n[chunk-2]\nbeta source chunk\n\n---\n\n[chunk-3]\ngamma source chunk",
     );
   });
 
@@ -33,8 +34,16 @@ describe("packSourceChunks", () => {
     assert.ok(packs[0]!.estimatedInputTokens <= DEFAULT_BATCH_TOKEN_BUDGET);
   });
 
+  it("keeps IDs stable when the same chunks split into different packs", () => {
+    const chunks = [words(20), words(20), words(20)];
+    const loose = packSourceChunks(chunks, 3000);
+    const tight = packSourceChunks(chunks, 30);
+    assert.deepEqual(loose.flatMap((pack) => pack.chunks.map((chunk) => chunk.chunkId)),
+      tight.flatMap((pack) => pack.chunks.map((chunk) => chunk.chunkId)));
+  });
+
   it("counts join separators against the input budget", () => {
-    // Each five-word chunk is 7 tokens; joined text with "---" is 15 tokens.
+    // Chunk labels and separators count against the budget.
     const chunks = [words(5), words(5)];
     const packs = packSourceChunks(chunks, 14);
 
@@ -65,6 +74,6 @@ describe("packSourceChunks", () => {
 
     assert.equal(packs.length, 1);
     assert.deepEqual(packs[0]!.chunkIndices, [0]);
-    assert.equal(packs[0]!.estimatedInputTokens, estimateTokens(oversized));
+    assert.equal(packs[0]!.estimatedInputTokens, estimateTokens(`[chunk-1]\n${oversized}`));
   });
 });

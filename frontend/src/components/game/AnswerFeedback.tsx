@@ -38,9 +38,6 @@ export default function AnswerFeedback({ result }: AnswerFeedbackProps) {
       {placementText && (
         <div className="mb-3 font-mono text-sm font-semibold text-muted-foreground">{placementText} place</div>
       )}
-      <div className="text-pretty text-ink">
-        Correct answer: <strong>{result.correctAnswer}</strong>
-      </div>
       <p className="mt-5 text-pretty text-sm font-medium text-muted-foreground">
         Waiting for other players...
       </p>

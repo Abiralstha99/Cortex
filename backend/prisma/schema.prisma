@@ -66,6 +66,7 @@ model Quiz {
 
   owner     User       @relation(fields: [ownerId], references: [id])
   questions Question[]
+  sourceChunks SourceChunk[]
   games     Game[]
 
   @@index([ownerId])
@@ -85,10 +86,38 @@ model Question {
 
   quiz    Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
   answers Answer[]
+  sourceReferences QuestionSource[]
+  playedRounds GameRound[]
 
   @@unique([quizId, position])
   @@index([quizId])
   @@map("questions")
+}
+
+model SourceChunk {
+  id String @id @default(uuid()) @db.Uuid
+  quizId String @map("quiz_id") @db.Uuid
+  chunkId String @map("chunk_id") @db.VarChar(32)
+  text String @db.Text
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  references QuestionSource[]
+
+  @@unique([quizId, chunkId])
+  @@map("source_chunks")
+}
+
+model QuestionSource {
+  id String @id @default(uuid()) @db.Uuid
+  questionId String @map("question_id") @db.Uuid
+  sourceChunkId String @map("source_chunk_id") @db.Uuid
+  quote String @db.Text
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  sourceChunk SourceChunk @relation(fields: [sourceChunkId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, sourceChunkId, quote])
+  @@map("question_sources")
 }
 
 model Game {
@@ -105,11 +134,24 @@ model Game {
   host        User         @relation("GameHost", fields: [hostId], references: [id])
   gamePlayers GamePlayer[]
   answers     Answer[]
+  playedRounds GameRound[]
 
   @@index([hostId])
   @@index([quizId])
   @@index([createdAt])
   @@map("games")
+}
+
+model GameRound {
+  gameId String @map("game_id") @db.Uuid
+  roundNumber Int @map("round_number")
+  questionId String @map("question_id") @db.Uuid
+
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id])
+
+  @@id([gameId, roundNumber])
+  @@map("game_rounds")
 }
 
 model GamePlayer {

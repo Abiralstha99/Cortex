@@ -20,7 +20,7 @@ it("shows every tied winner and recognizes each as a winner", () => {
   };
 
   renderWithRouter(
-    <GameResults gameResults={gameResults} myPlayerId="player-b" />,
+    <GameResults gameResults={gameResults} myPlayerId="player-b" loadReview={async () => ({ gameId: "game-1", rounds: [] })} />,
   );
 
   expect(screen.getByRole("heading", { name: "You won" })).toBeInTheDocument();

@@ -149,7 +149,6 @@ export type AnswerResult = {
   correct: boolean;
   pointsEarned: number;
   placement: number | null;
-  correctAnswer: string;
   phaseVersion?: number;
 };
 
@@ -175,13 +174,37 @@ export type SubmissionSummary = {
 
 export type RoundFinishedPayload = {
   roundNumber: number;
-  correctAnswer: string;
   submissions: SubmissionSummary[];
   leaderboard: LeaderboardEntry[];
   isLastRound: boolean;
   nextRoundIn: number; // ms
   phaseVersion?: number;
 };
+
+export type GameReviewRound = {
+  roundNumber: number;
+  question: string;
+  type: "MCQ" | "TRUE_FALSE" | "FILL_BLANK";
+  options?: string[];
+  playerAnswer: AnswerValue | null;
+  correct: boolean | null;
+  pointsEarned: number;
+  correctAnswer: string;
+  explanation: string;
+  sources: Array<{ chunkId: string; quote: string }>;
+};
+
+export type GameReview = { gameId: string; rounds: GameReviewRound[] };
+
+export async function getGameReview(token: string | null, gameId: string): Promise<GameReview> {
+  const response = await apiFetch(`/api/games/${gameId}/review`, token);
+  if (!response.ok) {
+    throw new Error(response.status === 404
+      ? "Review isn't available for this game."
+      : "We couldn't load the review. Try again.");
+  }
+  return response.json() as Promise<GameReview>;
+}
 
 export type GameFinishedPayload = {
   finalLeaderboard: LeaderboardEntry[];
@@ -230,14 +253,6 @@ export type GenerateResult = {
   quizId?: string;
   jobId?: string;
   status: "completed" | "processing" | "failed";
-  questions?: Array<{
-    question: string;
-    explanation: string;
-  } & (
-    | { type: "MCQ"; content: { options: string[]; correctIndex: number } }
-    | { type: "TRUE_FALSE"; content: { correctAnswer: boolean } }
-    | { type: "FILL_BLANK"; content: { acceptedAnswers: string[] } }
-  )>;
   metadata?: Record<string, unknown>;
   error?: string;
 };

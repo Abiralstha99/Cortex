@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { GeneratedQuestionSchema } from "../quiz.js";
 import { gradeAnswer, correctAnswerLabel } from "../../services/questionAnswer.service.js";
 
-const base = { question: "What is the answer to this question?", explanation: "The notes explain the answer clearly." };
+const base = { question: "What is the answer to this question?", explanation: "The notes explain the answer clearly.",
+  sources: [{ chunkId: "chunk-1", quote: "The notes explain" }] };
 
 describe("question content", () => {
   it("validates all three question variants", () => {

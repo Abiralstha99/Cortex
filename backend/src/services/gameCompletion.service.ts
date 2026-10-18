@@ -27,6 +27,11 @@ export async function finalizeGame(
   if (!Number.isInteger(currentRound) || currentRound < 0) {
     throw new Error(`Invalid current round for game ${gameId}`);
   }
+  const order = JSON.parse(game.questionOrder ?? "[]") as string[];
+  if (currentRound === 0 || order.length < currentRound ||
+      order.slice(0, currentRound).some((id) => typeof id !== "string" || !id)) {
+    throw new Error(`Missing played question order for game ${gameId}`);
+  }
 
   const submissions: SubmissionRecord[] = [];
   for (let roundNumber = 1; roundNumber <= currentRound; roundNumber += 1) {
@@ -49,6 +54,7 @@ export async function finalizeGame(
       gameId,
       leaderboard: finalLeaderboard,
       answers: submissions,
+      questionIds: order.slice(0, currentRound),
       finishedAt: new Date(finishedAt),
     },
   );

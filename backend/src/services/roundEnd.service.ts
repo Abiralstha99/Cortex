@@ -34,8 +34,6 @@ import { startRound } from "./round.service.js";
 import { publicNewQuestionFromRound } from "./gamePlay.helpers.js";
 import { rankPlayers } from "./gameCompletion.helpers.js";
 import { enqueueGameFinish } from "./gameFinish.queue.js";
-import { QuestionContentSchema } from "../schemas/quiz.js";
-import { correctAnswerLabel } from "./questionAnswer.service.js";
 import { publishGamePhase } from "./gameResume.service.js";
 
 export const BETWEEN_ROUND_DELAY_MS = 3000;
@@ -192,12 +190,8 @@ export async function endRound(
 
   // Build and broadcast round_finished payload
   const isLastRound = currentRound >= numberOfRounds;
-  const question = QuestionContentSchema.parse({ type: round.type, content: JSON.parse(round.content ?? "null") });
-  const correctAnswer = correctAnswerLabel(question);
-
   const payload: RoundFinishedPayload = {
     roundNumber,
-    correctAnswer,
     leaderboard,
     submissions: submissions.map((sub) => ({
       playerId: sub.playerId,

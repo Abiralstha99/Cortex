@@ -17,7 +17,6 @@ vi.mock("motion/react", async (importOriginal) => {
 
 const roundResults: RoundFinishedPayload = {
   roundNumber: 2,
-  correctAnswer: "Queue",
   submissions: [
     {
       playerId: "player-1",

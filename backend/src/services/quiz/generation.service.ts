@@ -10,11 +10,13 @@ import type {
  */
 
 const SYSTEM_PROMPT = `Generate study questions from the supplied notes. Return ONLY a JSON array, without markdown.
-Each element has "question" (at least 10 characters), "type", "content", and "explanation" (at least 10 characters).
+Each element has "question" (at least 10 characters), "type", "content", "explanation", and "sources".
+Write an explanation of one or two concise sentences (10–320 characters) that helps someone who answered incorrectly.
+For every question include one or more sources as {"chunkId":"chunk-1","quote":"exact text copied from that chunk"}. Use only chunk IDs in the supplied source material. Copy each quote verbatim, including case and punctuation; keep it under 500 characters. Every answer and explanation must be supported by its cited quotes.
 Use any mix of these types that best fits the material; do not force a ratio:
-- MCQ: {"question":"...","type":"MCQ","content":{"options":["...","...","...","..."],"correctIndex":0},"explanation":"..."} (index 0-3)
-- True/false: {"question":"...","type":"TRUE_FALSE","content":{"correctAnswer":true},"explanation":"..."}
-- Fill in the blank: {"question":"...","type":"FILL_BLANK","content":{"acceptedAnswers":["...","..."]},"explanation":"..."}
+- MCQ: {"question":"...","type":"MCQ","content":{"options":["...","...","...","..."],"correctIndex":0},"explanation":"...","sources":[{"chunkId":"chunk-1","quote":"..."}]} (index 0-3)
+- True/false: {"question":"...","type":"TRUE_FALSE","content":{"correctAnswer":true},"explanation":"...","sources":[{"chunkId":"chunk-1","quote":"..."}]}
+- Fill in the blank: {"question":"...","type":"FILL_BLANK","content":{"acceptedAnswers":["...","..."]},"explanation":"...","sources":[{"chunkId":"chunk-1","quote":"..."}]}
 Each answer must be supported by the source. For blanks, include equivalent exact answers only, without vague alternatives. Prefer distinct coverage.`;
 
 export type CallLlmForBatchInput = {

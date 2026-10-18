@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { after, describe, it } from "node:test";
+import redis from "../../../lib/redis.js";
+
+after(() => redis.disconnect());
 
 import {
   executeStoredGenerationWithDeps,
@@ -21,6 +24,7 @@ const question: GeneratedQuestion = {
   type: "MCQ",
   content: { options: ["First", "Second", "Third", "Fourth"], correctIndex: 0 },
   explanation: "The source supports the first answer.",
+  sources: [{ chunkId: "chunk-1", quote: "source notes" }],
 };
 
 function workPayload(gameId = "game-1"): QuizGenWorkPayload {

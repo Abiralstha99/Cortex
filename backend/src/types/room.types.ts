@@ -48,7 +48,7 @@ export type PublicWaitingRoomSummary = {
 export type Round = QuestionContent & {
   questionId: string;
   question: string;
-  explanation: string; // server-only until round end
+  explanation: string; // server-only during play; available through finished review
   startedAt: string;
   roundNumber: number;
 };
@@ -72,7 +72,6 @@ export type AnswerResult = {
   correct: boolean;
   pointsEarned: number;
   placement: number | null;
-  correctAnswer: string;
 };
 
 // One entry in the round-end leaderboard broadcast.
@@ -86,7 +85,6 @@ export type LeaderboardEntry = {
 // Payload for the round_finished broadcast.
 export type RoundFinishedPayload = {
   roundNumber: number;
-  correctAnswer: string;
   submissions: Pick<
     SubmissionRecord,
     "playerId" | "correct" | "pointsEarned" | "placement"

@@ -135,6 +135,7 @@ export async function generateAdaptiveQuiz(
       const batch: QuestionBatch = {
         text: planned.sourcePack.text,
         chunkIndices: planned.sourcePack.chunkIndices,
+        chunks: planned.sourcePack.chunks,
         questionCount: planned.questionCount,
       };
       const result = await generateAdaptiveBatch(
@@ -254,7 +255,7 @@ async function generateAdaptiveBatch(
         return failedAdaptiveBatch(batch.questionCount, finishReason, outputTokens, validationOutcome, metrics);
       }
 
-      const parsed = parseAndValidateQuestions(response.text);
+      const parsed = parseAndValidateQuestions(response.text, batch.chunks);
       if (parsed.length !== batch.questionCount) {
         validationOutcome = "count-mismatch";
         previousError = `Expected ${batch.questionCount} questions, received ${parsed.length}`;
@@ -531,6 +532,7 @@ async function generateAndPersistQuiz(
   deps: StoredGenerationDeps,
 ): Promise<{ id: string; questionCount: number }> {
   const result = await deps.generateQuiz({
+    chunks: work.chunks,
     requestedCount: work.requestedCount,
     modelConfig,
   });

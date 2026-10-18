@@ -33,7 +33,7 @@ describe("typed answer submission", () => {
     const result = await answer(false);
     assert.equal(result.result.correct, true);
     assert.equal(result.result.pointsEarned, 100);
-    assert.equal(result.result.correctAnswer, "False");
+    assert.equal("correctAnswer" in result.result, false);
     assert.equal(JSON.parse((await redis.get(SUBMISSION_KEY(gameId, 1, playerId)))!).answer, false);
     await assert.rejects(answer(true), /already submitted/);
   });
@@ -42,7 +42,7 @@ describe("typed answer submission", () => {
     await setRound("FILL_BLANK", { acceptedAnswers: ["New York", "NYC"] });
     const result = await answer("  nYc  ");
     assert.equal(result.result.correct, true);
-    assert.equal(result.result.correctAnswer, "New York / NYC");
+    assert.equal("correctAnswer" in result.result, false);
     assert.equal(JSON.parse((await redis.get(SUBMISSION_KEY(gameId, 1, playerId)))!).answer, "  nYc  ");
   });
 

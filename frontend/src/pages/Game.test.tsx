@@ -26,6 +26,10 @@ vi.mock("@/hooks/useCurrentUser", () => ({
   useCurrentUser: () => ({ id: "player-1" }),
 }));
 
+vi.mock("@clerk/react", () => ({
+  useAuth: () => ({ getToken: async () => "test-token" }),
+}));
+
 function gameRoute() {
   return (
     <MemoryRouter initialEntries={["/game/game-1"]}>

@@ -8,7 +8,7 @@
 //   - Determine whether this submission ends the round early (all players answered)
 
 import { QuestionContentSchema } from "../schemas/quiz.js";
-import { gradeAnswer, correctAnswerLabel, isAnswerValueForQuestion, type AnswerValue } from "./questionAnswer.service.js";
+import { gradeAnswer, isAnswerValueForQuestion, type AnswerValue } from "./questionAnswer.service.js";
 import redis from "../lib/redis.js";
 import {
   ROUND_KEY,
@@ -175,13 +175,10 @@ export async function submitAnswer(params: {
   };
   await redis.set(submissionKey, JSON.stringify(submissionRecord));
 
-  const correctAnswer = correctAnswerLabel(question);
-
   const answerResult: AnswerResult = {
     correct,
     pointsEarned,
     placement,
-    correctAnswer,
   };
 
   return {

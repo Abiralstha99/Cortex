@@ -1,5 +1,3 @@
-import { QuestionContentSchema } from "../schemas/quiz.js";
-import { correctAnswerLabel } from "./questionAnswer.service.js";
 import type { AnswerValue } from "./questionAnswer.service.js";
 import redis from "../lib/redis.js";
 import { GAME_KEY, ROUND_KEY, SUBMISSION_KEY } from "../lib/redisKeys.js";
@@ -46,7 +44,6 @@ export function buildGameSnapshot(
   game: Record<string, string>,
   playerId: string,
   submissionRaw: string | null,
-  correctAnswer = "",
 ): ResumeResponse {
   if (!game.players || (game.status !== "playing" && game.status !== "finished")) {
     return { ok: false, reason: "unavailable" };
@@ -62,6 +59,9 @@ export function buildGameSnapshot(
     return { ok: false, reason: "unavailable" };
   }
   const payload = JSON.parse(game.publicPayload) as Record<string, unknown>;
+  delete payload.correctAnswer;
+  delete payload.explanation;
+  delete payload.sources;
   // Public payloads are created at broadcast time and contain no answer key
   // while the question is open.
   const submission = submissionRaw ? JSON.parse(submissionRaw) as SubmissionRecord : null;
@@ -75,7 +75,6 @@ export function buildGameSnapshot(
         correct: submission.correct,
         pointsEarned: submission.pointsEarned,
         placement: submission.placement,
-        correctAnswer: phase === "round_results" ? String(payload.correctAnswer) : correctAnswer,
       }
     : null;
   return {
@@ -99,7 +98,6 @@ export async function resumeGame(gameId: string, playerId: string): Promise<Resu
   const roundNumber = Number(game.currentRound ?? 0);
   const submissionRaw = roundNumber > 0
     ? await redis.get(SUBMISSION_KEY(gameId, roundNumber, playerId)) : null;
-  let correctAnswer = "";
   if (submissionRaw && game.publicPhase === "question") {
     const round = await redis.hgetall(ROUND_KEY(gameId));
     const publicQuestion = JSON.parse(game.publicPayload ?? "{}") as {
@@ -109,8 +107,6 @@ export async function resumeGame(gameId: string, playerId: string): Promise<Resu
         Number(round.roundNumber) !== publicQuestion.roundNumber) {
       return { ok: false, reason: "temporary" };
     }
-    const question = QuestionContentSchema.parse({ type: round.type, content: JSON.parse(round.content ?? "null") });
-    correctAnswer = correctAnswerLabel(question);
   }
-  return buildGameSnapshot(game, playerId, submissionRaw, correctAnswer);
+  return buildGameSnapshot(game, playerId, submissionRaw);
 }

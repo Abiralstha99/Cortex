@@ -19,6 +19,19 @@ import {
   scheduleWaitingQuizGeneration,
 } from "../services/waitingQuiz.service.js";
 import { getIO } from "../socket/index.js";
+import { getGameReview } from "../services/gameReview.service.js";
+
+export async function reviewGame(req: Request, res: Response) {
+  if (!req.userId) return res.status(401).json({ message: "Unauthorized" });
+  const user = await prisma.user.findUnique({
+    where: { clerkUserId: req.userId }, select: { id: true },
+  });
+  if (!user) return res.status(404).json({ message: "Review unavailable" });
+  const { gameId } = req.params as WaitingGameIdParams;
+  const review = await getGameReview(gameId, user.id);
+  if (!review) return res.status(404).json({ message: "Review unavailable" });
+  return res.status(200).json(review);
+}
 
 export async function createGame(req: Request, res: Response) {
   const clerkUserId = req.userId!;

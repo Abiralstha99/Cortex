@@ -41,7 +41,7 @@ export const GAME_KEY = (gameId: string) => `game:${gameId}`;
 //     question          string   — prompt text shown to players
 //     type              string   — MCQ | TRUE_FALSE | FILL_BLANK
 //     content           string   — server-only JSON question content
-//     explanation       string   — server-only (broadcast at round end later)
+//     explanation       string   — server-only during play
 //     startedAt         string   — ISO date
 //     submissionCount   string   — HINCRBY in Lua submission script
 export const ROUND_KEY = (gameId: string) => `game:${gameId}:round`;
