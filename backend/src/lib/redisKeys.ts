@@ -21,7 +21,10 @@ export const ROOM_CODE_KEY = (roomCode: string) => `room-code:${roomCode}`;
 //     createdAt       string   — ISO date
 //   Added when game starts (status → "playing"):
 //     currentRound    string   — coerced number, starts at 0
-//     usedQuestionIds string   — JSON: string[] (question UUIDs) grows each round
+//     questionOrder   string   — shuffled JSON question UUIDs, private to this game
+//     quizVersion     string   — hash of the pinned quiz question snapshot
+//     currentQuestionIndex string — zero-based index in questionOrder (-1 before round 1)
+//     lastScoredRound string — score application guard for round-end retries
 //     phaseVersion    string   — monotonic public phase sequence, starts with countdown
 //     publicPhase     string   — countdown | question | round_results | game_finished
 //     publicPayload   string   — JSON of the last phase broadcast, without its version
@@ -36,18 +39,23 @@ export const GAME_KEY = (gameId: string) => `game:${gameId}`;
 //     roundNumber       string   — coerced number
 //     questionId        string   — questions.id UUID
 //     question          string   — prompt text shown to players
-//     options           string   — JSON string[4]
-//     correctIndex      string   — 0-3 (server-only until round_finished)
+//     type              string   — MCQ | TRUE_FALSE | FILL_BLANK
+//     content           string   — server-only JSON question content
 //     explanation       string   — server-only (broadcast at round end later)
 //     startedAt         string   — ISO date
 //     submissionCount   string   — HINCRBY in Lua submission script
 export const ROUND_KEY = (gameId: string) => `game:${gameId}:round`;
 
-// NEXT_QUESTION_KEY  game:<gameId>:nextQuestion  string
-//   Prefetch buffer — JSON QuestionPick { id, question, options, correctIndex, explanation }
-//   lifecycle: written after startRound(), consumed + deleted by the next startRound()
-export const NEXT_QUESTION_KEY = (gameId: string) =>
-  `game:${gameId}:nextQuestion`;
+// QUIZ_QUESTIONS_KEY quiz:<quizId>:questions string (JSON QuizSnapshot)
+//   Shared, server-only question data. Its content hash pins active games to a
+//   consistent snapshot. The TTL is refreshed when a game reads it.
+export const QUIZ_QUESTIONS_KEY = (quizId: string) =>
+  `quiz:${quizId}:questions`;
+
+// GAME_START_LOCK_KEY game:<gameId>:start-lock string
+//   Short-lived claim preventing concurrent start_game requests for one room.
+export const GAME_START_LOCK_KEY = (gameId: string) =>
+  `game:${gameId}:start-lock`;
 
 // CORRECT_COUNT_KEY  game:<gameId>:round:<n>:correctCount   string (integer)
 //   Atomically incremented (INCR) each time a player submits a correct answer.

@@ -12,6 +12,7 @@
  * rows and keeps the quizzes table clean for queries/joins.
  */
 
+import { GeneratedQuestionsArraySchema } from "../../schemas/quiz.js";
 import type { GeneratedQuestion } from "../../types/quiz.types.js";
 import redis from "../../lib/redis.js";
 import { QUIZ_GEN_JOB_KEY, QUIZ_GEN_WORK_KEY } from "../../lib/redisKeys.js";
@@ -203,7 +204,8 @@ export async function createReadyQuiz(input: {
   sourceType: "pdf" | "text";
   questions: GeneratedQuestion[];
 }): Promise<{ id: string; questionCount: number }> {
-  const { ownerId, title, sourceType, questions } = input;
+  const { ownerId, title, sourceType } = input;
+  const questions = GeneratedQuestionsArraySchema.parse(input.questions);
 
   console.info("[quiz-gen] postgres:persist", {
     ownerId,
@@ -221,8 +223,8 @@ export async function createReadyQuiz(input: {
       questions: {
         create: questions.map((q, index) => ({
           question: q.question,
-          options: q.options,
-          correctIndex: q.correctIndex,
+          type: q.type,
+          content: q.content,
           explanation: q.explanation,
           position: index,
         })),

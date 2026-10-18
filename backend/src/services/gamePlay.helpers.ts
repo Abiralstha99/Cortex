@@ -1,3 +1,4 @@
+import { publicQuestionContent } from "./questionAnswer.service.js";
 import type { QuizGenStatus, Round } from "../types/room.types.js";
 
 export type QuizPlayGate = {
@@ -56,32 +57,17 @@ export function capRoundsToQuiz(
   return Math.min(requestedRounds, questionCount);
 }
 
-/** Client-safe new_question payload — never include correctIndex/explanation. */
-export function publicNewQuestionPayload(round: {
-  questionId: string;
-  question: string;
-  options: string[];
-  correctIndex: number;
-  explanation: string;
-  startedAt: string;
-  roundNumber: number;
-}): {
-  roundNumber: number;
-  questionId: string;
-  question: string;
-  options: string[];
-  startedAt: string;
-} {
+/** Client-safe new_question payload. The full content stays server-side. */
+export function publicNewQuestionPayload(round: Round) {
   return {
     roundNumber: round.roundNumber,
     questionId: round.questionId,
     question: round.question,
-    options: round.options,
+    ...publicQuestionContent(round),
     startedAt: round.startedAt,
   };
 }
 
-/** Type helper if callers pass a full Round. */
 export function publicNewQuestionFromRound(round: Round) {
   return publicNewQuestionPayload(round);
 }

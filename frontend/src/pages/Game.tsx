@@ -13,6 +13,7 @@ import { useGameSocket } from "@/hooks/useGameSocket";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { cn } from "@/lib/utils";
 import "@/styles/editorialApp.css";
+import type { AnswerValue } from "@/lib/api";
 
 export default function Game() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -25,6 +26,7 @@ export default function Game() {
   const countdownMs = useGameStore((s) => s.countdownMs);
   const question = useGameStore((s) => s.question);
   const options = useGameStore((s) => s.options);
+  const questionType = useGameStore((s) => s.questionType);
   const roundNumber = useGameStore((s) => s.roundNumber);
   const startedAt = useGameStore((s) => s.startedAt);
   const timeLimit = useGameStore((s) => s.timeLimit);
@@ -95,11 +97,11 @@ export default function Game() {
     };
   }, [reset]);
 
-  function handleSubmitAnswer(answerIndex: number) {
+  function handleSubmitAnswer(answer: AnswerValue) {
     if (!responseStartTime.current || !questionId) return;
     const responseTime = Date.now() - responseStartTime.current;
 
-    submitAnswer(questionId, answerIndex, responseTime);
+    submitAnswer(questionId, answer, responseTime);
   }
 
   function handleExit() {
@@ -195,13 +197,15 @@ export default function Game() {
 
               {phase === "countdown" && <Countdown countdownMs={countdownMs} />}
 
-              {phase === "question" && question && startedAt && (
+              {phase === "question" && question && questionType && startedAt && (
                 <QuestionCard
+                  key={questionId}
                   question={question}
                   options={options}
+                  type={questionType}
                   onSubmit={handleSubmitAnswer}
                   disabled={myAnswer !== null}
-                  selectedIndex={myAnswer}
+                  selectedAnswer={myAnswer}
                 />
               )}
 

@@ -9,7 +9,6 @@
     "start": "tsx src/index.ts",
     "seed": "tsx scripts/seedCountries.ts",
     "seed:quiz": "tsx scripts/seedSampleQuiz.ts",
-    "smoke:pick-question": "tsx scripts/smokePickQuestion.ts",
     "test": "node --import tsx --test $(find src -name '*.test.ts')",
     "smoke:quiz-pipeline": "tsx scripts/smokeQuizPipeline.ts"
   },

@@ -73,8 +73,8 @@ describe("publicNewQuestionPayload", () => {
     const payload = publicNewQuestionPayload({
       questionId: "11111111-1111-1111-1111-111111111111",
       question: "Which planet is known as the Red Planet?",
-      options: ["Venus", "Mars", "Jupiter", "Saturn"],
-      correctIndex: 1,
+      type: "MCQ",
+      content: { options: ["Venus", "Mars", "Jupiter", "Saturn"], correctIndex: 1 },
       explanation: "Mars appears red due to iron oxide.",
       startedAt: "2026-08-09T12:00:00.000Z",
       roundNumber: 2,
@@ -84,12 +84,29 @@ describe("publicNewQuestionPayload", () => {
       roundNumber: 2,
       questionId: "11111111-1111-1111-1111-111111111111",
       question: "Which planet is known as the Red Planet?",
+      type: "MCQ",
       options: ["Venus", "Mars", "Jupiter", "Saturn"],
       startedAt: "2026-08-09T12:00:00.000Z",
     });
     assert.equal("correctIndex" in payload, false);
     assert.equal("explanation" in payload, false);
   });
+  it("keeps true/false and blank answers out of the public question", () => {
+    for (const variant of [
+      { type: "TRUE_FALSE" as const, content: { correctAnswer: true } },
+      { type: "FILL_BLANK" as const, content: { acceptedAnswers: ["Paris", "City of Paris"] } },
+    ]) {
+      const payload = publicNewQuestionPayload({
+        questionId: "11111111-1111-1111-1111-111111111111",
+        question: "Question text", explanation: "Explanation text",
+        startedAt: "2026-08-09T12:00:00.000Z", roundNumber: 1, ...variant,
+      });
+      assert.equal(JSON.stringify(payload).includes("content"), false);
+      assert.equal(JSON.stringify(payload).includes("correctAnswer"), false);
+      assert.equal(JSON.stringify(payload).includes("acceptedAnswers"), false);
+    }
+  });
+
 });
 
 describe("normalizeWaitingQuizId", () => {

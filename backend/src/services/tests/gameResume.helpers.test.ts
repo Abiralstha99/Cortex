@@ -12,7 +12,7 @@ const game = {
   phaseVersion: "2",
   players: JSON.stringify([{ id: "player-1", username: "Ada", ready: true, score: 0 }]),
   publicPhase: "question",
-  publicPayload: JSON.stringify({ roundNumber: 1, questionId: "q1", question: "Question?", options: ["A", "B", "C", "D"], startedAt: new Date().toISOString() }),
+  publicPayload: JSON.stringify({ roundNumber: 1, questionId: "q1", question: "Question?", type: "MCQ", options: ["A", "B", "C", "D"], startedAt: new Date().toISOString() }),
 };
 
 describe("game recovery snapshot", () => {
@@ -38,7 +38,7 @@ describe("game recovery snapshot", () => {
   });
 
   it("restores a submitted answer and its feedback", () => {
-    const submission = JSON.stringify({ answerIndex: 2, correct: true, pointsEarned: 100, placement: 1 });
+    const submission = JSON.stringify({ answer: 2, correct: true, pointsEarned: 100, placement: 1 });
     const result = buildGameSnapshot(game, "player-1", submission);
     assert.equal(result.ok, true);
     if (result.ok) {
@@ -48,7 +48,7 @@ describe("game recovery snapshot", () => {
   });
 
   it("waits for a submission record to finish scoring", () => {
-    assert.deepEqual(buildGameSnapshot(game, "player-1", JSON.stringify({ answerIndex: 2 })),
+    assert.deepEqual(buildGameSnapshot(game, "player-1", JSON.stringify({ answer: 2 })),
       { ok: false, reason: "temporary" });
   });
 

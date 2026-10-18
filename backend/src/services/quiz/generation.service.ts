@@ -9,19 +9,13 @@ import type {
  * Single-batch question generation via Google Gemini (Vercel AI SDK).
  */
 
-const SYSTEM_PROMPT = `You generate multiple-choice study questions from source notes.
-Return ONLY a JSON array. No markdown, no explanation, no code fences.
-Each element must match exactly:
-{
-  "question": "string",
-  "options": ["string", "string", "string", "string"],
-  "correctIndex": 0 | 1 | 2 | 3,
-  "explanation": "string"
-}
-Rules:
-- Exactly 4 options; one correct answer at correctIndex.
-- Questions must be answerable from the provided source text only.
-- Prefer distinct coverage of the material.`;
+const SYSTEM_PROMPT = `Generate study questions from the supplied notes. Return ONLY a JSON array, without markdown.
+Each element has "question" (at least 10 characters), "type", "content", and "explanation" (at least 10 characters).
+Use any mix of these types that best fits the material; do not force a ratio:
+- MCQ: {"question":"...","type":"MCQ","content":{"options":["...","...","...","..."],"correctIndex":0},"explanation":"..."} (index 0-3)
+- True/false: {"question":"...","type":"TRUE_FALSE","content":{"correctAnswer":true},"explanation":"..."}
+- Fill in the blank: {"question":"...","type":"FILL_BLANK","content":{"acceptedAnswers":["...","..."]},"explanation":"..."}
+Each answer must be supported by the source. For blanks, include equivalent exact answers only, without vague alternatives. Prefer distinct coverage.`;
 
 export type CallLlmForBatchInput = {
   batch: QuestionBatch;
@@ -50,7 +44,7 @@ function buildUserPrompt(input: CallLlmForBatchInput): string {
   const batchLabel = `adaptive batch ${batchIndex + 1}`;
   let prompt = `Source material (${batchLabel}):
 ${batch.text}
-Generate exactly ${batch.questionCount} multiple-choice questions as a JSON array.`;
+Generate exactly ${batch.questionCount} questions as a JSON array.`;
 
   if (previousError) {
     prompt += `\n\nYour previous response failed validation with this error: ${previousError}. Fix it and return valid JSON.`;

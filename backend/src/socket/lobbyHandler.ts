@@ -116,13 +116,14 @@ export function registerLobbyHandlers(io: Server, socket: Socket): void {
       });
       io.to(`game:${game.gameId}`).emit("game_started", countdown);
 
-      // Prefetch the first question during the countdown, then start the clock
+      // Prepare the first cached question during the countdown, then start the clock
       // only when players actually see the question (avoids a ~3s timer deficit).
-      const roundPromise = startRound(game.gameId);
+      const roundPromise = startRound(game.gameId, 0);
 
       setTimeout(async () => {
         try {
           const round = await roundPromise;
+          if (!round) return;
           const startedAt = await beginRoundClock(game.gameId);
 
           const question = await publishGamePhase(game.gameId, "question",

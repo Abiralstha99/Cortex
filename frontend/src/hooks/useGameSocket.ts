@@ -4,7 +4,7 @@ import { useGameStore } from "../stores/gameStore";
 import { useLobbyStore } from "../stores/lobbyStore";
 import type {
   NewQuestionPayload, AnswerResult, AnswerSubmittedPayload,
-  RoundFinishedPayload, GameFinishedPayload, ResumeGameResponse,
+  RoundFinishedPayload, GameFinishedPayload, ResumeGameResponse, AnswerValue,
 } from "../lib/api";
 
 export type ConnectionState = "connected" | "reconnecting" | "offline";
@@ -100,10 +100,10 @@ export function useGameSocket(gameId: string) {
     };
   }, [socket, connected, gameId, retryKey]);
 
-  function submitAnswer(questionId: string, answerIndex: number, responseTime: number) {
+  function submitAnswer(questionId: string, answer: AnswerValue, responseTime: number) {
     if (!socket || !connected || recoveryState !== "ready") return;
-    socket.emit("submit_answer", { gameId, questionId, answerIndex, responseTime });
-    useGameStore.getState().submitAnswer(answerIndex);
+    socket.emit("submit_answer", { gameId, questionId, answer, responseTime });
+    useGameStore.getState().submitAnswer(answer);
   }
 
   function retryConnection() {

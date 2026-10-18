@@ -2,7 +2,7 @@
 
 **Real-time multiplayer quizzes generated from your own notes.**
 
-Cortex turns study material into a live competition: upload a PDF, let an LLM generate validated multiple-choice questions, invite friends into a lobby, and play timed rounds over WebSockets. Built as a full-stack systems project focused on real-time state, durable persistence, and a production-shaped AI pipeline.
+Cortex turns study material into a live competition: upload a PDF, let an LLM generate validated MCQ, true/false, and fill-in-the-blank questions, invite friends into a lobby, and play timed rounds over WebSockets. Built as a full-stack systems project focused on real-time state, durable persistence, and a production-shaped AI pipeline.
 
 ---
 

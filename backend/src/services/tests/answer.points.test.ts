@@ -11,7 +11,7 @@ after(async () => {
   await redis.quit();
 });
 
-describe("calculatePoints (MCQ index grading payouts)", () => {
+describe("calculatePoints", () => {
   it("returns 0 when incorrect regardless of placement", () => {
     assert.equal(calculatePoints(false, 1), 0);
     assert.equal(calculatePoints(false, null), 0);
@@ -34,15 +34,5 @@ describe("calculateResponseTimeMs", () => {
 
   it("does not return negative elapsed time", () => {
     assert.equal(calculateResponseTimeMs(2_000, 1_000), 0);
-  });
-});
-
-describe("index equality grading contract", () => {
-  it("grades by integer equality 0-3 (mirrors Lua isCorrect)", () => {
-    const correctIndex = 2;
-    const grade = (answerIndex: number) => answerIndex === correctIndex;
-    assert.equal(grade(2), true);
-    assert.equal(grade(0), false);
-    assert.equal(grade(3), false);
   });
 });

@@ -47,7 +47,7 @@ export const JoinGamePayloadSchema = z.object({
 export const SubmitAnswerPayloadSchema = z.object({
   gameId: z.string().uuid(),
   questionId: z.string().uuid(),
-  answerIndex: z.number().int().min(0).max(3),
+  answer: z.union([z.number().int().min(0).max(3), z.boolean(), z.string().trim().min(1).max(500)]),
   responseTime: z.number().int().nonnegative(),
 });
 

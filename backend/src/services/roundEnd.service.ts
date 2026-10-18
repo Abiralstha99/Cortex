@@ -34,6 +34,8 @@ import { startRound } from "./round.service.js";
 import { publicNewQuestionFromRound } from "./gamePlay.helpers.js";
 import { rankPlayers } from "./gameCompletion.helpers.js";
 import { enqueueGameFinish } from "./gameFinish.queue.js";
+import { QuestionContentSchema } from "../schemas/quiz.js";
+import { correctAnswerLabel } from "./questionAnswer.service.js";
 import { publishGamePhase } from "./gameResume.service.js";
 
 export const BETWEEN_ROUND_DELAY_MS = 3000;
@@ -69,6 +71,7 @@ export async function computeLeaderboard(
 export async function applyScoresToGameState(
   gameId: string,
   scoreDelta: { playerId: string; points: number }[],
+  roundNumber: number,
 ): Promise<void> {
   while (true) {
     // Abort if another process has modified the game state.
@@ -79,6 +82,11 @@ export async function applyScoresToGameState(
     if (!game || !game.players) {
       await redis.unwatch();
       throw new Error(`Game ${gameId} not found`);
+    }
+
+    if (Number(game.lastScoredRound ?? 0) >= roundNumber) {
+      await redis.unwatch();
+      return;
     }
 
     const players = JSON.parse(game.players) as Player[];
@@ -98,7 +106,7 @@ export async function applyScoresToGameState(
 
     const result = await redis
       .multi()
-      .hset(GAME_KEY(gameId), "players", updatedPlayers)
+      .hset(GAME_KEY(gameId), "players", updatedPlayers, "lastScoredRound", String(roundNumber))
       .exec();
 
     // If WATCH detected a conflicting write, EXEC returns null.
@@ -161,6 +169,9 @@ export async function endRound(
   const players = JSON.parse(game.players!) as Player[];
   const numberOfRounds = parseInt(game.numberOfRounds!);
   const currentRound = parseInt(game.currentRound!);
+  if (currentRound !== roundNumber || Number(round.roundNumber) !== roundNumber) return;
+  if (game.publicPhase === "round_results" &&
+      (JSON.parse(game.publicPayload ?? "{}") as { roundNumber?: number }).roundNumber === roundNumber) return;
 
   // Get all submissions for this round
   const submissions = await getRoundSubmissions(
@@ -173,6 +184,7 @@ export async function endRound(
   await applyScoresToGameState(
     gameId,
     submissions.map((s) => ({ playerId: s.playerId, points: s.pointsEarned })),
+    roundNumber,
   );
 
   // Compute leaderboard
@@ -180,9 +192,8 @@ export async function endRound(
 
   // Build and broadcast round_finished payload
   const isLastRound = currentRound >= numberOfRounds;
-  const options: string[] = JSON.parse(round.options ?? "[]");
-  const correctIndex = Number(round.correctIndex);
-  const correctAnswer = options[correctIndex] ?? "";
+  const question = QuestionContentSchema.parse({ type: round.type, content: JSON.parse(round.content ?? "null") });
+  const correctAnswer = correctAnswerLabel(question);
 
   const payload: RoundFinishedPayload = {
     roundNumber,
@@ -207,7 +218,8 @@ export async function endRound(
     // Schedule next round after a delay
     setTimeout(async () => {
       try {
-        const nextRound = await startRound(gameId);
+        const nextRound = await startRound(gameId, currentRound);
+        if (!nextRound) return;
 
         // Emit new_question to the room
         const question = await publishGamePhase(gameId, "question",

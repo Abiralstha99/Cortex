@@ -21,12 +21,7 @@ export function parseAndValidateQuestions(raw: string): GeneratedQuestion[] {
 
   try {
     const result = GeneratedQuestionsArraySchema.parse(parsed);
-    return result.map((q) => ({
-      question: q.question,
-      options: q.options,
-      correctIndex: q.correctIndex,
-      explanation: q.explanation,
-    }));
+    return result;
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Question validation failed";

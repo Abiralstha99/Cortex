@@ -3,10 +3,12 @@
 // Responsibilities:
 //   - Validate a submission is within the time limit
 //   - Reject duplicate submissions (one per player per round)
-//   - Grade the answer (index equality against the correct MCQ option)
+//   - Grade the typed answer against server-only question content
 //   - Atomically record the submission and award placement via Lua script
 //   - Determine whether this submission ends the round early (all players answered)
 
+import { QuestionContentSchema } from "../schemas/quiz.js";
+import { gradeAnswer, correctAnswerLabel, isAnswerValueForQuestion, type AnswerValue } from "./questionAnswer.service.js";
 import redis from "../lib/redis.js";
 import {
   ROUND_KEY,
@@ -44,7 +46,7 @@ export function calculatePoints(
 
 /* Atomically:
   1. Guard duplicate via EXISTS on SUBMISSION_KEY
-  2. Compare answerIndex with correctIndex (Lua determines correctness)
+  2. Accept server-graded correctness and verify the active round
   3. If correct: INCR CORRECT_COUNT_KEY → placement
   4. HINCRBY ROUND_KEY submissionCount — total submissions so far
   5. SET SUBMISSION_KEY to submissionJson
@@ -55,16 +57,19 @@ local submissionKey   = KEYS[1]
 local correctCountKey = KEYS[2]
 local roundKey        = KEYS[3]
 local submissionJson  = ARGV[1]
-local answerIndex     = tonumber(ARGV[2])
-local correctIndex    = tonumber(ARGV[3])
+local isCorrect      = tonumber(ARGV[2])
+local questionId     = ARGV[3]
+local roundNumber    = ARGV[4]
 
 -- Reject duplicate
 if redis.call('EXISTS', submissionKey) == 1 then
   return {1, 0, 0, 0}
 end
 
--- Lua determines correctness (single source of truth)
-local isCorrect = (answerIndex == correctIndex) and 1 or 0
+if redis.call('HGET', roundKey, 'questionId') ~= questionId or
+   redis.call('HGET', roundKey, 'roundNumber') ~= roundNumber then
+  return {2, 0, 0, 0}
+end
 
 local placement = 0
 if isCorrect == 1 then
@@ -82,7 +87,7 @@ export async function submitAnswer(params: {
   roundNumber: number;
   questionId: string;
   playerId: string;
-  answerIndex: number;
+  answer: AnswerValue;
   responseTime: number;
   totalPlayers: number;
 }): Promise<{ result: AnswerResult; allAnswered: boolean }> {
@@ -91,7 +96,7 @@ export async function submitAnswer(params: {
     roundNumber,
     questionId,
     playerId,
-    answerIndex,
+    answer,
     responseTime: _responseTime,
     totalPlayers,
   } = params;
@@ -107,7 +112,9 @@ export async function submitAnswer(params: {
     throw new Error("Stale submission for wrong round");
   }
 
-  const correctIndex = Number(raw.correctIndex);
+  const question = QuestionContentSchema.parse({ type: raw.type, content: JSON.parse(raw.content ?? "null") });
+  if (!isAnswerValueForQuestion(question, answer)) throw new Error("Answer type does not match question");
+  const isCorrect = gradeAnswer(question, answer);
   const startedAt = new Date(raw.startedAt!).getTime();
   const submissionTime = new Date();
   const submittedAt = submissionTime.toISOString();
@@ -121,17 +128,17 @@ export async function submitAnswer(params: {
     throw new Error("Submission received after round time limit");
   }
 
-  // Atomic Lua script (Lua determines correctness)
+  // Atomic Lua script records the server-graded result and placement.
   const submissionKey = SUBMISSION_KEY(gameId, roundNumber, playerId);
   const correctCountKey = CORRECT_COUNT_KEY(gameId, roundNumber);
   const roundKey = ROUND_KEY(gameId);
 
-  // Build a base record (correctness will be determined by Lua)
+  // Build a base record; scoring fields are added after the Lua placement claim.
   const baseRecord = {
     playerId,
     roundNumber,
     questionId,
-    answerIndex,
+    answer,
     responseTimeMs,
     submittedAt,
   };
@@ -143,18 +150,18 @@ export async function submitAnswer(params: {
     correctCountKey,
     roundKey,
     JSON.stringify(baseRecord),
-    answerIndex.toString(),
-    correctIndex.toString(),
+    isCorrect ? "1" : "0",
+    questionId,
+    String(roundNumber),
   )) as [number, number, number, number];
 
   const [isDuplicate, rawPlacement, totalSubmissions, isCorrectFlag] = result;
 
   // Reject duplicate
-  if (isDuplicate === 1) {
-    throw new Error("Answer already submitted");
-  }
+  if (isDuplicate === 1) throw new Error("Answer already submitted");
+  if (isDuplicate === 2) throw new Error("Stale submission for wrong round");
 
-  // Use Lua's correctness determination
+  // Use the correctness value recorded by Lua
   const correct = isCorrectFlag === 1;
   const placement = correct ? rawPlacement : null;
   const pointsEarned = calculatePoints(correct, placement);
@@ -168,8 +175,7 @@ export async function submitAnswer(params: {
   };
   await redis.set(submissionKey, JSON.stringify(submissionRecord));
 
-  const options: string[] = JSON.parse(raw.options ?? "[]");
-  const correctAnswer = options[correctIndex] ?? "";
+  const correctAnswer = correctAnswerLabel(question);
 
   const answerResult: AnswerResult = {
     correct,
@@ -202,7 +208,7 @@ export async function getRoundSubmissions(
         playerId,
         roundNumber,
         questionId: "",
-        answerIndex: -1,
+        answer: null,
         responseTimeMs: 0,
         submittedAt: new Date().toISOString(),
         correct: false,

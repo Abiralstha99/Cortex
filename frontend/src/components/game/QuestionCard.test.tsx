@@ -10,10 +10,11 @@ it("locks every answer and confirms submission", async () => {
   const { rerender } = render(
     <QuestionCard
       question="FIFO?"
+      type="MCQ"
       options={["Stack", "Queue", "Heap", "Tree"]}
       onSubmit={onSubmit}
       disabled={false}
-      selectedIndex={null}
+      selectedAnswer={null}
     />,
   );
 
@@ -23,10 +24,11 @@ it("locks every answer and confirms submission", async () => {
   rerender(
     <QuestionCard
       question="FIFO?"
+      type="MCQ"
       options={["Stack", "Queue", "Heap", "Tree"]}
       onSubmit={onSubmit}
       disabled
-      selectedIndex={1}
+      selectedAnswer={1}
     />,
   );
 
@@ -41,6 +43,7 @@ it("renders every answer as a full-width, keyboard-addressable choice", async ()
   const { container } = render(
     <QuestionCard
       question="Which statement best describes this long question?"
+      type="MCQ"
       options={[
         "A long answer that should wrap naturally without becoming difficult to scan.",
         "Queue",
@@ -49,7 +52,7 @@ it("renders every answer as a full-width, keyboard-addressable choice", async ()
       ]}
       onSubmit={onSubmit}
       disabled={false}
-      selectedIndex={null}
+      selectedAnswer={null}
     />,
   );
 
@@ -64,4 +67,19 @@ it("renders every answer as a full-width, keyboard-addressable choice", async ()
   expect(answers[0]).toHaveFocus();
   fireEvent.click(answers[0]);
   expect(onSubmit).toHaveBeenCalledWith(0);
+});
+
+it("submits true or false as a boolean", async () => {
+  const onSubmit = vi.fn();
+  render(<QuestionCard question="Is this true?" type="TRUE_FALSE" onSubmit={onSubmit} disabled={false} selectedAnswer={null} />);
+  await userEvent.click(screen.getByRole("button", { name: /True/ }));
+  expect(onSubmit).toHaveBeenCalledWith(true);
+});
+
+it("submits a nonempty fill in the blank response", async () => {
+  const onSubmit = vi.fn();
+  render(<QuestionCard question="Name the capital" type="FILL_BLANK" onSubmit={onSubmit} disabled={false} selectedAnswer={null} />);
+  await userEvent.type(screen.getByRole("textbox", { name: "Your answer" }), " Paris ");
+  await userEvent.click(screen.getByRole("button", { name: "Submit answer" }));
+  expect(onSubmit).toHaveBeenCalledWith(" Paris ");
 });

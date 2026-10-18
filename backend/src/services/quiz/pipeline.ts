@@ -531,7 +531,6 @@ async function generateAndPersistQuiz(
   deps: StoredGenerationDeps,
 ): Promise<{ id: string; questionCount: number }> {
   const result = await deps.generateQuiz({
-    chunks: work.chunks,
     requestedCount: work.requestedCount,
     modelConfig,
   });
@@ -547,6 +546,7 @@ async function generateAndPersistQuiz(
     title: work.title,
     sourceType: work.sourceType,
     questions: result.questions,
+    chunks: work.chunks,
   });
   await deps.recordPersistedQuiz(jobId, quiz);
   return quiz;

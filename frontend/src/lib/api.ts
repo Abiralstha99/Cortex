@@ -132,14 +132,18 @@ export async function markWaitingQuizFailed(
 }
 
 // Game event payloads
+export type AnswerValue = number | boolean | string;
 export type NewQuestionPayload = {
   roundNumber: number;
   questionId: string;
   question: string;
-  options: string[];
-  startedAt: string; // ISO timestamp
+  startedAt: string;
   phaseVersion?: number;
-};
+} & (
+  | { type: "MCQ"; options: string[] }
+  | { type: "TRUE_FALSE" }
+  | { type: "FILL_BLANK" }
+);
 
 export type AnswerResult = {
   correct: boolean;
@@ -191,7 +195,7 @@ export type GameSnapshot = {
   phaseVersion: number;
   phase: "countdown" | "question" | "round_results" | "game_finished";
   payload: Record<string, unknown>;
-  myAnswer: number | null;
+  myAnswer: AnswerValue | null;
   answerResult: AnswerResult | null;
 };
 
@@ -228,10 +232,12 @@ export type GenerateResult = {
   status: "completed" | "processing" | "failed";
   questions?: Array<{
     question: string;
-    options: string[];
-    correctIndex: number;
     explanation: string;
-  }>;
+  } & (
+    | { type: "MCQ"; content: { options: string[]; correctIndex: number } }
+    | { type: "TRUE_FALSE"; content: { correctAnswer: boolean } }
+    | { type: "FILL_BLANK"; content: { acceptedAnswers: string[] } }
+  )>;
   metadata?: Record<string, unknown>;
   error?: string;
 };

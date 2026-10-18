@@ -27,8 +27,8 @@ function modelConfig(model: string, maxOutputTokens: number) {
 function question(topic: string): GeneratedQuestion {
   return {
     question: topic[0]!.repeat(12),
-    options: ["First option", "Second option", "Third option", "Fourth option"],
-    correctIndex: 0,
+    type: "MCQ",
+    content: { options: ["First option", "Second option", "Third option", "Fourth option"], correctIndex: 0 },
     explanation: `The source material explains the ${topic} concept in detail.`,
   };
 }

@@ -28,6 +28,12 @@ enum QuizStatus {
   failed
 }
 
+enum QuestionType {
+  MCQ
+  TRUE_FALSE
+  FILL_BLANK
+}
+
 model User {
   id          String   @id @default(uuid()) @db.Uuid
   clerkUserId String   @unique @map("clerk_user_id")
@@ -70,9 +76,9 @@ model Quiz {
 model Question {
   id           String   @id @default(uuid()) @db.Uuid
   quizId       String   @map("quiz_id") @db.Uuid
-  question     String   @db.Text
-  options      Json
-  correctIndex Int      @map("correct_index")
+  type         QuestionType
+  question     String   @map("question_text") @db.Text
+  content      Json     @db.JsonB
   explanation  String   @db.Text
   position     Int
   createdAt    DateTime @default(now()) @map("created_at")

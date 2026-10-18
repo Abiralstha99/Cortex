@@ -37,7 +37,7 @@ export async function finalizeGame(
     );
     submissions.push(
       ...roundSubmissions.filter(
-        (submission) => submission.questionId && submission.answerIndex >= 0,
+        (submission) => submission.questionId && submission.answer !== null,
       ),
     );
   }

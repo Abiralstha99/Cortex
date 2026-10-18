@@ -11,12 +11,44 @@ Lobby Redis mutations for waiting rooms:
 */
 
 import redis from "../lib/redis.js";
-import { ROOM_CODE_KEY, GAME_KEY } from "../lib/redisKeys.js";
+import { ROOM_CODE_KEY, GAME_KEY, GAME_START_LOCK_KEY } from "../lib/redisKeys.js";
 import type { Player, WaitingRoom } from "../types/room.types.js";
 import { RoomCodeSchema } from "../schemas/common.js";
 import { prisma } from "../lib/prisma.js";
 import { assertCanStartWithQuiz } from "./gamePlay.helpers.js";
 import { waitingQuizPublicState } from "./waitingQuiz.helpers.js";
+import { getQuizQuestions, shuffleQuestionIds } from "./quizCache.service.js";
+import { randomUUID } from "node:crypto";
+
+const ACTIVATE_GAME_LUA = `
+if redis.call('HGET', KEYS[1], 'status') ~= 'waiting' then return 0 end
+redis.call('HSET', KEYS[1],
+  'status', 'playing',
+  'questionOrder', ARGV[1],
+  'quizVersion', ARGV[2],
+  'currentRound', '0',
+  'currentQuestionIndex', '-1')
+redis.call('EXPIRE', KEYS[1], 7200)
+redis.call('EXPIRE', KEYS[2], 7200)
+return 1
+`;
+
+const RELEASE_START_LOCK_LUA = `
+if redis.call('GET', KEYS[1]) == ARGV[1] then
+  return redis.call('DEL', KEYS[1])
+end
+return 0
+`;
+
+export async function acquireGameStartLock(gameId: string): Promise<string | null> {
+  const token = randomUUID();
+  const acquired = await redis.set(GAME_START_LOCK_KEY(gameId), token, "EX", 120, "NX");
+  return acquired === "OK" ? token : null;
+}
+
+export async function releaseGameStartLock(gameId: string, token: string): Promise<void> {
+  await redis.eval(RELEASE_START_LOCK_LUA, 1, GAME_START_LOCK_KEY(gameId), token);
+}
 
 const MAX_PLAYERS = 8;
 const JOIN_PLAYERS_LUA = `
@@ -329,59 +361,69 @@ export async function leaveWaitingGame(
 export async function startGame(
   roomCode: string,
 ): Promise<{ game: WaitingRoom }> {
-  // Validate that the room code is valid
   const validatedRoomCode = RoomCodeSchema.parse(roomCode);
   const gameId = await redis.get(ROOM_CODE_KEY(validatedRoomCode));
-  if (!gameId) {
-    throw new Error("Room not found");
+  if (!gameId) throw new Error("Room not found");
+
+  const lockToken = await acquireGameStartLock(gameId);
+  if (!lockToken) {
+    throw new Error("Game start is already in progress");
   }
 
-  // Get the game from Redis and check if it's in the "waiting" status
-  const raw = (await redis.hgetall(GAME_KEY(gameId))) as Record<string, string>;
-
-  // Redis returns string, so we need to deserialize the room object
-  const game = deserializeRoom(raw, JSON.parse(raw.players!));
-
-  if (game.status !== "waiting") {
-    throw new Error("Game has already started");
-  }
-
-  if (game.players.length < 2) {
-    throw new Error("There must be at least 2 players to start the game");
-  }
-
-  // Check if all players are ready
-  if (!game.players.every((player) => player.ready)) {
-    throw new Error("All players must be ready to start the game");
-  }
-
-  assertCanStartWithQuiz(game.quizId, game.quizGenStatus);
-
-  // Create the durable Postgres record. The Redis gameId becomes the Postgres
-  // primary key so the two layers always refer to the same UUID.
-  const dbGame = await prisma.game.create({
-    data: {
-      id: game.gameId,
-      roomCode: game.roomCode,
-      hostId: game.hostId,
-      quizId: game.quizId!,
-      status: "playing",
-      rounds: game.numberOfRounds,
-    },
-  });
-
-  // Flip Redis to "playing". If this fails we roll back the Postgres row so
-  // there's no orphaned DB record with no live state behind it.
+  let persisted = false;
+  let activated = false;
   try {
-    await redis.multi()
-      .hset(GAME_KEY(gameId), "status", "playing", "usedQuestionIds", "[]")
-      .expire(GAME_KEY(gameId), 2 * 60 * 60)
-      .expire(ROOM_CODE_KEY(validatedRoomCode), 2 * 60 * 60)
-      .exec();
-  } catch (err) {
-    await prisma.game.delete({ where: { id: dbGame.id } });
-    throw new Error("Failed to update game state; rolled back", { cause: err });
-  }
+    const raw = await redis.hgetall(GAME_KEY(gameId));
+    if (!raw.players || raw.status !== "waiting") throw new Error("Game has already started");
+    const game = deserializeRoom(raw, JSON.parse(raw.players) as Player[]);
+    if (game.players.length < 2) throw new Error("There must be at least 2 players to start the game");
+    if (!game.players.every((player) => player.ready)) throw new Error("All players must be ready to start the game");
+    assertCanStartWithQuiz(game.quizId, game.quizGenStatus);
 
-  return { game };
+    const snapshot = await getQuizQuestions(game.quizId);
+    if (snapshot.questions.length < game.numberOfRounds) {
+      throw new Error("Quiz has fewer questions than this game requires");
+    }
+    const order = shuffleQuestionIds(snapshot.questions.map((question) => question.id));
+
+    // The stable game UUID makes a retry safe if the database write succeeded
+    // but Redis did not acknowledge the activation.
+    await prisma.game.upsert({
+      where: { id: game.gameId },
+      create: {
+        id: game.gameId,
+        roomCode: game.roomCode,
+        hostId: game.hostId,
+        quizId: game.quizId,
+        status: "playing",
+        rounds: game.numberOfRounds,
+      },
+      update: {},
+    });
+    persisted = true;
+
+    activated = Number(await redis.eval(
+      ACTIVATE_GAME_LUA,
+      2,
+      GAME_KEY(gameId),
+      ROOM_CODE_KEY(validatedRoomCode),
+      JSON.stringify(order),
+      snapshot.version,
+    )) === 1;
+    if (!activated) throw new Error("Game has already started");
+    return { game };
+  } catch (error) {
+    if (persisted && !activated) {
+      // If Redis cannot be reached, retain the stable game row for a retry.
+      const status = await redis.hget(GAME_KEY(gameId), "status").catch(() => null);
+      if (status === "waiting") {
+        await prisma.game.deleteMany({ where: { id: gameId } });
+      }
+    }
+    throw error;
+  } finally {
+    await releaseGameStartLock(gameId, lockToken).catch((error) => {
+      console.error(`Failed to release game start lock for ${gameId}:`, error);
+    });
+  }
 }

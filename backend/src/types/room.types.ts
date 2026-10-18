@@ -1,3 +1,5 @@
+import type { QuestionContent, AnswerValue } from "../services/questionAnswer.service.js";
+
 // This file defines the types for the waiting room and game room
 
 export type GameStatus = "waiting" | "playing" | "finished" | "cancelled";
@@ -42,27 +44,10 @@ export type PublicWaitingRoomSummary = {
   createdAt: string;
 };
 
-export type ActiveGame = Omit<WaitingRoom, "status"> & {
-  status: "playing";
-  currentRound: number;
-  usedQuestionIds: string[];
-};
-
-/** Question payload loaded from Postgres / nextQuestion prefetch */
-export type QuestionPick = {
-  id: string;
-  question: string;
-  options: string[];
-  correctIndex: number;
-  explanation: string;
-};
-
 // Current round state — promoted at the start of each round.
-export type Round = {
+export type Round = QuestionContent & {
   questionId: string;
   question: string;
-  options: string[];
-  correctIndex: number; // server-only until round end
   explanation: string; // server-only until round end
   startedAt: string;
   roundNumber: number;
@@ -74,7 +59,7 @@ export type SubmissionRecord = {
   playerId: string;
   roundNumber: number;
   questionId: string;
-  answerIndex: number;
+  answer: AnswerValue | null;
   responseTimeMs?: number;
   correct: boolean;
   pointsEarned: number;

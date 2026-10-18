@@ -1,9 +1,6 @@
-export type GeneratedQuestion = {
-  question: string;
-  options: [string, string, string, string];
-  correctIndex: 0 | 1 | 2 | 3;
-  explanation: string;
-};
+import type { GeneratedQuestionInput } from "../schemas/quiz.js";
+
+export type GeneratedQuestion = GeneratedQuestionInput;
 
 export type QuestionBatch = {
   /** Joined chunk text sent to the LLM as source material */

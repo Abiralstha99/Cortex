@@ -52,12 +52,12 @@ export function buildGameFinishedPayload(
 
 export function buildAnswerRecords(gameId: string, submissions: SubmissionRecord[]) {
   return submissions
-    .filter((submission) => submission.questionId && submission.answerIndex >= 0)
+    .filter((submission) => submission.questionId && submission.answer !== null)
     .map((submission) => ({
       gameId,
       userId: submission.playerId,
       questionId: submission.questionId,
-      response: submission.answerIndex,
+      response: submission.answer!,
       correct: submission.correct,
       points: submission.pointsEarned,
       responseTimeMs: submission.responseTimeMs ?? 0,

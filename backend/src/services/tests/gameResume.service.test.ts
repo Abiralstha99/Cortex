@@ -20,11 +20,11 @@ beforeEach(async () => {
     phaseVersion: "2", publicPhase: "question",
     publicPayload: JSON.stringify({
       roundNumber: 1, questionId: "q1", question: "Question?",
-      options: ["A", "B", "C", "D"], startedAt: new Date().toISOString(),
+      type: "MCQ", options: ["A", "B", "C", "D"], startedAt: new Date().toISOString(),
     }),
   });
   await redis.hset(roundKey, { roundNumber: "1", questionId: "q1",
-    options: JSON.stringify(["A", "B", "C", "D"]), correctIndex: "2" });
+    type: "MCQ", content: JSON.stringify({ options: ["A", "B", "C", "D"], correctIndex: 2 }) });
 });
 
 after(async () => {
@@ -63,7 +63,7 @@ describe("resumeGame Redis recovery", () => {
 
   it("recovers the member's answer from its submission key", async () => {
     await redis.set(submissionKey, JSON.stringify({
-      answerIndex: 2, correct: true, pointsEarned: 100, placement: 1,
+      answer: 2, correct: true, pointsEarned: 100, placement: 1,
     }));
     const result = await resumeGame(gameId, playerId);
     assert.equal(result.ok, true);
@@ -75,11 +75,10 @@ describe("resumeGame Redis recovery", () => {
 
   it("never reads the next round's answer as feedback for this question", async () => {
     await redis.set(submissionKey, JSON.stringify({
-      answerIndex: 2, correct: true, pointsEarned: 100, placement: 1,
+      answer: 2, correct: true, pointsEarned: 100, placement: 1,
     }));
     await redis.hset(roundKey, { roundNumber: "2", questionId: "q2",
-      options: JSON.stringify(["Next A", "Next B", "Secret", "Next D"]),
-      correctIndex: "2" });
+      type: "MCQ", content: JSON.stringify({ options: ["Next A", "Next B", "Secret", "Next D"], correctIndex: 2 }) });
     assert.deepEqual(await resumeGame(gameId, playerId),
       { ok: false, reason: "temporary" });
   });
@@ -119,7 +118,7 @@ describe("resumeGame Redis recovery", () => {
     registerGameHandlers({} as Server, socket);
     await handlers.get("submit_answer")!({
       gameId, questionId: "77777777-7777-4777-8777-777777777777",
-      answerIndex: 1, responseTime: 500,
+      answer: 1, responseTime: 500,
     });
     assert.equal(await redis.get(SUBMISSION_KEY(gameId, 1, "stranger")), null);
     assert.deepEqual(emitted, [{

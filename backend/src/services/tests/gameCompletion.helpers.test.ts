@@ -41,6 +41,17 @@ describe("rankPlayers", () => {
 });
 
 describe("game completion record builders", () => {
+  it("preserves false and text answers as JSON responses", () => {
+    const base = { playerId: "player-a", roundNumber: 1, correct: true,
+      pointsEarned: 100, placement: 1, responseTimeMs: 500,
+      submittedAt: "2026-09-29T12:00:00.500Z" };
+    const records = buildAnswerRecords("game-1", [
+      { ...base, questionId: "true-false", answer: false },
+      { ...base, questionId: "blank", answer: "  New York  " },
+    ]);
+    assert.deepEqual(records.map((record) => record.response), [false, "  New York  "]);
+  });
+
   it("includes every rank-one player in the finished payload", () => {
     const finalLeaderboard = rankPlayers([
       { id: "player-a", username: "A", ready: true, score: 300 },
@@ -60,7 +71,7 @@ describe("game completion record builders", () => {
         playerId: "player-a",
         roundNumber: 1,
         questionId: "question-1",
-        answerIndex: 2,
+        answer: 2,
         correct: true,
         pointsEarned: 100,
         placement: 1,
@@ -71,7 +82,7 @@ describe("game completion record builders", () => {
         playerId: "player-b",
         roundNumber: 1,
         questionId: "",
-        answerIndex: -1,
+        answer: null,
         correct: false,
         pointsEarned: 0,
         placement: null,

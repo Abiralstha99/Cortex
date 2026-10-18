@@ -7,6 +7,7 @@ import type {
   GameFinishedPayload,
   LeaderboardEntry,
   GameSnapshot,
+  AnswerValue,
 } from "../lib/api";
 
 type GamePhase =
@@ -26,12 +27,13 @@ type GameState = {
   roundNumber: number;
   question: string | null;
   options: string[];
+  questionType: NewQuestionPayload["type"] | null;
   startedAt: Date | null;
   timeLimit: number; // 30000ms
   questionId: string | null;
 
   // Answer tracking
-  myAnswer: number | null; // index 0-3
+  myAnswer: AnswerValue | null;
   answerResult: AnswerResult | null;
   otherAnswers: AnswerSubmittedPayload[]; // who else submitted this round
 
@@ -48,7 +50,7 @@ type GameState = {
   applyRoundFinished: (payload: RoundFinishedPayload) => void;
   applyGameFinished: (payload: GameFinishedPayload) => void;
   applySnapshot: (snapshot: GameSnapshot) => void;
-  submitAnswer: (answerIndex: number) => void;
+  submitAnswer: (answer: AnswerValue) => void;
   reset: () => void;
 };
 
@@ -58,6 +60,7 @@ const initialState = {
   roundNumber: 0,
   question: null as string | null,
   options: [] as string[],
+  questionType: null as NewQuestionPayload["type"] | null,
   startedAt: null as Date | null,
   timeLimit: 30000,
   questionId: null as string | null,
@@ -85,7 +88,8 @@ export const useGameStore = create<GameState>((set) => ({
       phase: "question",
       roundNumber: payload.roundNumber,
       question: payload.question,
-      options: payload.options,
+      options: payload.type === "MCQ" ? payload.options : [],
+      questionType: payload.type,
       startedAt: new Date(payload.startedAt),
       questionId: payload.questionId,
       myAnswer: null,
@@ -127,7 +131,7 @@ export const useGameStore = create<GameState>((set) => ({
       const question = payload as NewQuestionPayload;
       set({ ...initialState, phase: snapshot.answerResult ? "answered" : "question",
         roundNumber: question.roundNumber, question: question.question,
-        options: question.options, startedAt: new Date(question.startedAt),
+        options: question.type === "MCQ" ? question.options : [], questionType: question.type, startedAt: new Date(question.startedAt),
         questionId: question.questionId, myAnswer: snapshot.myAnswer,
         answerResult: snapshot.answerResult });
     } else if (snapshot.phase === "round_results") {
@@ -141,9 +145,9 @@ export const useGameStore = create<GameState>((set) => ({
     }
   },
 
-  submitAnswer: (answerIndex) =>
+  submitAnswer: (answer) =>
     set({
-      myAnswer: answerIndex,
+      myAnswer: answer,
     }),
 
   reset: () => set(initialState),

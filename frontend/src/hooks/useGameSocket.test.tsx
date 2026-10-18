@@ -17,7 +17,7 @@ vi.mock("./useSocket", () => ({ useSocket: () => connection }));
 const gameId = "33333333-3333-3333-3333-333333333333";
 const question = {
   roundNumber: 1, questionId: "q1", question: "What is Cortex?",
-  options: ["A", "B", "C", "D"], startedAt: new Date().toISOString(),
+  type: "MCQ", options: ["A", "B", "C", "D"], startedAt: new Date().toISOString(),
 };
 const snapshot = (phaseVersion = 2): ResumeGameResponse => ({
   ok: true,

@@ -1,24 +1,29 @@
+import { useState } from "react";
+import type { AnswerValue, NewQuestionPayload } from "@/lib/api";
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 type QuestionCardProps = {
   question: string;
-  options: string[];
-  onSubmit: (index: number) => void;
+  options?: string[];
+  type: NewQuestionPayload["type"];
+  onSubmit: (answer: AnswerValue) => void;
   disabled: boolean;
-  selectedIndex: number | null;
+  selectedAnswer: AnswerValue | null;
 };
 
 const LETTERS = ["A", "B", "C", "D"];
 
 export default function QuestionCard({
   question,
-  options,
+  options = [],
+  type,
   onSubmit,
   disabled,
-  selectedIndex,
+  selectedAnswer,
 }: QuestionCardProps) {
   const reduce = useReducedMotion();
+  const [blankAnswer, setBlankAnswer] = useState("");
 
   return (
     <motion.section
@@ -30,9 +35,20 @@ export default function QuestionCard({
       <h1 className="mb-5 max-w-3xl text-balance font-display text-2xl font-bold leading-tight text-ink sm:text-[1.75rem]">
         {question}
       </h1>
+      {type === "FILL_BLANK" ? (
+        <form onSubmit={(event) => { event.preventDefault(); if (blankAnswer.trim()) onSubmit(blankAnswer); }} className="space-y-3">
+          <label htmlFor="blank-answer" className="block text-sm font-semibold text-ink">Your answer</label>
+          <input id="blank-answer" name="answer" type="text" maxLength={500} autoComplete="off"
+            value={blankAnswer} onChange={(event) => setBlankAnswer(event.target.value)} disabled={disabled}
+            className="min-h-14 w-full rounded-[var(--radius-control)] border border-border bg-subtle px-4 text-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/40" />
+          <button type="submit" disabled={disabled || !blankAnswer.trim()}
+            className="min-h-14 rounded-[var(--radius-control)] bg-primary px-6 font-semibold text-primary-foreground disabled:opacity-60 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/40">Submit answer</button>
+        </form>
+      ) : (
       <div className="editorial-question-options space-y-2.5">
-        {options.map((option, index) => {
-          const isSelected = selectedIndex === index;
+        {(type === "TRUE_FALSE" ? ["True", "False"] : options).map((option, index) => {
+          const answer = type === "TRUE_FALSE" ? index === 0 : index;
+          const isSelected = selectedAnswer === answer;
           const ButtonTag = reduce ? "button" : motion.button;
           const motionProps = reduce
             ? {}
@@ -56,7 +72,7 @@ export default function QuestionCard({
                   ? "cursor-not-allowed opacity-75"
                   : "cursor-pointer",
               )}
-              onClick={() => onSubmit(index)}
+              onClick={() => onSubmit(answer)}
               disabled={disabled}
               {...motionProps}
             >
@@ -68,7 +84,7 @@ export default function QuestionCard({
                     : "border-border bg-surface text-muted-foreground",
                 )}
               >
-                {LETTERS[index]}
+                {type === "TRUE_FALSE" ? (index === 0 ? "T" : "F") : LETTERS[index]}
               </span>
               <span className="min-w-0 text-pretty font-display text-base font-semibold leading-snug text-ink sm:text-[1.0625rem]">
                 {option}
@@ -77,7 +93,8 @@ export default function QuestionCard({
           );
         })}
       </div>
-      {disabled && selectedIndex !== null && (
+      )}
+      {disabled && selectedAnswer !== null && (
         <p
           role="status"
           aria-live="polite"

@@ -17,7 +17,7 @@ const answers = [
     playerId: "player-a",
     roundNumber: 1,
     questionId: "question-1",
-    answerIndex: 2,
+    answer: 2,
     correct: true,
     pointsEarned: 100,
     placement: 1,

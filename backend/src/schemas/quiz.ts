@@ -21,22 +21,37 @@ export const JobIdParamsSchema = z.object({
   jobId: z.string().uuid(),
 });
 
-export const GeneratedQuestionSchema = z.object({
-  question: z.string().min(10),
-  options: z.tuple([
-    z.string().min(1),
-    z.string().min(1),
-    z.string().min(1),
-    z.string().min(1),
-  ]),
-  correctIndex: z.union([
-    z.literal(0),
-    z.literal(1),
-    z.literal(2),
-    z.literal(3),
-  ]),
-  explanation: z.string().min(10),
-});
+const questionBase = {
+  question: z.string().trim().min(10),
+  explanation: z.string().trim().min(10),
+};
+const nonemptyAnswer = z.string().trim().min(1);
+
+export const QuestionContentSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("MCQ"), content: z.object({
+    options: z.tuple([nonemptyAnswer, nonemptyAnswer, nonemptyAnswer, nonemptyAnswer]),
+    correctIndex: z.number().int().min(0).max(3),
+  }).strict() }),
+  z.object({ type: z.literal("TRUE_FALSE"), content: z.object({
+    correctAnswer: z.boolean(),
+  }).strict() }),
+  z.object({ type: z.literal("FILL_BLANK"), content: z.object({
+    acceptedAnswers: z.array(nonemptyAnswer).min(1),
+  }).strict() }),
+]);
+
+export const GeneratedQuestionSchema = z.discriminatedUnion("type", [
+  z.object({ ...questionBase, type: z.literal("MCQ"), content: z.object({
+    options: z.tuple([nonemptyAnswer, nonemptyAnswer, nonemptyAnswer, nonemptyAnswer]),
+    correctIndex: z.number().int().min(0).max(3),
+  }).strict() }),
+  z.object({ ...questionBase, type: z.literal("TRUE_FALSE"), content: z.object({
+    correctAnswer: z.boolean(),
+  }).strict() }),
+  z.object({ ...questionBase, type: z.literal("FILL_BLANK"), content: z.object({
+    acceptedAnswers: z.array(nonemptyAnswer).min(1),
+  }).strict() }),
+]);
 
 export const GeneratedQuestionsArraySchema = z
   .array(GeneratedQuestionSchema)

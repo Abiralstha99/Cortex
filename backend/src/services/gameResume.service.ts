@@ -1,3 +1,6 @@
+import { QuestionContentSchema } from "../schemas/quiz.js";
+import { correctAnswerLabel } from "./questionAnswer.service.js";
+import type { AnswerValue } from "./questionAnswer.service.js";
 import redis from "../lib/redis.js";
 import { GAME_KEY, ROUND_KEY, SUBMISSION_KEY } from "../lib/redisKeys.js";
 import type { AnswerResult, Player, SubmissionRecord } from "../types/room.types.js";
@@ -9,7 +12,7 @@ export type GameSnapshot = {
   phaseVersion: number;
   phase: "countdown" | "question" | "round_results" | "game_finished";
   payload: Record<string, unknown>;
-  myAnswer: number | null;
+  myAnswer: AnswerValue | null;
   answerResult: AnswerResult | null;
 };
 export type ResumeResponse = { ok: true; snapshot: GameSnapshot } | ResumeFailure;
@@ -83,7 +86,7 @@ export function buildGameSnapshot(
       phaseVersion: Number(game.phaseVersion ?? 0),
       phase,
       payload,
-      myAnswer: phase === "question" && submission ? submission.answerIndex : null,
+      myAnswer: phase === "question" && submission ? submission.answer : null,
       answerResult: phase === "question" ? answerResult : null,
     },
   };
@@ -106,8 +109,8 @@ export async function resumeGame(gameId: string, playerId: string): Promise<Resu
         Number(round.roundNumber) !== publicQuestion.roundNumber) {
       return { ok: false, reason: "temporary" };
     }
-    const options = JSON.parse(round.options ?? "[]") as string[];
-    correctAnswer = options[Number(round.correctIndex)] ?? "";
+    const question = QuestionContentSchema.parse({ type: round.type, content: JSON.parse(round.content ?? "null") });
+    correctAnswer = correctAnswerLabel(question);
   }
   return buildGameSnapshot(game, playerId, submissionRaw, correctAnswer);
 }

@@ -18,8 +18,8 @@ const testModelConfig = {
 
 const question: GeneratedQuestion = {
   question: "What does the source explain?",
-  options: ["First", "Second", "Third", "Fourth"],
-  correctIndex: 0,
+  type: "MCQ",
+  content: { options: ["First", "Second", "Third", "Fourth"], correctIndex: 0 },
   explanation: "The source supports the first answer.",
 };
 
