@@ -13,6 +13,7 @@ import { motion, useReducedMotion, useScroll, useTransform } from "motion/react"
 import { useRef } from "react";
 import QuizRows from "@/components/home/QuizRows";
 import LiveRoomRows from "@/components/home/LiveRoomRows";
+import { scrollToLandingSection } from "@/components/home/scrollToLandingSection";
 import "@fontsource/league-spartan/latin-900.css";
 import "@fontsource/dm-serif-display/latin-400.css";
 import "@fontsource/dm-serif-display/latin-400-italic.css";
@@ -115,12 +116,14 @@ export default function HomeWorkspace() {
               <motion.a
                 className="landing-button landing-button-dark"
                 href="#create"
+                onClick={scrollToLandingSection}
                 whileHover={reduceMotion ? undefined : buttonHover}
                 whileTap={reduceMotion ? undefined : buttonTap}
               >Create a quiz</motion.a>
               <motion.a
                 className="landing-text-link"
                 href="#join"
+                onClick={scrollToLandingSection}
                 initial="rest"
                 whileHover={reduceMotion ? undefined : "hover"}
               >Join a game <motion.span aria-hidden="true" variants={arrowVariants} transition={{ duration: 0.16 }}>↗</motion.span></motion.a>
@@ -173,7 +176,7 @@ export default function HomeWorkspace() {
               <motion.p variants={revealItem} className="landing-eyebrow">Made for a room full of minds</motion.p>
               <motion.h2 id="landing-live-title" aria-label="Learning sticks better when everyone plays." variants={lineGroup}><span className="landing-line-mask"><motion.span variants={line}>Learning sticks better</motion.span></span><span className="landing-line-mask"><motion.span variants={line}>when <em>everyone plays.</em></motion.span></span></motion.h2>
               <motion.p variants={revealItem}>A room code brings everyone together. Once the players are ready, timed rounds put every answer in motion.</motion.p>
-              <motion.a variants={revealItem} className="landing-button landing-button-light" href="#join" whileHover={reduceMotion ? undefined : buttonHover} whileTap={reduceMotion ? undefined : buttonTap}>Join a game</motion.a>
+              <motion.a variants={revealItem} className="landing-button landing-button-light" href="#join" onClick={scrollToLandingSection} whileHover={reduceMotion ? undefined : buttonHover} whileTap={reduceMotion ? undefined : buttonTap}>Join a game</motion.a>
             </motion.div>
             <motion.div variants={revealItem} initial={reduceMotion ? false : "hidden"} whileInView="visible" viewport={viewport}>
               <motion.div className="landing-live-art" style={{ y: reduceMotion ? 0 : diagramY }}>
@@ -205,11 +208,11 @@ export default function HomeWorkspace() {
         <section className="landing-final" aria-labelledby="landing-final-title">
           <motion.div className="landing-shell landing-final-inner" variants={revealGroup} initial={reduceMotion ? false : "hidden"} whileInView="visible" viewport={viewport}>
             <motion.h2 id="landing-final-title" aria-label="The best study session is the one you play." variants={lineGroup}><span className="landing-line-mask"><motion.span variants={line}>The best study session</motion.span></span><span className="landing-line-mask"><motion.span variants={line}>is the one you <em>play.</em></motion.span></span></motion.h2>
-            <motion.a variants={revealItem} className="landing-button landing-button-dark" href="#create" whileHover={reduceMotion ? undefined : buttonHover} whileTap={reduceMotion ? undefined : buttonTap}>Create a quiz</motion.a>
+            <motion.a variants={revealItem} className="landing-button landing-button-dark" href="#create" onClick={scrollToLandingSection} whileHover={reduceMotion ? undefined : buttonHover} whileTap={reduceMotion ? undefined : buttonTap}>Create a quiz</motion.a>
           </motion.div>
         </section>
       </main>
-      <footer className="landing-footer"><div className="landing-shell"><BrandMark className="landing-wordmark" /><a href="#how-it-works">How it works</a></div></footer>
+      <footer className="landing-footer"><div className="landing-shell"><BrandMark className="landing-wordmark" /><a href="#how-it-works" onClick={scrollToLandingSection}>How it works</a></div></footer>
     </div>
   );
 }

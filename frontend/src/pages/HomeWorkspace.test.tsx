@@ -1,4 +1,4 @@
-import { cleanup, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithRouter } from "@/test/render";
@@ -38,7 +38,7 @@ describe("HomeWorkspace shell", () => {
     renderWithRouter(<HomeWorkspace />);
 
     expect(document.querySelector('[data-theme="editorial-landing"]')).not.toBeNull();
-    expect(screen.getByRole("link", { name: "Cortex" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "Cortex" })).toHaveLength(2);
   });
 
   it("keeps create and join entry points on the landing page", () => {
@@ -48,6 +48,19 @@ describe("HomeWorkspace shell", () => {
     expect(document.querySelector("#join")).not.toBeNull();
     expect(screen.getAllByRole("link", { name: "Create a quiz" })[0]).toHaveAttribute("href", "#create");
     expect(screen.getAllByRole("link", { name: "Join a game" })[0]).toHaveAttribute("href", "#join");
+  });
+
+  it("scrolls to the join section without adding a URL hash", () => {
+    renderWithRouter(<HomeWorkspace />);
+    const scrollIntoView = vi.fn();
+    document.querySelector("#join")!.scrollIntoView = scrollIntoView;
+    const originalUrl = window.location.href;
+
+    const followed = fireEvent.click(screen.getAllByRole("link", { name: "Join a game" })[0]);
+
+    expect(followed).toBe(false);
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+    expect(window.location.href).toBe(originalUrl);
   });
 
   it("keeps the PLAY orbital story readable without WebGL", () => {
