@@ -11,5 +11,5 @@ it.each(["create", "join"])("scrolls %s links to the shared section heading", (h
   document.body.appendChild(heading);
   render(<a href={`#${hash}`} onClick={scrollToLandingSection}>Go</a>);
   fireEvent.click(screen.getByRole("link", { name: "Go" }));
-  expect(heading.scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+  expect(heading.scrollIntoView).toHaveBeenCalledWith({ block: "start" });
 });

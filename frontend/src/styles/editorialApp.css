@@ -129,7 +129,7 @@ body:has(.editorial-app) [data-slot="select-content"] {
 .editorial-round-progress { flex: 0 0 100%; height: 5px; overflow: hidden; border-radius: 999px; background: var(--color-border); }
 .editorial-round-progress span { display: block; height: 100%; border-radius: inherit; background: var(--color-ink); transition: width 250ms ease; }
 .editorial-question { border: 0; border-radius: 0; background: transparent; padding: clamp(10px, 3vw, 28px) 0 32px; box-shadow: none; }
-.editorial-question h1 { max-width: 730px; margin-bottom: clamp(28px, 5vw, 52px); font: 400 clamp(1.85rem, 4vw, 3.25rem)/1.14 "DM Serif Display", Georgia, serif; letter-spacing: -.035em; }
+.editorial-question h1 { max-width: 730px; margin-bottom: clamp(28px, 5vw, 52px); font: 400 clamp(1.75rem, 3vw, 2.75rem)/1.2 "DM Serif Display", Georgia, serif; letter-spacing: -.035em; overflow-wrap: anywhere; }
 .editorial-question-options { display: grid; gap: 12px; }
 .editorial-question .editorial-answer { min-height: 76px; gap: 14px; border-width: 2px; border-radius: 17px; padding: 14px 18px; background: var(--color-surface); }
 .editorial-question .editorial-answer:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--color-ink); }

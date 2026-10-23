@@ -60,7 +60,7 @@ describe("HomeWorkspace shell", () => {
 
     expect(followed).toBe(false);
     expect(scrollIntoView).toHaveBeenCalledOnce();
-    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start" });
     expect(window.location.href).toBe(originalUrl);
   });
 

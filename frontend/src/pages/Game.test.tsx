@@ -138,5 +138,18 @@ describe("Game connection feedback", () => {
     view.rerender(gameRoute());
     act(() => vi.advanceTimersByTime(20));
     expect(screen.getByRole("heading", { name: "Which one?" })).not.toHaveFocus();
+
+    const answer = screen.getByRole("button", { name: /True/ });
+    answer.focus();
+    act(() => useGameStore.getState().applyAnswerResult({ questionId: "q-1", roundNumber: 1, correctAnswer: true, correct: true, pointsEarned: 100, placement: 1 }));
+    expect(answer).toHaveFocus();
+
+    act(() => useGameStore.getState().applyNewQuestion({ questionId: "q-2", roundNumber: 2, question: "Type an answer", type: "FILL_BLANK", startedAt: new Date().toISOString() }));
+    const answerInput = screen.getByRole("textbox", { name: "Your answer" });
+    answerInput.focus();
+    act(() => useGameStore.getState().applyCountdown(3000));
+    act(() => vi.advanceTimersByTime(20));
+    expect(screen.getByRole("heading", { name: "Get ready" })).not.toHaveFocus();
+    expect(document.querySelector("[data-game-phase-announcement]")).toHaveTextContent("Get ready. Game starting.");
   });
 });

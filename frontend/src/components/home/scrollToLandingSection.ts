@@ -8,5 +8,5 @@ export function scrollToLandingSection(event: MouseEvent<HTMLAnchorElement>) {
   if (!section) return;
 
   event.preventDefault();
-  section.scrollIntoView({ behavior: "smooth", block: "start" });
+  section.scrollIntoView({ block: "start" });
 }

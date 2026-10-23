@@ -43,7 +43,7 @@ export default function GameResults({ gameResults, myPlayerId, loadReview }: Gam
         </h1>
         <p className="mt-3 text-pretty text-muted-foreground">
           {winners.length === 1 ? "Winner:" : "Winners:"}{" "}
-          <strong className="font-display break-words text-ink">{winnerNames}</strong>,{" "}
+          <strong className="font-display break-words [overflow-wrap:anywhere] text-ink">{winnerNames}</strong>,{" "}
           <span className="font-mono font-semibold tabular-nums text-ink">
             {winnerScore} pts
           </span>

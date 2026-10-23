@@ -55,6 +55,7 @@ export default function Game() {
   const [phaseAnnouncement, setPhaseAnnouncement] = useState("");
   const phaseContentRef = useRef<HTMLDivElement>(null);
   const previousPhaseState = useRef<{ phase: typeof phase; connected: boolean } | null>(null);
+  const answerEntryFocused = useRef(false);
 
   useEffect(() => {
     if (recoveryState !== "ready" || !myPlayerId || !connectionReady) {
@@ -74,8 +75,10 @@ export default function Game() {
           ? "Game complete. Final results."
           : "Get ready. Game starting.";
     setPhaseAnnouncement(message);
+    const preserveAnswerFocus = answerEntryFocused.current;
+    answerEntryFocused.current = false;
     const frame = window.requestAnimationFrame(() => {
-      phaseContentRef.current?.querySelector<HTMLElement>("h1")?.focus();
+      if (!preserveAnswerFocus) phaseContentRef.current?.querySelector<HTMLElement>("h1")?.focus();
     });
     return () => window.cancelAnimationFrame(frame);
   }, [phase, roundNumber, recoveryState, myPlayerId, connectionReady, connectionState]);
@@ -216,7 +219,12 @@ export default function Game() {
             </header>
 
             <p aria-live="polite" className="sr-only" data-game-phase-announcement>{phaseAnnouncement}</p>
-            <div ref={phaseContentRef} className="space-y-6">
+            <div
+              ref={phaseContentRef}
+              className="space-y-6"
+              onFocusCapture={(event) => { if (event.target instanceof HTMLInputElement) answerEntryFocused.current = true; }}
+              onBlurCapture={(event) => { if (event.target instanceof HTMLInputElement) answerEntryFocused.current = false; }}
+            >
               {phase === "idle" && (
                 <section className="rounded-[var(--radius-panel)] border border-border bg-surface px-6 py-12 text-center shadow-card">
                   <h1 tabIndex={-1} className="font-display text-xl font-bold text-ink">

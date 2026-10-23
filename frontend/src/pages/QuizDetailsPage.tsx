@@ -44,7 +44,7 @@ export default function QuizDetailsPage() {
       {quiz && <>
         <div className="mt-7 flex flex-wrap items-start justify-between gap-6 border-b border-border pb-8 sm:mt-10">
           <div className="min-w-0 flex-1">
-            <h1 className="break-words font-serif text-4xl leading-tight text-ink sm:text-6xl">{quiz.title}</h1>
+            <h1 className="break-words [overflow-wrap:anywhere] font-serif text-4xl leading-tight text-ink sm:text-6xl">{quiz.title}</h1>
             <p className="mt-3 text-sm text-muted-foreground">{quiz.questionCount} {quiz.questionCount === 1 ? "question" : "questions"}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -52,7 +52,7 @@ export default function QuizDetailsPage() {
             <Button variant="outline" disabled={practiceMutation.isPending} onClick={() => practiceMutation.mutate()}>Practice quiz</Button>
             <DropdownMenu>
               <DropdownMenuTrigger aria-label="Quiz actions" disabled={deleteMutation.isPending} className="grid size-11 place-items-center rounded-full border border-border bg-surface hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"><MoreHorizontal className="size-5" /></DropdownMenuTrigger>
-              <DropdownMenuContent><DropdownMenuItem className="text-danger" onSelect={() => { if (window.confirm(`Delete “${quiz.title}”? Its practice attempts, answers, and results will also be deleted. This cannot be undone.`)) { setDeleteError(null); deleteMutation.mutate(); } }}>Delete quiz</DropdownMenuItem></DropdownMenuContent>
+              <DropdownMenuContent><DropdownMenuItem disabled={deleteMutation.isPending} className="text-danger" onSelect={() => { if (window.confirm(`Delete “${quiz.title}”? Its practice attempts, answers, and results will also be deleted. This cannot be undone.`)) { setDeleteError(null); deleteMutation.mutate(); } }}>Delete quiz</DropdownMenuItem></DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>

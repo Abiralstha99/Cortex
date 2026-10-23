@@ -13,7 +13,7 @@ vi.mock("@/components/ui/dropdown-menu", () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuTrigger: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => <button {...props}>{children}</button>,
   DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DropdownMenuItem: ({ children, onSelect }: { children: React.ReactNode; onSelect: () => void }) => <button role="menuitem" onClick={onSelect}>{children}</button>,
+  DropdownMenuItem: ({ children, onSelect, disabled }: { children: React.ReactNode; onSelect: () => void; disabled?: boolean }) => <button role="menuitem" onClick={onSelect} disabled={disabled}>{children}</button>,
 }));
 
 function Destination() {
@@ -67,5 +67,6 @@ describe("QuizDetailsPage", () => {
     expect(await screen.findByText("Deleting quiz...")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Host game" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Quiz actions" })).toBeDisabled();
+    expect(screen.getByRole("menuitem", { name: "Delete quiz" })).toBeDisabled();
   });
 });
