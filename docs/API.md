@@ -6,7 +6,7 @@ This document describes the HTTP routes mounted by `backend/src/index.ts`, as im
 
 `index.ts` mounts the Clerk webhook first, with a raw JSON body. It then installs `express.json()` and Clerk middleware. `/api/users` has `requireAuth` at the mount; `/api/games`, `/api/quiz`, and `/api/quizzes` apply it per route. There is no global HTTP error formatter or explicit 404 handler. Unhandled errors and Multer errors therefore use Express's default error path; do not assume they return the endpoint's JSON error shape. CORS is configured in `backend/src/lib/cors.ts` from `CLIENT_ORIGIN`.
 
-Protected requests use Clerk authentication (the frontend sends `Authorization: Bearer <Clerk token>`). `requireAuth` calls Clerk's `getAuth`, returns `401 { error: "Unauthorized" }` when unauthenticated, and assigns the Clerk user ID to `req.userId`. Controllers resolve that ID to the local Postgres `User.id` where owner or host checks require it. A valid Clerk identity may temporarily lack a local row after signup; those controllers return their stated `404` response. `GET /api/users/:userId` allows any authenticated caller to read another user's selected profile fields; only `PUT` checks that the path ID equals `req.userId`.
+Protected requests use Clerk authentication (the frontend sends `Authorization: Bearer <Clerk token>`). `requireAuth` calls Clerk's `getAuth` and returns `401 { error: "Unauthorized" }` when unauthenticated. For an authenticated identity missing from local Postgres, it fetches that identity's Clerk profile and upserts a local `User` before assigning the Clerk user ID to `req.userId`; provisioning failure returns `503 { error: "Could not prepare user account" }`. This lets an existing Clerk account use a new local database even when its original `user.created` webhook predates that database. Controllers resolve the Clerk ID to the local `User.id` where owner or host checks require it. `GET /api/users/:userId` allows any authenticated caller to read another user's selected profile fields; only `PUT` checks that the path ID equals `req.userId`.
 
 `validateBody` and `validateParams` use Zod `safeParse`, replace the parsed request value (including defaults/transforms), and on failure return `400 { message: "Validation failed", errors: <Zod flattened error> }`. The object schemas do not use strict mode, so extra body fields are stripped on routes using `validateBody`. The two multipart generation routes instead validate `count` and `title` in their controllers and have different error keys. No route implements query-parameter filtering or pagination. No HTTP rate-limit middleware or explicit `429` response is present. Generation has a per-local-user Redis `SET NX` inflight lock with a 15-second TTL; standalone generation maps a lock conflict to `409`, while waiting-room generation starts asynchronously and reports later failure through room status.
 
@@ -49,6 +49,8 @@ The pipeline stores transient job and work data in Redis with a one-hour TTL, qu
 - **Response/status:** `202` object `{ jobId, status, metadata }`, where `jobId` is a Redis job UUID, `status` is `processing`, and `metadata` has `requestedCount`, `sourceType` (`pdf` or `text`), and `title`. `404 { error: "User not found" }`; `400 { error: "File is required" }`; `400 { error: "Invalid count" | "Invalid title", details: <Zod issues> }`; `400 { error: <message> }` for too-short source, no chunks, or pipeline count outside its range; `422 { error: <message> }` for PDF parse failure, unsupported type, or no readable text; `409 { error: "Quiz generation already in progress" }`; `500 { error: "Internal server error" }` for other caught errors. Common auth and Multer behavior also applies.
 - **Implementation:** `backend/src/routes/quiz.routes.ts`; `backend/src/controllers/quiz.controller.ts`; `backend/src/schemas/quiz.ts`; `backend/src/services/quiz/{pipeline,load,persist}.ts`; `backend/src/workers/quizGenerate.worker.ts`.
 
+`POST /api/quiz/generate/solo` accepts the same multipart request and returns the same `202` job envelope, but persists the completed quiz with classification `SOLO_ONLY`. The original endpoint creates `MULTIPLAYER` quizzes. Both use `GET /api/quiz/jobs/:jobId` for owner-scoped status polling.
+
 ### `GET /api/quiz/jobs/:jobId`
 
 - **Purpose/access:** Poll a standalone generation job. Requires Clerk auth and a local user; a missing, expired, or other user's job returns the same `404`.
@@ -58,17 +60,23 @@ The pipeline stores transient job and work data in Redis with a one-hour TTL, qu
 
 ### `GET /api/quizzes`
 
-- **Purpose/access:** List the authenticated local user's ready quizzes that have at least one question.
+- **Purpose/access:** List the authenticated local user's ready multiplayer quizzes that have at least one question, for hosting and dashboard selection. Solo-only quizzes are excluded.
 - **Parameters:** No path, query, or body parameters. Results are ordered by `createdAt` descending, with no pagination.
 - **Response/status:** `200 { quizzes: [...] }`. Each summary has `id`, `title`, `sourceType`, `questionCount`, and `createdAt`; no questions. `404 { error: "User not found" }`; `500 { error: "Internal server error" }`. Common auth behavior applies.
 - **Implementation:** `backend/src/routes/quiz.routes.ts`; `backend/src/controllers/quiz.controller.ts`; `backend/src/services/quiz/persist.service.ts`.
 
 ### `GET /api/quizzes/:quizId`
 
-- **Purpose/access:** Fetch non-sensitive metadata for a quiz owned by the authenticated local user. An absent or other user's quiz returns `404`.
+- **Purpose/access:** Fetch quiz details and question previews for the authenticated owner. An absent or other user's quiz returns `404`.
 - **Parameters:** UUID `quizId` path parameter. No query or body parameters.
-- **Response/status:** `200` object with `id`, `title`, `sourceType`, `status`, `questionCount`, and `createdAt`; no questions or answer keys. `404 { error: "User not found" }` or `{ error: "Quiz not found" }`; `500 { error: "Internal server error" }`. Common auth and path-validation behavior applies. This detail endpoint does not filter on quiz `status`, unlike the list endpoint.
+- **Response/status:** `200` object with `id`, `title`, `sourceType`, `status`, `classification`, `questionCount`, `createdAt`, and ordered `questions`. Each question has `id`, `position`, `type`, `question`, and MCQ `options` when applicable; answer keys and explanations are omitted. `404 { error: "User not found" }` or `{ error: "Quiz not found" }`; `500 { error: "Internal server error" }`. Common auth and path-validation behavior applies. This detail endpoint does not filter on quiz `status`, unlike the list endpoint.
 - **Implementation:** `backend/src/routes/quiz.routes.ts`; `backend/src/controllers/quiz.controller.ts`; `backend/src/schemas/quiz.ts`; `backend/src/services/quiz/persist.service.ts`; `backend/prisma/schema.prisma`.
+
+### `DELETE /api/quizzes/:quizId`
+
+- **Purpose/access:** Delete an owned quiz after client confirmation. An absent or other user's quiz returns `404`.
+- **Parameters:** UUID `quizId` path parameter. No query or body parameters.
+- **Response/status:** `204` on deletion; `404 { error: "Quiz not found" }` for a missing or unowned quiz; `409` when an active Redis room or durable game references it. Child questions and source records cascade in Postgres. Common auth and validation behavior applies.
 
 ## Quiz and game management
 
@@ -108,6 +116,24 @@ HTTP covers room creation, public waiting-room discovery, and a host's quiz-gene
 - **Parameters/body:** UUID `gameId` path parameter. JSON `message`: trimmed string, 1–500 characters; if omitted, defaults to `Failed to start quiz generation`. No query parameters. Extra body fields are stripped.
 - **Response/status:** `200` payload with `quizId: null`, `quizGenStatus: "failed"`, and `quizGenError` (the message, capped to 500 characters by the service). Also emits `quiz_status` to the room. `404 { message: "User not found" }` or `{ message: "Room not found" }`; `403 { message: "Only the host can update the quiz" }`; `409 { message: "Game has already started" }` or `{ message: "Room is no longer waiting" }`. Common auth/path/body-validation behavior applies. Unhandled storage errors pass to Express.
 - **Implementation:** `backend/src/routes/game.routes.ts`; `backend/src/controllers/game.controller.ts`; `backend/src/schemas/game.ts`; `backend/src/services/waitingQuiz.service.ts`.
+
+## Solo practice
+
+All `/api/practice` routes require Clerk authentication. Quiz and session IDs are UUIDs; unauthorized or ineligible quizzes and sessions return 404. Eligibility is quiz ownership or a `GamePlayer` row in a finished game for that quiz. Responses for an unfinished session include ordered public questions, saved answers, and `resumeIndex` (`-1` when all are answered); they omit answer keys, correctness, explanations, and sources.
+
+| Method and path | Behavior |
+| --- | --- |
+| `GET /api/practice/library` | `{created, played}` ready quiz summaries, each with `classification`, `unfinished` progress, and `latestResult` metadata. Created includes owned solo-only and multiplayer quizzes. |
+| `DELETE /api/practice/quizzes/:quizId` | Delete an owned `SOLO_ONLY` quiz and cascading practice/question/source records (204). Missing or unowned returns 404; an owned multiplayer quiz returns 403; a live room or saved game reference returns 409. |
+| `POST /api/practice/quizzes/:quizId/sessions` | Return an existing unfinished attempt or start a shuffled complete attempt. |
+| `POST /api/practice/quizzes/:quizId/start-fresh` | Replace only the caller's unfinished attempt. |
+| `GET /api/practice/sessions/:sessionId` | Read the owned attempt and its ordered questions/answers. |
+| `PUT /api/practice/sessions/:sessionId/answers/:questionId` | Save `{selectedIndex: number}` for MCQ, `{answer: boolean}` for true/false, or `{answer: string}` for fill blank. |
+| `DELETE /api/practice/sessions/:sessionId/answers/:questionId` | Clear a saved answer; returns 204. |
+| `POST /api/practice/sessions/:sessionId/submit` | Finalize all answered questions, optionally with `{pending: {questionId, answer}}`; retries return the saved result. |
+| `GET /api/practice/quizzes/:quizId/results/latest` | Return the latest completed result, including correctness, correct answer, and explanation. |
+
+Invalid answer shapes return 400; attempts that cannot be changed or submitted return 409. The backend rechecks access on every route.
 
 ## Existing tests, examples, and client compatibility
 

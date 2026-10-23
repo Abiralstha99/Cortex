@@ -74,6 +74,9 @@ export async function createGame(req: Request, res: Response) {
     if (error instanceof Error && error.message === "Quiz has no questions") {
       return res.status(400).json({ message: error.message });
     }
+    if (error instanceof Error && error.message === "This quiz is for solo practice only") {
+      return res.status(400).json({ message: error.message });
+    }
     throw error;
   }
 }

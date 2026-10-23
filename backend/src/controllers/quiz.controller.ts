@@ -6,6 +6,7 @@ import {
   getQuizGenJob,
   getQuiz as getQuizForOwner,
   getAllQuizzes,
+  deleteQuiz as deleteOwnedQuiz,
 } from "../services/quiz/persist.service.js";
 
 async function resolveOwnerId(clerkUserId: string): Promise<string | null> {
@@ -16,6 +17,14 @@ async function resolveOwnerId(clerkUserId: string): Promise<string | null> {
 }
 
 export async function generateQuiz(req: Request, res: Response) {
+  return generateQuizWithClassification(req, res, "MULTIPLAYER");
+}
+
+export async function generateSoloQuiz(req: Request, res: Response) {
+  return generateQuizWithClassification(req, res, "SOLO_ONLY");
+}
+
+async function generateQuizWithClassification(req: Request, res: Response, classification: "MULTIPLAYER" | "SOLO_ONLY") {
   try {
     // Require authenticated user and resolve internal owner ID
     if (!req.userId) {
@@ -53,6 +62,7 @@ export async function generateQuiz(req: Request, res: Response) {
       mimeType: req.file.mimetype,
       originalName: req.file.originalname,
       requestedCount: countResult.data,
+      classification,
       ...(titleResult.data !== undefined ? { title: titleResult.data } : {}),
     });
 
@@ -156,6 +166,24 @@ export async function getQuizById(req: Request, res: Response) {
     return res.status(200).json(quiz);
   } catch (error) {
     console.error("getQuiz error:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+/** DELETE /api/quizzes/:quizId — remove an unused owned quiz. */
+export async function deleteQuizById(req: Request, res: Response) {
+  try {
+    if (!req.userId) return res.status(401).json({ error: "Unauthorized" });
+    const ownerId = await resolveOwnerId(req.userId);
+    if (!ownerId) return res.status(404).json({ error: "User not found" });
+
+    const { quizId } = req.params as { quizId: string };
+    const result = await deleteOwnedQuiz(quizId, ownerId);
+    if (result === "missing") return res.status(404).json({ error: "Quiz not found" });
+    if (result === "in_use") return res.status(409).json({ error: "This quiz is used by a room or saved game and cannot be deleted." });
+    return res.status(204).send();
+  } catch (error) {
+    console.error("deleteQuiz error:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }

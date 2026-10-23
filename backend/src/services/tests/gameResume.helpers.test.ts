@@ -38,12 +38,13 @@ describe("game recovery snapshot", () => {
   });
 
   it("restores a submitted answer and its feedback", () => {
-    const submission = JSON.stringify({ answer: 2, correct: true, pointsEarned: 100, placement: 1 });
+    const submission = JSON.stringify({ answer: 2, questionId: "q1", roundNumber: 1, correctAnswer: 2, correct: true, pointsEarned: 100, placement: 1 });
     const result = buildGameSnapshot(game, "player-1", submission);
     assert.equal(result.ok, true);
     if (result.ok) {
       assert.equal(result.snapshot.myAnswer, 2);
       assert.equal(result.snapshot.answerResult?.pointsEarned, 100);
+      assert.equal(result.snapshot.answerResult?.correctAnswer, 2);
     }
   });
 

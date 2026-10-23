@@ -3,8 +3,6 @@ import { useLocation } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import HomeChrome from "@/components/home/HomeChrome";
 import { cn } from "@/lib/utils";
-import AppSidebar from "./AppSidebar";
-import MobileBottomNav from "./MobileBottomNav";
 import "@/styles/editorialApp.css";
 
 const widths = {
@@ -50,13 +48,11 @@ export default function PageShell({
       className="editorial-app min-h-dvh bg-background text-ink"
     >
       {isPreGame && <HomeChrome />}
-      {hasDashboardChrome && <AppSidebar />}
-      <div className={cn("min-h-dvh", hasDashboardChrome && "md:pl-22")}>
+      <div className="min-h-dvh">
         {hasDashboardChrome && <AppHeader />}
         <main
           className={cn(
             "editorial-page mx-auto px-4 py-8 sm:px-6 md:px-8 md:py-10",
-            hasDashboardChrome && "pb-28 md:pb-10",
             isPreGame && "pregame-content-enter",
             widths[maxWidth],
             className,
@@ -72,7 +68,6 @@ export default function PageShell({
           )}
         </main>
       </div>
-      {hasDashboardChrome && <MobileBottomNav />}
     </div>
   );
 }

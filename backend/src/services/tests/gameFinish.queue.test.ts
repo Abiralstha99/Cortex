@@ -44,4 +44,13 @@ describe("enqueueGameFinish", () => {
       assert.deepEqual(calls, [], `${state} job should not be replaced`);
     }
   });
+
+  it("delays final persistence for the leaderboard reveal", async () => {
+    let delay: number | undefined;
+    await enqueueGameFinish({
+      getJob: async () => undefined,
+      add: async (_name, _data, options) => { delay = options.delay; },
+    }, "game-1", "2026-09-29T12:05:00.000Z", 4500);
+    assert.equal(delay, 4500);
+  });
 });

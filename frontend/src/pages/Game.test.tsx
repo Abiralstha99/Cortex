@@ -119,4 +119,24 @@ describe("Game connection feedback", () => {
     expect(screen.getByText("You're not a player in this game.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Return home" })).toBeInTheDocument();
   });
+
+  it("announces and focuses connected phase changes without refocusing during recovery", () => {
+    gameSocketState.connectionReady = true;
+    gameSocketState.connected = true;
+    gameSocketState.connectionState = "connected";
+    const view = render(gameRoute());
+
+    act(() => useGameStore.getState().applyCountdown(3000));
+    act(() => vi.advanceTimersByTime(20));
+    expect(document.querySelector("[data-game-phase-announcement]")).toHaveTextContent("Get ready. Game starting.");
+    expect(screen.getByRole("heading", { name: "Get ready" })).toHaveFocus();
+
+    gameSocketState.connectionState = "reconnecting";
+    view.rerender(gameRoute());
+    act(() => useGameStore.getState().applyNewQuestion({ questionId: "q-1", roundNumber: 1, question: "Which one?", type: "TRUE_FALSE", startedAt: new Date().toISOString() }));
+    gameSocketState.connectionState = "connected";
+    view.rerender(gameRoute());
+    act(() => vi.advanceTimersByTime(20));
+    expect(screen.getByRole("heading", { name: "Which one?" })).not.toHaveFocus();
+  });
 });

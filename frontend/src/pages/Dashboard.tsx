@@ -11,7 +11,7 @@ export default function Dashboard() {
   const reduceMotion = useReducedMotion();
 
   return (
-    <PageShell maxWidth="6xl" className="editorial-dashboard" aside={<div className="editorial-live-rooms"><LiveRoomsSection /></div>}>
+    <PageShell maxWidth="6xl" className="editorial-dashboard">
       <DashboardHero firstName={firstName} />
       <motion.div
         className="editorial-dashboard-library"
@@ -21,6 +21,9 @@ export default function Dashboard() {
       >
         <QuizRows showEmptyState />
       </motion.div>
+      <section className="editorial-live-rooms mt-8 border-t border-border pt-7 sm:mt-10 sm:pt-8">
+        <LiveRoomsSection />
+      </section>
     </PageShell>
   );
 }

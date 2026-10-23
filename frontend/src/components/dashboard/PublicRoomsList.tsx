@@ -26,7 +26,7 @@ function upsertPublicRoom(
   return next;
 }
 
-export default function PublicRoomsList({ hideEmptyState = false }: { hideEmptyState?: boolean }) {
+export default function PublicRoomsList({ hideEmptyState = false, compactEmptyState = false }: { hideEmptyState?: boolean; compactEmptyState?: boolean }) {
   const { getToken } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -72,6 +72,7 @@ export default function PublicRoomsList({ hideEmptyState = false }: { hideEmptyS
   }, [socket, connected, queryClient]);
 
   if (query.isLoading) {
+    if (compactEmptyState) return <Skeleton className="h-14 w-full" aria-label="Loading public rooms" />;
     return (
       <div className="space-y-3" aria-label="Loading public rooms">
         {Array.from({ length: 3 }).map((_, i) => (
@@ -92,6 +93,7 @@ export default function PublicRoomsList({ hideEmptyState = false }: { hideEmptyS
   }
 
   if (query.isError) {
+    if (compactEmptyState) return <div className="py-4 text-sm text-muted-foreground">Could not load public rooms. <button className="ml-2 min-h-11 font-semibold text-primary underline underline-offset-2" onClick={() => void query.refetch()}>Try again</button></div>;
     return (
       <div className="rounded-[var(--radius-panel)] border border-border bg-surface shadow-card">
         <EmptyState
@@ -112,6 +114,10 @@ export default function PublicRoomsList({ hideEmptyState = false }: { hideEmptyS
 
   if (rooms.length === 0) {
     if (hideEmptyState) return null;
+
+    if (compactEmptyState) {
+      return <p className="py-4 text-sm text-muted-foreground">No public rooms are open right now.</p>;
+    }
 
     return (
       <div className="rounded-[var(--radius-panel)] border border-border bg-surface shadow-card">

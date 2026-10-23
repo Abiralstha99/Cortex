@@ -10,7 +10,7 @@ it("selects only owner-scoped, non-sensitive quiz metadata", () => {
   const query = quizMetadataQuery("quiz-1", "owner-1");
   assert.deepEqual(query.where, { id: "quiz-1", ownerId: "owner-1" });
   assert.deepEqual(Object.keys(query.select).sort(),
-    ["createdAt", "id", "questionCount", "sourceType", "status", "title"].sort());
+    ["classification", "createdAt", "id", "questionCount", "sourceType", "status", "title"].sort());
 });
 
 it("persists only cited chunks and distinct quotes with quiz and questions in one transaction", async () => {
@@ -34,6 +34,7 @@ it("persists only cited chunks and distinct quotes with quiz and questions in on
   assert.deepEqual(result, { id: "quiz-1", questionCount: 1 });
   assert.equal(transactionCount, 1);
   assert.deepEqual(calls.map((call) => call.model), ["quiz", "chunk", "question"]);
+  assert.equal((calls[0]!.args as { data: { classification: string } }).data.classification, "MULTIPLAYER");
   assert.deepEqual((calls[1]!.args as { data: unknown }).data,
     [{ quizId: "quiz-1", chunkId: "chunk-1", text: "Alpha supports the answer." }]);
   const sources = (calls[2]!.args as { data: { sourceReferences: { create: unknown[] } } }).data.sourceReferences.create;

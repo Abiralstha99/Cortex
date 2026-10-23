@@ -16,7 +16,7 @@ interface GameFinishQueue {
   add(
     name: string,
     data: GameFinishJobData,
-    options: { jobId: string },
+    options: { jobId: string; delay?: number },
   ): Promise<unknown>;
 }
 
@@ -24,6 +24,7 @@ export async function enqueueGameFinish(
   queue: GameFinishQueue,
   gameId: string,
   finishedAt: string,
+  delay = 0,
 ): Promise<void> {
   const jobId = GAME_FINISH_JOB_ID(gameId);
   const existingJob = await queue.getJob(jobId);
@@ -37,6 +38,6 @@ export async function enqueueGameFinish(
   await queue.add(
     GAME_FINISH_JOB,
     { gameId, finishedAt },
-    { jobId },
+    { jobId, delay },
   );
 }

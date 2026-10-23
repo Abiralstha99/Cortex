@@ -12,6 +12,7 @@
 //   - Scheduling the next round (or triggering game-finished)
 
 import type { Server } from "socket.io";
+import { setTimeout as delay } from "node:timers/promises";
 import type {
   RoundFinishedPayload,
   LeaderboardEntry,
@@ -32,11 +33,12 @@ import redis from "../lib/redis.js";
 import { getRoundSubmissions, ROUND_TIME_LIMIT_MS } from "./answer.service.js";
 import { startRound } from "./round.service.js";
 import { publicNewQuestionFromRound } from "./gamePlay.helpers.js";
-import { rankPlayers } from "./gameCompletion.helpers.js";
+import { previousLeaderboard, rankPlayers } from "./gameCompletion.helpers.js";
 import { enqueueGameFinish } from "./gameFinish.queue.js";
 import { publishGamePhase } from "./gameResume.service.js";
 
-export const BETWEEN_ROUND_DELAY_MS = 3000;
+export const BETWEEN_ROUND_DELAY_MS = 4500;
+export const ANSWER_FEEDBACK_MIN_MS = 2000;
 
 // This function attempts to claim the round-end lock via SET NX.
 // Returns true if this caller won the lock and should proceed.
@@ -178,6 +180,16 @@ export async function endRound(
     players.map((p) => p.id),
   );
 
+  // Keep the public question phase long enough for the most recent accepted
+  // answer to show its private feedback, even when the timer ends nearby.
+  const latestSubmittedAt = submissions.reduce((latest, submission) => {
+    if (!submission.questionId) return latest;
+    const submittedAt = Date.parse(submission.submittedAt);
+    return Number.isFinite(submittedAt) ? Math.max(latest, submittedAt) : latest;
+  }, 0);
+  const feedbackDelayMs = Math.max(0, latestSubmittedAt + ANSWER_FEEDBACK_MIN_MS - Date.now());
+  if (feedbackDelayMs > 0) await delay(feedbackDelayMs);
+
   // Apply scores to game state
   await applyScoresToGameState(
     gameId,
@@ -193,14 +205,17 @@ export async function endRound(
   const payload: RoundFinishedPayload = {
     roundNumber,
     leaderboard,
+    previousLeaderboard: previousLeaderboard(leaderboard, submissions),
+    revealEndsAt: Date.now() + BETWEEN_ROUND_DELAY_MS,
     submissions: submissions.map((sub) => ({
       playerId: sub.playerId,
       correct: sub.correct,
       pointsEarned: sub.pointsEarned,
       placement: sub.placement,
+      submitted: !!sub.questionId,
     })),
     isLastRound,
-    nextRoundIn: isLastRound ? 0 : BETWEEN_ROUND_DELAY_MS,
+    nextRoundIn: BETWEEN_ROUND_DELAY_MS,
   };
   const publishedResults = await publishGamePhase(gameId, "round_results", payload);
   io.to(`game:${gameId}`).emit("round_finished", publishedResults);
@@ -235,5 +250,5 @@ export async function endRound(
 
 // Schedule durable game completion. The worker retries transient database failures.
 export async function endGame(gameId: string): Promise<void> {
-  await enqueueGameFinish(gameFinishQueue, gameId, new Date().toISOString());
+  await enqueueGameFinish(gameFinishQueue, gameId, new Date().toISOString(), BETWEEN_ROUND_DELAY_MS);
 }

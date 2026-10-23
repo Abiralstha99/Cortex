@@ -8,12 +8,13 @@
 //   - Determine whether this submission ends the round early (all players answered)
 
 import { QuestionContentSchema } from "../schemas/quiz.js";
-import { gradeAnswer, isAnswerValueForQuestion, type AnswerValue } from "./questionAnswer.service.js";
+import { correctAnswerLabel, gradeAnswer, isAnswerValueForQuestion, type AnswerValue, type QuestionContent } from "./questionAnswer.service.js";
 import redis from "../lib/redis.js";
 import {
   ROUND_KEY,
   SUBMISSION_KEY,
   CORRECT_COUNT_KEY,
+  ROUND_ENDED_KEY,
 } from "../lib/redisKeys.js";
 import type { SubmissionRecord, AnswerResult } from "../types/room.types.js";
 
@@ -44,18 +45,25 @@ export function calculatePoints(
   }
 }
 
+export function privateCorrectAnswer(question: QuestionContent): number | boolean | string {
+  return question.type === "MCQ" ? question.content.correctIndex
+    : question.type === "TRUE_FALSE" ? question.content.correctAnswer
+      : correctAnswerLabel(question);
+}
+
 /* Atomically:
   1. Guard duplicate via EXISTS on SUBMISSION_KEY
   2. Accept server-graded correctness and verify the active round
   3. If correct: INCR CORRECT_COUNT_KEY → placement
   4. HINCRBY ROUND_KEY submissionCount — total submissions so far
-  5. SET SUBMISSION_KEY to submissionJson
+  5. SET SUBMISSION_KEY to the complete scored record
  Returns: [isDuplicate (0|1), placement (0 if incorrect), totalSubmissions, isCorrect (0|1)]
 */
 export const SUBMIT_ANSWER_LUA = `
 local submissionKey   = KEYS[1]
 local correctCountKey = KEYS[2]
 local roundKey        = KEYS[3]
+local endedKey        = KEYS[4]
 local submissionJson  = ARGV[1]
 local isCorrect      = tonumber(ARGV[2])
 local questionId     = ARGV[3]
@@ -67,7 +75,8 @@ if redis.call('EXISTS', submissionKey) == 1 then
 end
 
 if redis.call('HGET', roundKey, 'questionId') ~= questionId or
-   redis.call('HGET', roundKey, 'roundNumber') ~= roundNumber then
+   redis.call('HGET', roundKey, 'roundNumber') ~= roundNumber or
+   redis.call('EXISTS', endedKey) == 1 then
   return {2, 0, 0, 0}
 end
 
@@ -77,7 +86,17 @@ if isCorrect == 1 then
 end
 
 local totalSubmissions = tonumber(redis.call('HINCRBY', roundKey, 'submissionCount', 1))
-redis.call('SET', submissionKey, submissionJson)
+local submission = cjson.decode(submissionJson)
+submission.correct = isCorrect == 1
+submission.placement = placement > 0 and placement or cjson.null
+submission.pointsEarned = 0
+if isCorrect == 1 then
+  if placement == 1 then submission.pointsEarned = 100
+  elseif placement == 2 then submission.pointsEarned = 75
+  elseif placement == 3 then submission.pointsEarned = 50
+  else submission.pointsEarned = 25 end
+end
+redis.call('SET', submissionKey, cjson.encode(submission))
 
 return {0, placement, totalSubmissions, isCorrect}
 `;
@@ -115,6 +134,7 @@ export async function submitAnswer(params: {
   const question = QuestionContentSchema.parse({ type: raw.type, content: JSON.parse(raw.content ?? "null") });
   if (!isAnswerValueForQuestion(question, answer)) throw new Error("Answer type does not match question");
   const isCorrect = gradeAnswer(question, answer);
+  const correctAnswer = privateCorrectAnswer(question);
   const startedAt = new Date(raw.startedAt!).getTime();
   const submissionTime = new Date();
   const submittedAt = submissionTime.toISOString();
@@ -141,14 +161,16 @@ export async function submitAnswer(params: {
     answer,
     responseTimeMs,
     submittedAt,
+    correctAnswer,
   };
 
   const result = (await redis.eval(
     SUBMIT_ANSWER_LUA,
-    3,
+    4,
     submissionKey,
     correctCountKey,
     roundKey,
+    ROUND_ENDED_KEY(gameId, roundNumber),
     JSON.stringify(baseRecord),
     isCorrect ? "1" : "0",
     questionId,
@@ -166,16 +188,10 @@ export async function submitAnswer(params: {
   const placement = correct ? rawPlacement : null;
   const pointsEarned = calculatePoints(correct, placement);
 
-  // Write the complete record back (now that we know correctness, placement, and points)
-  const submissionRecord: SubmissionRecord = {
-    ...baseRecord,
-    correct,
-    pointsEarned,
-    placement,
-  };
-  await redis.set(submissionKey, JSON.stringify(submissionRecord));
-
   const answerResult: AnswerResult = {
+    questionId,
+    roundNumber,
+    correctAnswer,
     correct,
     pointsEarned,
     placement,

@@ -5,9 +5,11 @@ import { validateParams } from "../middleware/validate.middleware.js";
 import { JobIdParamsSchema, QuizIdParamsSchema } from "../schemas/quiz.js";
 import {
   generateQuiz,
+  generateSoloQuiz,
   getQuizById,
   getQuizJob,
   getAllQuiz,
+  deleteQuizById,
 } from "../controllers/quiz.controller.js";
 
 const upload = multer({
@@ -23,6 +25,7 @@ quizGenerateRouter.post(
   upload.single("file"),
   generateQuiz,
 );
+quizGenerateRouter.post("/generate/solo", requireAuth, upload.single("file"), generateSoloQuiz);
 quizGenerateRouter.get(
   "/jobs/:jobId",
   requireAuth,
@@ -39,5 +42,6 @@ quizzesRouter.get(
   validateParams(QuizIdParamsSchema),
   getQuizById,
 );
+quizzesRouter.delete("/:quizId", requireAuth, validateParams(QuizIdParamsSchema), deleteQuizById);
 
 export default quizzesRouter;

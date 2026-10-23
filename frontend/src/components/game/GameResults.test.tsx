@@ -28,4 +28,5 @@ it("shows every tied winner and recognizes each as a winner", () => {
   expect(screen.getByText("Alice, Bob").closest("p")).toHaveTextContent(
     /Winners: Alice, Bob,\s*300 pts/,
   );
+  expect(screen.getAllByRole("button", { name: "Return home" })).toHaveLength(2);
 });

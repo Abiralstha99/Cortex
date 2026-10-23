@@ -87,6 +87,7 @@ export type RunQuizGenerationInput = {
   /** When set, overrides the filename-derived title stored on the quiz. */
   title?: string;
   gameId?: string;
+  classification?: "MULTIPLAYER" | "SOLO_ONLY";
 };
 
 export type RunQuizGenerationResult = {
@@ -455,6 +456,7 @@ export async function runQuizGeneration(
       sourceType: pipeline.sourceType,
       title: pipeline.title,
       ...(input.gameId === undefined ? {} : { gameId: input.gameId }),
+      classification: input.classification ?? "MULTIPLAYER",
     });
 
     // Enqueue the lightweight BullMQ job (just the jobId reference).
@@ -549,6 +551,7 @@ async function generateAndPersistQuiz(
     sourceType: work.sourceType,
     questions: result.questions,
     chunks: work.chunks,
+    classification: work.classification ?? "MULTIPLAYER",
   });
   await deps.recordPersistedQuiz(jobId, quiz);
   return quiz;

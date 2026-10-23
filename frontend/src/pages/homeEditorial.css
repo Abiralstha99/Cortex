@@ -399,6 +399,7 @@ body:has(.editorial-landing),
 }
 
 .landing-play-heading h2 { font-size: clamp(45px, 5.1vw, 78px); }
+#landing-play-title { scroll-margin-top: 24px; }
 .landing-play-heading p { margin-top: 20px; color: var(--landing-muted); font-size: 19px; }
 .landing-play-grid { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr); gap: clamp(40px, 7vw, 100px); margin-top: 68px; }
 .landing-create, .landing-join { min-width: 0; }

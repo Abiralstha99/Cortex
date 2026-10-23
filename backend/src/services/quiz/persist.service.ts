@@ -15,11 +15,12 @@
 import { GeneratedQuestionsArraySchema } from "../../schemas/quiz.js";
 import type { GeneratedQuestion } from "../../types/quiz.types.js";
 import redis from "../../lib/redis.js";
-import { QUIZ_GEN_JOB_KEY, QUIZ_GEN_WORK_KEY } from "../../lib/redisKeys.js";
+import { QUIZ_GEN_JOB_KEY, QUIZ_GEN_WORK_KEY, QUIZ_QUESTIONS_KEY } from "../../lib/redisKeys.js";
 import { prisma } from "../../lib/prisma.js";
 import type { Prisma } from "../../../app/generated/prisma/client.js";
 import { chunkIdForIndex } from "./batch.service.js";
 import { parseAndValidateQuestions } from "./validation.service.js";
+import { lockQuizRow } from "./quizRowLock.js";
 
 // ─── Constants ──────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ export type QuizGenWorkPayload = {
   sourceType: "pdf" | "text";
   title: string;
   ownerId: string;
+  classification?: "MULTIPLAYER" | "SOLO_ONLY";
   gameId?: string;
   persistedQuizId?: string;
   persistedQuestionCount?: number;
@@ -206,6 +208,7 @@ export async function createReadyQuiz(input: {
   sourceType: "pdf" | "text";
   questions: GeneratedQuestion[];
   chunks: string[];
+  classification?: "MULTIPLAYER" | "SOLO_ONLY";
 }): Promise<{ id: string; questionCount: number }> {
   return persistReadyQuiz((operation) => prisma.$transaction(operation, { timeout: 30_000 }), input);
 }
@@ -220,6 +223,7 @@ export async function persistReadyQuiz(runTransaction: ReadyQuizTransactionRunne
   sourceType: "pdf" | "text";
   questions: GeneratedQuestion[];
   chunks: string[];
+  classification?: "MULTIPLAYER" | "SOLO_ONLY";
 }): Promise<{ id: string; questionCount: number }> {
   const { ownerId, title, sourceType } = input;
   const questions = GeneratedQuestionsArraySchema.parse(input.questions);
@@ -243,6 +247,7 @@ export async function persistReadyQuiz(runTransaction: ReadyQuizTransactionRunne
         title,
         sourceType,
         status: "ready",
+        classification: input.classification ?? "MULTIPLAYER",
         questionCount: questions.length,
       },
       select: { id: true, questionCount: true },
@@ -283,14 +288,62 @@ export async function persistReadyQuiz(runTransaction: ReadyQuizTransactionRunne
  * Returns null if not found or if the quiz belongs to another user.
  */
 export async function getQuiz(quizId: string, ownerId: string) {
-  return prisma.quiz.findFirst(quizMetadataQuery(quizId, ownerId));
+  const quiz = await prisma.quiz.findFirst({
+    ...quizMetadataQuery(quizId, ownerId),
+    select: {
+      ...quizMetadataQuery(quizId, ownerId).select,
+      questions: {
+        orderBy: { position: "asc" },
+        select: { id: true, position: true, type: true, question: true, content: true },
+      },
+    },
+  });
+  if (!quiz) return null;
+  return {
+    ...quiz,
+    questions: quiz.questions.map(({ content, ...question }) => ({
+      ...question,
+      options: question.type === "MCQ" && content && typeof content === "object" && !Array.isArray(content) && Array.isArray(content.options)
+        ? content.options.filter((option): option is string => typeof option === "string")
+        : undefined,
+    })),
+  };
+}
+
+/** Delete only an owned quiz that is not in use by a live room or saved game. */
+export async function deleteQuiz(quizId: string, ownerId: string, soloOnly = false): Promise<"deleted" | "missing" | "in_use" | "not_solo"> {
+  const result = await prisma.$transaction(async (tx) => {
+    if (!await lockQuizRow(tx, quizId)) return "missing";
+    const ownedQuiz = await tx.quiz.findFirst({ where: { id: quizId, ownerId }, select: { id: true, classification: true } });
+    if (!ownedQuiz) return "missing";
+    if (soloOnly && ownedQuiz.classification !== "SOLO_ONLY") return "not_solo";
+    let cursor = "0";
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, "MATCH", "game:*", "COUNT", 100);
+      cursor = nextCursor;
+      for (const key of keys) {
+        if (await redis.type(key) !== "hash") continue;
+        const [roomQuizId, status] = await redis.hmget(key, "quizId", "status");
+        if (roomQuizId === quizId && (status === "waiting" || status === "playing")) return "in_use";
+      }
+    } while (cursor !== "0");
+
+    const deleted = await tx.quiz.deleteMany({
+      where: { id: quizId, ownerId, games: { none: {} } },
+    });
+    return deleted.count > 0 ? "deleted" : "in_use";
+  }, { timeout: 15000 });
+  if (result === "deleted") {
+    await redis.del(QUIZ_QUESTIONS_KEY(quizId));
+  }
+  return result;
 }
 
 export function quizMetadataQuery(quizId: string, ownerId: string) {
   return {
     where: { id: quizId, ownerId },
     select: {
-      id: true, title: true, sourceType: true, status: true,
+      id: true, title: true, sourceType: true, status: true, classification: true,
       questionCount: true, createdAt: true,
     },
   } as const;
@@ -303,7 +356,7 @@ export function quizMetadataQuery(quizId: string, ownerId: string) {
  */
 export async function getAllQuizzes(ownerId: string) {
   const quizzes = await prisma.quiz.findMany({
-    where: { ownerId, status: "ready", questionCount: { gt: 0 } },
+    where: { ownerId, status: "ready", classification: "MULTIPLAYER", questionCount: { gt: 0 } },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,

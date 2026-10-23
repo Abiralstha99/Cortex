@@ -65,13 +65,20 @@ export function buildGameSnapshot(
   // Public payloads are created at broadcast time and contain no answer key
   // while the question is open.
   const submission = submissionRaw ? JSON.parse(submissionRaw) as SubmissionRecord : null;
-  // The answer script first writes a duplicate guard, then adds scoring fields.
-  // Do not present a half-written answer as a recoverable final state.
-  if (phase === "question" && submission && typeof submission.correct !== "boolean") {
+  // Reject malformed records left by older deployments.
+  if (phase === "question" && submission &&
+      (typeof submission.correct !== "boolean" ||
+       typeof submission.pointsEarned !== "number" ||
+       submission.correctAnswer === undefined ||
+       submission.questionId !== payload.questionId ||
+       submission.roundNumber !== payload.roundNumber)) {
     return { ok: false, reason: "temporary" };
   }
   const answerResult: AnswerResult | null = submission && typeof submission.correct === "boolean"
     ? {
+        questionId: submission.questionId,
+        roundNumber: submission.roundNumber,
+        correctAnswer: submission.correctAnswer!,
         correct: submission.correct,
         pointsEarned: submission.pointsEarned,
         placement: submission.placement,

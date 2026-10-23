@@ -17,6 +17,10 @@ it("shows loading, played order, unanswered rounds, and older missing sources", 
       correct: null, pointsEarned: 0, correctAnswer: "True", explanation: "The treaty was signed.", sources: [] },
   ] });
   expect(await screen.findByText("Which city is the capital?")).toBeInTheDocument();
+  expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual([
+    "Which city is the capital?", "Was the treaty signed?",
+  ]);
+  expect(screen.getByText("Lyon", { exact: true })).toHaveClass("text-danger-foreground");
   expect(screen.getByText("No answer submitted")).toBeInTheDocument();
   expect(screen.getByText("Source excerpt unavailable for this quiz.")).toBeInTheDocument();
   expect(screen.getByText(/Paris is the capital/)).toBeInTheDocument();

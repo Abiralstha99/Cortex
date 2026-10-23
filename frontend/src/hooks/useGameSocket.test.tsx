@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useGameSocket } from "./useGameSocket";
 import { useGameStore } from "../stores/gameStore";
 import { useLobbyStore } from "../stores/lobbyStore";
-import type { ResumeGameResponse } from "../lib/api";
+import type { ResumeGameResponse, SubmitAnswerResponse } from "../lib/api";
 
 const connection = vi.hoisted(() => ({
   socket: null as unknown,
@@ -27,7 +27,8 @@ const snapshot = (phaseVersion = 2): ResumeGameResponse => ({
 
 function fakeSocket() {
   const listeners = new Map<string, Set<(payload: unknown) => void>>();
-  let acknowledge: ((error: Error | null, response?: ResumeGameResponse) => void) | undefined;
+  let acknowledge: ((error: Error | null, response?: unknown) => void) | undefined;
+  let submitAcknowledge: ((error: Error | null, response?: unknown) => void) | undefined;
   const socket = {
     connected: true,
     resumeRequests: 0,
@@ -42,10 +43,12 @@ function fakeSocket() {
     },
     timeout() {
       return { emit(event: string, _payload: unknown,
-        callback: (error: Error | null, response?: ResumeGameResponse) => void) {
+        callback: (error: Error | null, response?: unknown) => void) {
         if (event === "resume_game") {
           socket.resumeRequests += 1;
           acknowledge = callback;
+        } else if (event === "submit_answer") {
+          submitAcknowledge = callback;
         }
       } };
     },
@@ -55,6 +58,9 @@ function fakeSocket() {
     },
     acknowledge(response: ResumeGameResponse) {
       acknowledge?.(null, response);
+    },
+    answer(response?: SubmitAnswerResponse, error: Error | null = null) {
+      submitAcknowledge?.(error, response);
     },
   };
   return socket;
@@ -77,6 +83,56 @@ describe("game socket recovery", () => {
     expect(result.current.recoveryState).toBe("ready");
     expect(useLobbyStore.getState().numberOfRounds).toBe(4);
     expect(useGameStore.getState().question).toBe(question.question);
+  });
+
+  it("keeps the question visible while pending and confirms private feedback", () => {
+    const socket = connection.socket as ReturnType<typeof fakeSocket>;
+    const { result } = renderHook(() => useGameSocket(gameId));
+    act(() => socket.acknowledge(snapshot()));
+    act(() => result.current.submitAnswer("q1", 0, 300));
+    expect(useGameStore.getState().phase).toBe("question");
+    expect(useGameStore.getState().myAnswer).toBe(0);
+    expect(useGameStore.getState().answerResult).toBeNull();
+    act(() => socket.answer({ ok: true, result: { questionId: "q1", roundNumber: 1, correctAnswer: 1, correct: false, pointsEarned: 0, placement: null } }));
+    expect(useGameStore.getState().phase).toBe("question");
+    expect(useGameStore.getState().answerResult?.correctAnswer).toBe(1);
+  });
+
+  it("reconciles a rejected answer before another attempt", () => {
+    const socket = connection.socket as ReturnType<typeof fakeSocket>;
+    const { result } = renderHook(() => useGameSocket(gameId));
+    act(() => socket.acknowledge(snapshot()));
+    act(() => result.current.submitAnswer("q1", 0, 300));
+    act(() => socket.answer({ ok: false, reason: "Stale submission" }));
+    expect(result.current.recoveryState).toBe("connecting");
+    expect(useGameStore.getState().myAnswer).toBe(0);
+    act(() => socket.acknowledge(snapshot(2)));
+    expect(result.current.recoveryState).toBe("ready");
+    expect(useGameStore.getState().myAnswer).toBeNull();
+  });
+
+  it("reconciles an acknowledgement timeout before another attempt", () => {
+    const socket = connection.socket as ReturnType<typeof fakeSocket>;
+    const { result } = renderHook(() => useGameSocket(gameId));
+    act(() => socket.acknowledge(snapshot()));
+    act(() => result.current.submitAnswer("q1", 0, 300));
+    act(() => socket.answer(undefined, new Error("timeout")));
+    expect(result.current.recoveryState).toBe("connecting");
+    expect(useGameStore.getState().myAnswer).toBe(0);
+    act(() => socket.acknowledge(snapshot()));
+    expect(useGameStore.getState().myAnswer).toBeNull();
+  });
+
+  it("restores feedback from a completed private submission", () => {
+    const socket = connection.socket as ReturnType<typeof fakeSocket>;
+    renderHook(() => useGameSocket(gameId));
+    const recovered = snapshot();
+    if (!recovered.ok) throw new Error("Expected snapshot");
+    recovered.snapshot.myAnswer = 2;
+    recovered.snapshot.answerResult = { questionId: "q1", roundNumber: 1, correctAnswer: 2, correct: true, pointsEarned: 100, placement: 1 };
+    act(() => socket.acknowledge(recovered));
+    expect(useGameStore.getState().phase).toBe("question");
+    expect(useGameStore.getState().answerResult?.pointsEarned).toBe(100);
   });
 
   it("replays only newer phase events received during recovery", () => {

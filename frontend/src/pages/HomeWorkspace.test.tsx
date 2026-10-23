@@ -50,16 +50,17 @@ describe("HomeWorkspace shell", () => {
     expect(screen.getAllByRole("link", { name: "Join a game" })[0]).toHaveAttribute("href", "#join");
   });
 
-  it("scrolls to the join section without adding a URL hash", () => {
+  it("scrolls to the shared setup heading without adding a URL hash", () => {
     renderWithRouter(<HomeWorkspace />);
     const scrollIntoView = vi.fn();
-    document.querySelector("#join")!.scrollIntoView = scrollIntoView;
+    document.querySelector("#landing-play-title")!.scrollIntoView = scrollIntoView;
     const originalUrl = window.location.href;
 
     const followed = fireEvent.click(screen.getAllByRole("link", { name: "Join a game" })[0]);
 
     expect(followed).toBe(false);
     expect(scrollIntoView).toHaveBeenCalledOnce();
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
     expect(window.location.href).toBe(originalUrl);
   });
 

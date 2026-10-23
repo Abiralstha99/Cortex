@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, cleanup } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import Lobby from "./Lobby";
 
 const lobbyState = vi.hoisted(() => ({
@@ -11,11 +11,12 @@ const lobbyState = vi.hoisted(() => ({
   maxPlayers: 8,
   quizId: "quiz-1",
   quizGenStatus: "ready" as const,
-  status: "in_lobby" as const,
+  status: "in_lobby" as "in_lobby" | "joining" | "error",
   toast: null,
   attemptStart: vi.fn(() => true),
   setToast: vi.fn(),
 }));
+const socketState = vi.hoisted(() => ({ connected: true, toggleReady: vi.fn(), startGame: vi.fn(), leave: vi.fn() }));
 
 vi.mock("@/components/layout/PageShell", () => ({
   default: ({ children }: { children: React.ReactNode }) => <main>{children}</main>,
@@ -26,12 +27,7 @@ vi.mock("@/components/lobby/PlayerCard", () => ({
 }));
 
 vi.mock("@/hooks/useLobbySocket", () => ({
-  useLobbySocket: () => ({
-    connected: true,
-    toggleReady: vi.fn(),
-    startGame: vi.fn(),
-    leave: vi.fn(),
-  }),
+  useLobbySocket: () => socketState,
 }));
 
 vi.mock("@/hooks/useCurrentUser", () => ({
@@ -48,6 +44,7 @@ vi.mock("@/stores/lobbyStore", () => ({
 }));
 
 describe("Lobby", () => {
+  afterEach(() => { cleanup(); lobbyState.status = "in_lobby"; socketState.connected = true; });
   it("keeps room status outside the Players workspace", () => {
     render(
       <MemoryRouter initialEntries={["/lobby/ABC123"]}>
@@ -66,5 +63,22 @@ describe("Lobby", () => {
     expect(screen.getByRole("button", { name: /Start game/ })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Start the game" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Your readiness" })).not.toBeInTheDocument();
+  });
+
+  it("keeps readiness unavailable until joined and connected", () => {
+    lobbyState.status = "joining";
+    const view = render(<MemoryRouter initialEntries={["/lobby/ABC123"]}><Lobby /></MemoryRouter>);
+    expect(screen.getByRole("button", { name: "You're ready" })).toBeDisabled();
+    expect(screen.getByText(/Joining room before you can mark ready/)).toBeInTheDocument();
+
+    lobbyState.status = "in_lobby";
+    socketState.connected = false;
+    view.rerender(<MemoryRouter initialEntries={["/lobby/ABC123"]}><Lobby /></MemoryRouter>);
+    expect(screen.getByRole("button", { name: "You're ready" })).toBeDisabled();
+    expect(screen.getByText("Connection lost. Reconnecting...")).toBeInTheDocument();
+
+    socketState.connected = true;
+    view.rerender(<MemoryRouter initialEntries={["/lobby/ABC123"]}><Lobby /></MemoryRouter>);
+    expect(screen.getByRole("button", { name: "You're ready" })).toBeEnabled();
   });
 });

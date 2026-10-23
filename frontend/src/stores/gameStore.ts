@@ -14,7 +14,6 @@ type GamePhase =
   | "idle"
   | "countdown"
   | "question"
-  | "answered"
   | "round_results"
   | "game_finished";
 
@@ -64,7 +63,7 @@ const initialState = {
   startedAt: null as Date | null,
   timeLimit: 30000,
   questionId: null as string | null,
-  myAnswer: null as number | null,
+  myAnswer: null as AnswerValue | null,
   answerResult: null as AnswerResult | null,
   otherAnswers: [] as AnswerSubmittedPayload[],
   leaderboard: [] as LeaderboardEntry[],
@@ -98,10 +97,8 @@ export const useGameStore = create<GameState>((set) => ({
     }),
 
   applyAnswerResult: (result) =>
-    set({
-      phase: "answered",
-      answerResult: result,
-    }),
+    set((state) => state.phase === "question" && state.questionId === result.questionId && state.roundNumber === result.roundNumber
+      ? { answerResult: result } : state),
 
   applyAnswerSubmitted: (payload) =>
     set((state) => ({
@@ -129,7 +126,7 @@ export const useGameStore = create<GameState>((set) => ({
         Number(payload.countdownEndsAt) - Date.now()) });
     } else if (snapshot.phase === "question") {
       const question = payload as NewQuestionPayload;
-      set({ ...initialState, phase: snapshot.answerResult ? "answered" : "question",
+      set({ ...initialState, phase: "question",
         roundNumber: question.roundNumber, question: question.question,
         options: question.type === "MCQ" ? question.options : [], questionType: question.type, startedAt: new Date(question.startedAt),
         questionId: question.questionId, myAnswer: snapshot.myAnswer,

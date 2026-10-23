@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { AnswerValue, GameReview, GameReviewRound } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function answerLabel(round: GameReviewRound, answer: AnswerValue | null): string {
   if (answer === null) return "No answer submitted";
@@ -47,8 +48,8 @@ export default function PostGameReview({ loadReview }: { loadReview: () => Promi
             <li key={round.roundNumber} className="py-5 first:pt-0 last:pb-0">
               <p className="font-mono text-xs font-semibold tabular-nums text-muted-foreground">Round {round.roundNumber}</p>
               <h3 className="mt-2 font-display text-lg font-semibold text-ink">{round.question}</h3>
-              <p className="mt-3 text-sm text-ink">Your answer: <strong>{answerLabel(round, round.playerAnswer)}</strong>
-                {round.playerAnswer !== null && <span className="ml-2 text-muted-foreground">{round.correct ? "Correct" : "Not quite"} · +{round.pointsEarned} pts</span>}
+              <p className="mt-3 text-sm text-ink">Your answer: <strong className={cn(round.playerAnswer !== null && (round.correct ? "text-success-foreground" : "text-danger-foreground"))}>{answerLabel(round, round.playerAnswer)}</strong>
+                {round.playerAnswer !== null && <span className={cn("ml-2 font-semibold", round.correct ? "text-success-foreground" : "text-danger-foreground")}>{round.correct ? "✓ Correct" : "✕ Incorrect"} · +{round.pointsEarned} pts</span>}
               </p>
               <p className="mt-1 text-sm text-ink">Correct answer: <strong>{round.correctAnswer}</strong></p>
               <p className="mt-3 text-pretty text-sm text-muted-foreground">{round.explanation}</p>

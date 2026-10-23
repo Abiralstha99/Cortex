@@ -200,6 +200,7 @@ export default function CreateGame() {
                     setSelectedQuiz(quiz);
                     setQuestionCount(Math.min(questionCount, quiz.questionCount));
                   }}
+                  onRetry={() => void quizzesQuery.refetch()}
                 />
               </TabsContent>
             </Tabs>

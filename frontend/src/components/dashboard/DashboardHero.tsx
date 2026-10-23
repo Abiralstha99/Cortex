@@ -1,4 +1,3 @@
-import { Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion, useReducedMotion } from "motion/react";
@@ -17,7 +16,7 @@ export default function DashboardHero({
       initial={reduceMotion ? false : { opacity: 0, y: 22 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      className="editorial-dashboard-hero relative isolate min-h-72 overflow-hidden rounded-[var(--radius-hero)] bg-ink px-6 py-8 text-white shadow-card sm:px-10 sm:py-10"
+      className="editorial-dashboard-hero relative isolate overflow-hidden rounded-[var(--radius-hero)] bg-ink px-6 py-8 text-white shadow-card sm:px-10 sm:py-10"
       aria-labelledby="dashboard-hero-heading"
     >
       <div className="relative z-10 flex h-full max-w-xl flex-col justify-center">
@@ -37,32 +36,20 @@ export default function DashboardHero({
           <Button
             type="button"
             className="bg-[#fcfaf5] text-[#161410] hover:bg-[#f3eedc] active:translate-y-px"
-            onClick={() => navigate("/game/join")}
+            onClick={() => navigate("/game/create")}
           >
-            Join game
+            Create a quiz
           </Button>
           <Button
             type="button"
             variant="outline"
             className="border-white/45 bg-transparent text-white hover:bg-white/10 active:translate-y-px"
-            onClick={() => navigate("/game/create")}
+            onClick={() => navigate("/game/join")}
           >
-            Host game
+            Join game
           </Button>
+          <Button type="button" variant="outline" className="border-white/45 bg-transparent text-white hover:bg-white/10" onClick={() => navigate("/practice")}>Practice solo</Button>
         </div>
-      </div>
-
-      <div
-        className="pointer-events-none absolute inset-y-0 right-0 hidden w-2/5 items-center justify-center lg:flex"
-        aria-hidden="true"
-      >
-        <span className="absolute right-12 top-10 grid size-24 place-items-center rounded-[var(--radius-panel)] border border-white/20 bg-white/10 font-display text-6xl font-bold text-accent-yellow">
-          ?
-        </span>
-        <span className="absolute bottom-9 right-36 grid size-28 place-items-center rounded-full border border-white/20 bg-primary-hover/50 text-white">
-          <Trophy className="size-12" strokeWidth={2} />
-        </span>
-        <span className="absolute right-4 top-1/2 size-10 rounded-[var(--radius-control)] border border-white/20 bg-accent-cyan/40" />
       </div>
     </motion.section>
   );

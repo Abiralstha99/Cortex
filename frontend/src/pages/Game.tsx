@@ -4,7 +4,6 @@ import { useAuth } from "@clerk/react";
 import Countdown from "@/components/game/Countdown";
 import QuestionCard from "@/components/game/QuestionCard";
 import Timer from "@/components/game/Timer";
-import AnswerFeedback from "@/components/game/AnswerFeedback";
 import RoundResults from "@/components/game/RoundResults";
 import GameResults from "@/components/game/GameResults";
 import ConnectionBanner from "@/components/game/ConnectionBanner";
@@ -53,6 +52,33 @@ export default function Game() {
   const previousConnectionState = useRef<typeof connectionState | null>(null);
   const reconnectedDismissTimer = useRef<number | undefined>(undefined);
   const [showReconnected, setShowReconnected] = useState(false);
+  const [phaseAnnouncement, setPhaseAnnouncement] = useState("");
+  const phaseContentRef = useRef<HTMLDivElement>(null);
+  const previousPhaseState = useRef<{ phase: typeof phase; connected: boolean } | null>(null);
+
+  useEffect(() => {
+    if (recoveryState !== "ready" || !myPlayerId || !connectionReady) {
+      previousPhaseState.current = null;
+      return;
+    }
+    const connected = connectionState === "connected";
+    const previous = previousPhaseState.current;
+    previousPhaseState.current = { phase, connected };
+    if (!connected || !previous?.connected || previous.phase === phase || phase === "idle") return;
+
+    const message = phase === "question"
+      ? `Round ${roundNumber} question.`
+      : phase === "round_results"
+        ? `Round ${roundNumber} complete. Leaderboard.`
+        : phase === "game_finished"
+          ? "Game complete. Final results."
+          : "Get ready. Game starting.";
+    setPhaseAnnouncement(message);
+    const frame = window.requestAnimationFrame(() => {
+      phaseContentRef.current?.querySelector<HTMLElement>("h1")?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [phase, roundNumber, recoveryState, myPlayerId, connectionReady, connectionState]);
 
   // Track response time from when question appears
   useEffect(() => {
@@ -189,10 +215,11 @@ export default function Game() {
               )}
             </header>
 
-            <div className="space-y-6">
+            <p aria-live="polite" className="sr-only" data-game-phase-announcement>{phaseAnnouncement}</p>
+            <div ref={phaseContentRef} className="space-y-6">
               {phase === "idle" && (
                 <section className="rounded-[var(--radius-panel)] border border-border bg-surface px-6 py-12 text-center shadow-card">
-                  <h1 className="font-display text-xl font-bold text-ink">
+                  <h1 tabIndex={-1} className="font-display text-xl font-bold text-ink">
                     Starting game...
                   </h1>
                 </section>
@@ -209,11 +236,8 @@ export default function Game() {
                   onSubmit={handleSubmitAnswer}
                   disabled={myAnswer !== null}
                   selectedAnswer={myAnswer}
+                  answerResult={answerResult}
                 />
-              )}
-
-              {phase === "answered" && answerResult && (
-                <AnswerFeedback result={answerResult} />
               )}
 
               {phase === "round_results" && roundResults && (

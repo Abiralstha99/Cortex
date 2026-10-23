@@ -63,6 +63,18 @@ function successfulGeneration() {
 }
 
 describe("stored adaptive quiz generation", () => {
+  it("persists a solo job with its classification", async () => {
+    const work = { ...workPayload(""), classification: "SOLO_ONLY" as const };
+    let savedClassification: string | undefined;
+    await executeStoredGenerationWithDeps("solo-job", testModelConfig, {
+      loadWork: async () => work,
+      generateQuiz: async () => successfulGeneration(),
+      persistQuiz: async (input) => { savedClassification = input.classification; return { id: "solo-quiz", questionCount: 2 }; },
+      recordPersistedQuiz: async () => {}, markReady: async () => {}, markFailed: async () => {}, clearWork: async () => {},
+      enqueueWaitingRoomJob: async () => { throw new Error("solo jobs must not attach to rooms"); },
+    });
+    assert.equal(savedClassification, "SOLO_ONLY");
+  });
   it("marks a job ready only after persistence and then dispatches room attachment", async () => {
     const calls: string[] = [];
     const deps: StoredGenerationDeps = {

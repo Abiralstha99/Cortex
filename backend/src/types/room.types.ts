@@ -64,11 +64,15 @@ export type SubmissionRecord = {
   correct: boolean;
   pointsEarned: number;
   placement: number | null;
+  correctAnswer?: number | boolean | string;
   submittedAt: string;
 };
 
 // Payload broadcast to the submitting player after their answer is processed.
 export type AnswerResult = {
+  questionId: string;
+  roundNumber: number;
+  correctAnswer: number | boolean | string;
   correct: boolean;
   pointsEarned: number;
   placement: number | null;
@@ -85,11 +89,13 @@ export type LeaderboardEntry = {
 // Payload for the round_finished broadcast.
 export type RoundFinishedPayload = {
   roundNumber: number;
-  submissions: Pick<
+  submissions: (Pick<
     SubmissionRecord,
     "playerId" | "correct" | "pointsEarned" | "placement"
-  >[];
+  > & { submitted: boolean })[];
   leaderboard: LeaderboardEntry[];
+  previousLeaderboard: LeaderboardEntry[];
+  revealEndsAt: number;
   isLastRound: boolean;
   nextRoundIn: number;
 };

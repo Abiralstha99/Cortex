@@ -7,7 +7,7 @@ import { submitAnswer } from "../services/answer.service.js";
 import { endRound, cancelRoundEndJob } from "../services/roundEnd.service.js";
 import { GAME_KEY } from "../lib/redisKeys.js";
 import redis from "../lib/redis.js";
-import type { Player } from "../types/room.types.js";
+import type { AnswerResult, Player } from "../types/room.types.js";
 import { isGameMember, resumeGame, type ResumeResponse } from "../services/gameResume.service.js";
 
 export function registerGameHandlers(io: Server, socket: Socket): void {
@@ -31,10 +31,14 @@ export function registerGameHandlers(io: Server, socket: Socket): void {
     }
   });
 
-  socket.on("submit_answer", async (payload: unknown) => {
+  socket.on("submit_answer", async (payload: unknown, acknowledge?: (response: { ok: true; result: AnswerResult } | { ok: false; reason: string }) => void) => {
     const parsed = parseSocketPayload(socket, SubmitAnswerPayloadSchema, payload);
-    if (!parsed) return;
+    if (!parsed) {
+      acknowledge?.({ ok: false, reason: "Invalid answer" });
+      return;
+    }
 
+    let accepted = false;
     try {
       const game = await redis.hgetall(GAME_KEY(parsed.gameId));
       if (!game || Object.keys(game).length === 0) {
@@ -52,8 +56,10 @@ export function registerGameHandlers(io: Server, socket: Socket): void {
         totalPlayers,
         roundNumber: currentRound,
       });
+      accepted = true;
 
       socket.emit("answer_result", { ...result.result, phaseVersion: Number(game.phaseVersion ?? 0) });
+      acknowledge?.({ ok: true, result: result.result });
       socket.to(`game:${parsed.gameId}`).emit("answer_submitted", {
         playerId: socket.data.userId,
         username: socket.data.username,
@@ -67,11 +73,17 @@ export function registerGameHandlers(io: Server, socket: Socket): void {
 
 
     } catch (error) {
+      if (accepted) {
+        console.error("Failed to close round after accepted answer:", error);
+        return;
+      }
       if (error instanceof Error) {
+        acknowledge?.({ ok: false, reason: error.message });
         socket.emit("error", { message: error.message });
         return;
       }
       console.error("submit_answer unexpected error:", error);
+      acknowledge?.({ ok: false, reason: "Failed to submit answer" });
       socket.emit("error", { message: "Failed to submit answer" });
     }
   });

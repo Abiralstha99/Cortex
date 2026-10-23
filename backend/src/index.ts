@@ -14,6 +14,7 @@ import { startWaitingRoomQuizWorker } from "./workers/waitingRoomQuiz.worker.js"
 import { startGameFinishWorker } from "./workers/gameFinish.worker.js";
 import gameRouter from "./routes/game.routes.js";
 import { quizGenerateRouter, quizzesRouter } from "./routes/quiz.routes.js";
+import practiceRouter from "./routes/practice.routes.js";
 import {
   logModelGenerationConfig,
   resolveModelGenerationConfig,
@@ -54,6 +55,7 @@ startWaitingRoomQuizWorker();
 app.use("/api/games", gameRouter);
 app.use("/api/quiz", quizGenerateRouter);
 app.use("/api/quizzes", quizzesRouter);
+app.use("/api/practice", practiceRouter);
 
 const port = Number(process.env.PORT) || 3000;
 

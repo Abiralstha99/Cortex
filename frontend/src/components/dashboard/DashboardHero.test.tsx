@@ -14,7 +14,8 @@ afterEach(cleanup);
 describe("DashboardHero", () => {
   it.each([
     ["Join game", "/game/join"],
-    ["Host game", "/game/create"],
+    ["Create a quiz", "/game/create"],
+    ["Practice solo", "/practice"],
   ])("routes %s to %s", async (label, path) => {
     renderWithRouter(
       <>

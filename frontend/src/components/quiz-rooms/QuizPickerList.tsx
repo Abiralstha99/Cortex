@@ -7,6 +7,7 @@ interface QuizPickerListProps {
   error?: unknown;
   selectedId: string | null;
   onSelect: (quiz: QuizSummary) => void;
+  onRetry?: () => void;
 }
 
 function formatDate(dateStr: string): string {
@@ -24,6 +25,7 @@ export default function QuizPickerList({
   error,
   selectedId,
   onSelect,
+  onRetry,
 }: QuizPickerListProps) {
   if (isLoading) {
     return (
@@ -46,8 +48,9 @@ export default function QuizPickerList({
       >
         <p className="font-semibold text-ink">We couldn't load your quizzes.</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Refresh the page and try again.
+          Try loading your quizzes again.
         </p>
+        {onRetry && <button type="button" onClick={onRetry} className="mt-4 min-h-11 rounded-[var(--radius-control)] border border-border bg-surface px-4 text-sm font-semibold text-ink focus-visible:ring-3 focus-visible:ring-primary/30">Try again</button>}
       </div>
     );
   }

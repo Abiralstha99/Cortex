@@ -28,12 +28,12 @@ describe("PageShell", () => {
     expect(screen.queryByTestId("mobile-navigation")).not.toBeInTheDocument();
   });
 
-  it("keeps dashboard chrome on authenticated setup routes", () => {
+  it("uses the minimal header on the dashboard", () => {
     renderWithRouter(<PageShell>Dashboard</PageShell>, "/dashboard");
 
-    expect(screen.getByTestId("desktop-navigation")).toBeInTheDocument();
+    expect(screen.queryByTestId("desktop-navigation")).not.toBeInTheDocument();
     expect(screen.getByTestId("app-header")).toBeInTheDocument();
-    expect(screen.getByTestId("mobile-navigation")).toBeInTheDocument();
+    expect(screen.queryByTestId("mobile-navigation")).not.toBeInTheDocument();
     expect(document.querySelector('[data-theme="editorial-app"]')).toBeInTheDocument();
   });
 });

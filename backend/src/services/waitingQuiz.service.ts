@@ -3,6 +3,8 @@ import { GAME_KEY } from "../lib/redisKeys.js";
 import type { QuizGenStatus } from "../types/room.types.js";
 import { capRoundsToQuiz } from "./gamePlay.helpers.js";
 import { runQuizGeneration } from "./quiz/pipeline.js";
+import { prisma } from "../lib/prisma.js";
+import { lockQuizRow } from "./quiz/quizRowLock.js";
 
 export type WaitingQuizStatusPayload = {
   quizId: string | null;
@@ -70,30 +72,61 @@ export async function attachQuizToWaitingGame(
   const raw = await redis.hgetall(GAME_KEY(gameId));
   if (!raw?.gameId) throw new Error("Room not found");
   if (raw.status !== "waiting") throw new Error("Room is not waiting");
-
-  const capped = capRoundsToQuiz(Number(raw.numberOfRounds), questionCount);
+  let redisAttached = false;
+  let attached: number | null;
+  try {
+    attached = await prisma.$transaction(async (tx) => {
+      if (!await lockQuizRow(tx, quizId)) return null;
+      const quiz = await tx.quiz.findUnique({ where: { id: quizId }, select: { status: true, questionCount: true, classification: true } });
+      if (!quiz || quiz.status !== "ready" || quiz.classification === "SOLO_ONLY" || quiz.questionCount !== questionCount) return null;
+      const capped = capRoundsToQuiz(Number(raw.numberOfRounds), quiz.questionCount);
+      const updated = await setWaitingQuizFields(gameId, {
+        quizId,
+        quizGenStatus: "ready",
+        quizGenJobId: "",
+        quizGenError: "",
+        numberOfRounds: String(capped),
+      });
+      if (!updated) throw new Error("Room is not waiting");
+      redisAttached = true;
+      return capped;
+    }, { timeout: 15000 });
+  } catch (error) {
+    if (redisAttached) {
+      const failed = await failUncommittedAttachment(gameId, quizId);
+      if (failed) return failed;
+    }
+    throw error;
+  }
+  if (attached === null) {
+    const failed = await markWaitingQuizFailed(gameId, "Generated quiz is no longer available");
+    if (!failed) throw new Error("Room is not waiting");
+    return failed;
+  }
   console.info("[quiz-gen] waiting-room:attach", {
     gameId,
     quizId,
     quizQuestionCount: questionCount,
     configuredRoundCount: Number(raw.numberOfRounds),
-    attachedRoundCount: capped,
+    attachedRoundCount: attached,
   });
-  const updated = await setWaitingQuizFields(gameId, {
-    quizId,
-    quizGenStatus: "ready",
-    quizGenJobId: "",
-    quizGenError: "",
-    numberOfRounds: String(capped),
-  });
-  if (!updated) throw new Error("Room is not waiting");
-
   return {
     quizId,
     quizGenStatus: "ready",
     quizGenError: null,
-    numberOfRounds: capped,
+    numberOfRounds: attached,
   };
+}
+
+async function failUncommittedAttachment(gameId: string, quizId: string): Promise<WaitingQuizStatusPayload | null> {
+  const message = "Generated quiz could not be attached. Retry generation.";
+  const updated = await redis.eval(`
+    if redis.call("HGET", KEYS[1], "status") ~= "waiting" then return 0 end
+    if redis.call("HGET", KEYS[1], "quizId") ~= ARGV[1] then return 0 end
+    redis.call("HSET", KEYS[1], "quizId", "", "quizGenStatus", "failed", "quizGenJobId", "", "quizGenError", ARGV[2])
+    return 1
+  `, 1, GAME_KEY(gameId), quizId, message);
+  return updated === 1 ? { quizId: null, quizGenStatus: "failed", quizGenError: message } : null;
 }
 
 export async function markWaitingQuizFailed(

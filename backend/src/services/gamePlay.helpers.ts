@@ -6,6 +6,7 @@ export type QuizPlayGate = {
   ownerId: string;
   status: string;
   questionCount: number;
+  classification?: "MULTIPLAYER" | "SOLO_ONLY";
 };
 
 /**
@@ -21,6 +22,9 @@ export function assertQuizPlayableForHost(
   }
   if (quiz.status !== "ready") {
     throw new Error("Quiz is not ready");
+  }
+  if (quiz.classification === "SOLO_ONLY") {
+    throw new Error("This quiz is for solo practice only");
   }
   if (quiz.questionCount < 1) {
     throw new Error("Quiz has no questions");

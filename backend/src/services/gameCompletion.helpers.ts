@@ -25,6 +25,17 @@ export function rankPlayers(players: Player[]): LeaderboardEntry[] {
   });
 }
 
+export function previousLeaderboard(
+  finalLeaderboard: LeaderboardEntry[],
+  submissions: Pick<SubmissionRecord, "playerId" | "pointsEarned">[],
+): LeaderboardEntry[] {
+  const points = new Map(submissions.map((submission) => [submission.playerId, submission.pointsEarned]));
+  return rankPlayers(finalLeaderboard.map((entry) => ({
+    id: entry.playerId, username: entry.username, ready: true,
+    score: entry.score - (points.get(entry.playerId) ?? 0),
+  })));
+}
+
 export function buildGamePlayerRecords(
   gameId: string,
   leaderboard: LeaderboardEntry[],

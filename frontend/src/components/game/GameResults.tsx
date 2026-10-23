@@ -38,12 +38,12 @@ export default function GameResults({ gameResults, myPlayerId, loadReview }: Gam
           strokeWidth={2}
           aria-hidden="true"
         />
-        <h1 className="text-balance font-display text-3xl font-bold text-ink">
+        <h1 tabIndex={-1} className="text-balance font-display text-3xl font-bold text-ink">
           {isWinner ? "You won" : "Game finished"}
         </h1>
         <p className="mt-3 text-pretty text-muted-foreground">
           {winners.length === 1 ? "Winner:" : "Winners:"}{" "}
-          <strong className="font-display text-ink">{winnerNames}</strong>,{" "}
+          <strong className="font-display break-words text-ink">{winnerNames}</strong>,{" "}
           <span className="font-mono font-semibold tabular-nums text-ink">
             {winnerScore} pts
           </span>
@@ -66,6 +66,10 @@ export default function GameResults({ gameResults, myPlayerId, loadReview }: Gam
           </div>
         )}
       </section>
+
+      <Button onClick={handleExit} className="min-h-12 w-full">
+        Return home
+      </Button>
 
       <Leaderboard entries={finalLeaderboard} highlightPlayerId={myPlayerId} />
 

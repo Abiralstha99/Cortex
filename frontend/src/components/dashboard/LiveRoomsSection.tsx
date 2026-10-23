@@ -3,10 +3,10 @@ import PublicRoomsList from "@/components/dashboard/PublicRoomsList";
 export default function LiveRoomsSection() {
   return (
     <section aria-labelledby="live-rooms-heading">
-      <div className="mb-5">
+      <div className="mb-4">
         <h2
           id="live-rooms-heading"
-          className="text-balance font-display text-2xl font-bold tracking-tight text-ink"
+          className="text-balance text-2xl tracking-tight text-ink"
         >
           Live now
         </h2>
@@ -14,7 +14,7 @@ export default function LiveRoomsSection() {
           Join an open room while there is still space.
         </p>
       </div>
-      <PublicRoomsList />
+      <PublicRoomsList compactEmptyState />
     </section>
   );
 }

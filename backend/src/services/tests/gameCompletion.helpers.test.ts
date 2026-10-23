@@ -5,9 +5,27 @@ import {
   buildGameFinishedPayload,
   buildGamePlayerRecords,
   rankPlayers,
+  previousLeaderboard,
 } from "../gameCompletion.helpers.js";
 
 describe("rankPlayers", () => {
+  it("reconstructs tie-aware standings before the awarded points", () => {
+    const final = rankPlayers([
+      { id: "a", username: "A", ready: true, score: 200 },
+      { id: "b", username: "B", ready: true, score: 200 },
+      { id: "c", username: "C", ready: true, score: 100 },
+    ]);
+    const previous = previousLeaderboard(final, [
+      { playerId: "a", pointsEarned: 100 },
+      { playerId: "b", pointsEarned: 0 },
+      { playerId: "c", pointsEarned: 0 },
+    ]);
+    assert.deepEqual(previous.map(({ playerId, score, rank }) => ({ playerId, score, rank })), [
+      { playerId: "b", score: 200, rank: 1 },
+      { playerId: "a", score: 100, rank: 2 },
+      { playerId: "c", score: 100, rank: 2 },
+    ]);
+  });
   it("assigns shared competition ranks and skips ranks after ties", () => {
     const leaderboard = rankPlayers([
       { id: "player-a", username: "A", ready: true, score: 300 },

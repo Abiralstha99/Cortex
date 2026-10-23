@@ -32,7 +32,7 @@ Cortex turns study material into a live competition: upload a PDF, let an LLM ge
 
 The frontend is migrating the existing product flows to a playful, polished game-dashboard theme. [`design.md`](design.md) is the visual north star; [`docs/design/`](docs/design/) translates it into repository-specific tokens, component contracts, UX rules, copy guidance, and a decision log.
 
-The redesign does not imply new product capabilities. Search, notifications, topic/manual quiz creation, solo practice, result sharing, quiz editing, and analytics remain outside the frontend redesign until their data and behavior are specified separately.
+The redesign does not imply new product capabilities. Solo practice is a separate authenticated flow for ready quizzes. Search, notifications, topic/manual quiz creation, result sharing, quiz editing, and analytics remain outside the frontend redesign until their data and behavior are specified separately.
 
 ---
 
@@ -159,7 +159,7 @@ npm run smoke:quiz-pipeline
 - Complete end-to-end play loop polish (round UX, results screens, reconnect handling)
 - Multi-player ELO / rating updates with a settled formula for 2–8 players
 - Socket.io Redis adapter for safe multi-instance deployments
-- Solo flashcard / practice mode from the same generated quiz bank
+- Expanded solo practice history and analytics beyond the latest result
 - Stronger observability (structured logs, generation metrics, failed-job alerts)
 - Horizontal scaling playbook (sticky sessions vs Redis adapter, rate limits)
 

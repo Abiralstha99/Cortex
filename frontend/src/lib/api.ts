@@ -146,6 +146,9 @@ export type NewQuestionPayload = {
 );
 
 export type AnswerResult = {
+  questionId: string;
+  roundNumber: number;
+  correctAnswer: AnswerValue;
   correct: boolean;
   pointsEarned: number;
   placement: number | null;
@@ -167,6 +170,7 @@ export type LeaderboardEntry = {
 
 export type SubmissionSummary = {
   playerId: string;
+  submitted: boolean;
   correct: boolean;
   pointsEarned: number;
   placement: number | null;
@@ -176,10 +180,16 @@ export type RoundFinishedPayload = {
   roundNumber: number;
   submissions: SubmissionSummary[];
   leaderboard: LeaderboardEntry[];
+  previousLeaderboard?: LeaderboardEntry[];
+  revealEndsAt?: number;
   isLastRound: boolean;
   nextRoundIn: number; // ms
   phaseVersion?: number;
 };
+
+export type SubmitAnswerResponse =
+  | { ok: true; result: AnswerResult }
+  | { ok: false; reason: string };
 
 export type GameReviewRound = {
   roundNumber: number;
@@ -232,7 +242,27 @@ export type QuizSummary = {
   sourceType: string;
   questionCount: number;
   createdAt: string;
+  classification?: "MULTIPLAYER" | "SOLO_ONLY";
 };
+
+export type QuizDetails = QuizSummary & {
+  status: string;
+  questions?: Array<{ id: string; position: number; type: "MCQ" | "TRUE_FALSE" | "FILL_BLANK"; question: string; options?: string[] }>;
+};
+
+export async function getQuiz(token: string | null, quizId: string): Promise<QuizDetails> {
+  const response = await apiFetch(`/api/quizzes/${quizId}`, token);
+  if (!response.ok) throw new Error(response.status === 404 ? "Quiz not found" : "Could not load quiz");
+  return response.json() as Promise<QuizDetails>;
+}
+
+export async function deleteQuiz(token: string | null, quizId: string): Promise<void> {
+  const response = await apiFetch(`/api/quizzes/${quizId}`, token, { method: "DELETE" });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as { error?: string } | null;
+    throw new Error(body?.error ?? "Could not delete quiz");
+  }
+}
 
 export async function listQuizzes(
   token: string | null,
@@ -252,9 +282,10 @@ export async function listQuizzes(
 export type GenerateResult = {
   quizId?: string;
   jobId?: string;
-  status: "completed" | "processing" | "failed";
+  status: "ready" | "completed" | "processing" | "failed";
   metadata?: Record<string, unknown>;
   error?: string;
+  errorMessage?: string;
 };
 
 export async function generateQuiz(
@@ -262,6 +293,7 @@ export async function generateQuiz(
   file: File,
   count: number,
   title?: string,
+  soloOnly = false,
 ): Promise<GenerateResult> {
   const formData = new FormData();
   formData.append("file", file);
@@ -273,7 +305,7 @@ export async function generateQuiz(
   const headers: HeadersInit = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}/api/quiz/generate`, {
+  const res = await fetch(`${API_URL}/api/quiz/generate${soloOnly ? "/solo" : ""}`, {
     method: "POST",
     headers,
     body: formData,
@@ -301,3 +333,30 @@ export async function getQuizJob(
   }
   return res.json() as Promise<GenerateResult>;
 }
+
+export type PracticeAnswer = { selectedIndex: number } | { answer: boolean } | { answer: string };
+export type PracticeQuestion = { id: string; question: string; type: "MCQ" | "TRUE_FALSE" | "FILL_BLANK"; options?: string[]; correctAnswer?: string; explanation?: string };
+export type PracticeSession = {
+  id: string; quizId: string; title: string; status: "IN_PROGRESS" | "COMPLETED";
+  questions: PracticeQuestion[]; answers: Array<{ questionId: string; answer: PracticeAnswer; isCorrect?: boolean }>;
+  resumeIndex: number; score?: number; completedAt?: string;
+};
+export type PracticeQuiz = { id: string; title: string; questionCount: number; classification?: "MULTIPLAYER" | "SOLO_ONLY"; unfinished: { id: string; answeredCount: number } | null; latestResult: { id: string; score: number; completedAt: string } | null };
+
+async function practiceRequest<T>(token: string | null, path: string, init?: RequestInit): Promise<T> {
+  const response = await apiFetch(`/api/practice${path}`, token, init);
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as { error?: string } | null;
+    throw new Error(body?.error ?? "Practice request failed. Try again.");
+  }
+  return response.status === 204 ? undefined as T : response.json() as Promise<T>;
+}
+
+export const getPracticeLibrary = (token: string | null) => practiceRequest<{ created: PracticeQuiz[]; played: PracticeQuiz[] }>(token, "/library");
+export const deleteSoloQuiz = (token: string | null, quizId: string) => practiceRequest<void>(token, `/quizzes/${quizId}`, { method: "DELETE" });
+export const startPractice = (token: string | null, quizId: string, fresh = false) => practiceRequest<PracticeSession>(token, `/quizzes/${quizId}/${fresh ? "start-fresh" : "sessions"}`, { method: "POST" });
+export const getPracticeSession = (token: string | null, sessionId: string) => practiceRequest<PracticeSession>(token, `/sessions/${sessionId}`);
+export const getLatestPracticeResult = (token: string | null, quizId: string) => practiceRequest<PracticeSession>(token, `/quizzes/${quizId}/results/latest`);
+export const savePracticeAnswer = (token: string | null, sessionId: string, questionId: string, answer: PracticeAnswer) => practiceRequest<{ questionId: string; answer: PracticeAnswer }>(token, `/sessions/${sessionId}/answers/${questionId}`, { method: "PUT", body: JSON.stringify(answer) });
+export const clearPracticeAnswer = (token: string | null, sessionId: string, questionId: string) => practiceRequest<void>(token, `/sessions/${sessionId}/answers/${questionId}`, { method: "DELETE" });
+export const submitPractice = (token: string | null, sessionId: string, pending?: { questionId: string; answer: PracticeAnswer }) => practiceRequest<PracticeSession>(token, `/sessions/${sessionId}/submit`, { method: "POST", body: JSON.stringify(pending ? { pending } : {}) });

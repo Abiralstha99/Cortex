@@ -68,7 +68,8 @@ export const CORRECT_COUNT_KEY = (gameId: string, round: number) =>
 // SUBMISSION_KEY  game:<gameId>:round:<n>:submissions:<playerId>   string
 //   Written atomically inside the Lua submission script.
 //   value: JSON SubmissionRecord — see types/room.types.ts
-//   Acts as the duplicate-submission guard: SET NX, rejected if already exists.
+//   Acts as the duplicate-submission guard: Lua checks EXISTS and writes the
+//   fully scored record in the same atomic operation.
 export const SUBMISSION_KEY = (
   gameId: string,
   round: number,

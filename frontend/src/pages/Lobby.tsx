@@ -34,6 +34,7 @@ export default function Lobby() {
   const isHost = myUserId != null && hostId === myUserId;
   const quizReady = quizGenStatus === "ready" && Boolean(quizId);
   const currentPlayer = players.find((player) => player.id === myUserId);
+  const canToggleReady = connected && status === "in_lobby" && Boolean(currentPlayer);
   const allPlayersReady =
     players.length >= 2 && players.every((player) => player.ready);
   const canStart = quizReady && allPlayersReady && status !== "starting";
@@ -173,10 +174,11 @@ export default function Lobby() {
         </ul>
         <div className="flex flex-col gap-3 border-t border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="min-w-0">
-            <Button variant={currentPlayer?.ready ? "secondary" : "outline"} onClick={toggleReady}>
+            <Button variant={currentPlayer?.ready ? "secondary" : "outline"} onClick={toggleReady} disabled={!canToggleReady} aria-describedby={!canToggleReady ? "readiness-unavailable" : undefined}>
               {currentPlayer?.ready ? <Check aria-hidden="true" /> : null}
               {currentPlayer?.ready ? "You're ready" : "I'm ready"}
             </Button>
+            {!canToggleReady && <p id="readiness-unavailable" role="status" className="mt-2 text-sm text-muted-foreground">{!connected ? "Connection lost. Reconnecting..." : status === "error" ? "You couldn't join this room. Return home and try again." : "Joining room before you can mark ready..."}</p>}
           </div>
           {isHost && (
             <div className="flex min-w-0 flex-col items-stretch gap-1.5 sm:items-end">

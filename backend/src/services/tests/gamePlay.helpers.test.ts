@@ -59,6 +59,13 @@ describe("assertQuizPlayableForHost", () => {
   it("passes for ready owned quiz with questions", () => {
     assert.doesNotThrow(() => assertQuizPlayableForHost(base, "host-1"));
   });
+
+  it("rejects a solo-only quiz for multiplayer hosting", () => {
+    assert.throws(
+      () => assertQuizPlayableForHost({ ...base, classification: "SOLO_ONLY" }, "host-1"),
+      /solo practice only/i,
+    );
+  });
 });
 
 describe("capRoundsToQuiz", () => {
